@@ -12,6 +12,10 @@
 
 Fullstack으로 판정되면 BE로 조용히 진행하지 않고 `BLOCKED:FULLSTACK_HANDOFF_REQUIRED`로 종료한다. Minmos overlay와 원격 feedback 제출은 0.1.0 범위에 포함하지 않는다. 세부 차이는 [COMPATIBILITY.md](./COMPATIBILITY.md)를 참고한다.
 
+`start-workflow`는 승인된 고정 topology를 사용한다. Sol High는 승인·상태·판정을 조정하고, Terra
+High/Max는 source/test/API 문서 등 업무 변경 파일의 유일한 writer 및 승인된 push/PR 실행자이며, Luna xHigh는 읽기 전용 검토를 맡는다.
+Phase 4.3은 매번 새 Sol Max advisor context로 Plan만 검증한다. 모든 고정 spawn은 `fork_turns:none`이다.
+
 ## 주요 skill
 
 | skill | 설명 |

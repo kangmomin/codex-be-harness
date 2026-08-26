@@ -23,7 +23,7 @@ request의 즉시 실행 규칙은 사용하지 않는다.
 - 각 엣지 케이스의 참조 구현 `file:line` 또는 `-`
 
 엣지 케이스 보강이 필요하면 [agents/edge-case-analyzer.md](agents/edge-case-analyzer.md)를 읽고 API당 한
-읽기 전용 역할에 `incremental` 모드로 전달한다. 질문은 역할이 사용자에게 직접 보내지 않고
+Luna xHigh 읽기 전용 역할에 `incremental` 모드로 전달한다. 고정 spawn은 `fork_turns:none`이며 질문은 역할이 사용자에게 직접 보내지 않고
 오케스트레이터에게 반환한다.
 
 Spec 전문을 사용자에게 보여주고 확인받는다. 불명확한 요구는 대안을 제시하고 결정받으며 임의로
@@ -81,7 +81,8 @@ Spec+Plan 산출물로 만든다. 중복 로직이 예상되면 최종 단순 �
 
 ### Phase 4.2: 다관점 보강 1회
 
-최대 3개 독립 리뷰어를 두 배치로 실행한다. 모두 읽기 전용이고 Spec+Plan 전문을 받는다.
+최대 3개 Luna xHigh 독립 리뷰어를 두 배치로 실행한다. 모든 고정 spawn은 `fork_turns:none`이고,
+모두 읽기 전용이며 Spec+Plan 전문을 받는다.
 
 - Batch 1: 유지보수성, 성능, 엣지 케이스
 - Batch 2: 데이터 정합성, 보안, 기존 코드 영향
@@ -91,7 +92,7 @@ CONCERN은 근거가 타당한 항목만 반영한다. 결과를 Plan v1으로 �
 
 ### Phase 4.3: 독립 Plan 검증 루프
 
-fresh-context architect 리뷰어로 최대 5회 검증한다. 매회 Spec, Plan vN, 전략, 난이도 근거를 전달하고,
+매 iteration `fork_turns:none`으로 새로 만든 Sol Max fresh-context advisor로 최대 5회 검증한다. 매회 Spec, Plan vN, 전략, 난이도 근거를 전달하고,
 2회차부터 이전 diff와 기각 피드백/사유도 전달한다. 검토 관점은 Spec 추적성, 레이어 책임, 파일 소유권,
 테스트 누락, 더 단순한 경로다.
 
@@ -149,8 +150,8 @@ baseline 수집 실패는 자율 구간 전 마지막 결정 지점이다. 회�
 TDD가 활성일 때만 `AC-nn`/`EC-nn`/`RC-nn` 근거의 실패 테스트와 최소 스텁을 작성한다. 형제
 `../../unit-test/SKILL.md`의 Red 절차를 읽어 적용한다.
 
-- sequential: 테스트 작성자 1명, 커밋은 오케스트레이터 소유
-- parallel-slices: 각 작성자는 자기 테스트/스텁만 편집하고 실행·상태 기록·커밋하지 않는다.
+- sequential: Terra executor 테스트 작성자 1명, 커밋 조정과 상태 기록은 Sol High 소유
+- parallel-slices: Terra executor 각 작성자는 자기 테스트/스텁만 편집하고 실행·상태 기록·커밋하지 않는다.
   모두 끝난 뒤 오케스트레이터가 전역 Red 검증과 단일 커밋을 수행한다.
 
 | 결과 | 상태/진행 |
@@ -165,8 +166,8 @@ Red 커밋은 `Test: {요약} — 실패 테스트 선작성 (Red)`다. pre-comm
 
 ### Phase 6.2: Green
 
-- sequential: implementer 역할이 Plan 순서대로 구현하고 논리 단위로 커밋한다.
-- parallel-slices: 파일 범위를 겹치지 않게 병렬 편집하고 각 작성자는 커밋·빌드를 하지 않는다.
+- sequential: Terra executor implementer가 Plan 순서대로 구현하고 구조화 결과를 반환한다. Sol High가 논리 단위 커밋을 조정한다.
+- parallel-slices: 파일 범위를 겹치지 않게 Terra executor에 배정하고 각 작성자는 커밋·빌드를 하지 않는다.
   오케스트레이터가 결과를 대조한 뒤 한 번 커밋한다.
 
 TDD 활성 시 테스트 파일 수정은 금지한다. 테스트가 잘못됐다고 판단하면 `[TestConflict]`만 보고하고
@@ -174,8 +175,8 @@ TDD 활성 시 테스트 파일 수정은 금지한다. 테스트가 잘못됐�
 
 ## Phase 7: 빌드 강제 검증
 
-`buildCommand`가 없으면 `SKIPPED:PROFILE_EMPTY`다. 있으면 구현 직후 실행한다. 실패할 때마다
-build-fix 역할이 원인 범위만 수정하고 커밋한 후 다시 실행한다. 총 3회 실패하면
+`buildCommand`가 없으면 `SKIPPED:PROFILE_EMPTY`다. 있으면 Sol High가 구현 직후 실행한다. 실패할 때마다
+Terra executor build-fix가 원인 범위만 수정하고 결과를 반환한 후 Sol High가 다시 실행한다. 총 3회 실패하면
 `BLOCKED:BUILD_FAIL`로 중단하고 오류를 보고한다.
 
 ## Phase 8: 품질 루프
@@ -190,8 +191,8 @@ TDD가 생략됐으면 수정 0건만으로 종료할 수 있다. 3회 뒤에도
 
 ## Phase 9: API 문서
 
-작업 유형이 API 생성/수정/삭제이고 `apiDocsPath`가 실제 파일일 때만 문서 파일을 외과적으로
-동기화한다. 외부 플랫폼으로 push하지 않는다. 아니면 구체적인 `SKIPPED:{사유}`를 기록한다.
+작업 유형이 API 생성/수정/삭제이고 `apiDocsPath`가 실제 파일일 때만 Terra executor가 문서 파일을 외과적으로
+동기화하고 결과를 반환한다. Sol High는 상태만 기록한다. 외부 플랫폼으로 push하지 않는다. 아니면 구체적인 `SKIPPED:{사유}`를 기록한다.
 
 ## Phase 10: Assumption Gate와 PR/push
 
@@ -204,11 +205,11 @@ base diff의 추가 라인과 미push 커밋 본문에서 `[Assumption]`을 검�
 - `--hard`: 형제 `../../commit-hard-push/SKILL.md`의 Assumption Gate와 일반 push 절차를 읽고 현재
   브랜치에 push한다. PR은 만들지 않는다.
 
-Phase 4.4에서 승인되지 않은 원격 효과가 새로 필요하면 여기서 멈춰 추가 승인을 받는다.
+Phase 4.4에서 승인되지 않은 원격 효과가 새로 필요하면 여기서 멈춰 추가 승인을 받는다. 승인된 push/PR의 실제 실행은 Terra executor가 한다.
 
 ## Phase 11: 성찰
 
-`--reflect`일 때만 [agents/workflow-reflection.md](agents/workflow-reflection.md) 역할로 커밋 로그와 Phase
+`--reflect`일 때만 Luna xHigh [agents/workflow-reflection.md](agents/workflow-reflection.md) 역할로 커밋 로그와 Phase
 결과를 분석한다. 아니면 `SKIPPED:REFLECT_NOT_REQUESTED`다. 보완점은 plugin 원본이 아니라
 `.codex/be-harness/**` 후보로만 제안한다.
 
@@ -225,3 +226,7 @@ Phase 4.4에서 승인되지 않은 원격 효과가 새로 필요하면 여기�
 `feedbackUpstreamRepo`가 없으므로 첫 릴리스는 feedback PR을 만들지 않고
 `SKIPPED:NO_FEEDBACK_UPSTREAM`을 기록한다. 값이 있더라도 Phase 4.4 승인 범위를 벗어난 외부 제출은
 별도 승인을 받는다. 실행 중 띄운 서버가 남아 있지 않은지 확인하고 PID/세션 핸들을 정리한다.
+
+Phase 12의 사용자 승인 remediation이 작업 트리 diff를 바꾸면, Sol High는 Phase 10 Assumption Gate와
+Phase 4.4에서 승인된 push/PR 범위를 다시 확인한다. 재확인 뒤 필요한 수정 또는 승인된 외부 효과는 Terra
+executor만 수행한다.

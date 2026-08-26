@@ -27,24 +27,26 @@ Write tool로 `{STATE_FILE}`을 생성한다:
 [N]/10
 
 ## Current Phase
-Phase 5 - 자율 실행 시작 (agent: orchestrator, model: 현재 세션, effort: 현재 세션)
+Phase 5 - 자율 실행 시작 (agent: Sol High orchestrator, model: gpt-5.6-sol, effort: high)
 
 ## Phase Assignments
 | Phase | Agent | Model | Effort | Status |
 |-------|-------|-------|--------|--------|
-| 1 | orchestrator | 현재 세션 | 현재 세션 | DONE |
-| 2 | orchestrator | 현재 세션 | 현재 세션 | DONE |
-| 3 | orchestrator | 현재 세션 | 현재 세션 | DONE |
-| 4 | independent reviewers + orchestrator | 난이도 기준 | 난이도 기준 | DONE |
-| 5 | orchestrator | 현재 세션 | 현재 세션 | IN_PROGRESS |
-| 6.1 | Red test writer | 난이도 기준 | 난이도 기준 | PENDING |
-| 6.2 | implementation writer | 난이도 기준 | 난이도 기준 | PENDING |
-| 7 | orchestrator/build-fix writer | 난이도 기준 | 난이도 기준 | PENDING |
-| 8 | quality reviewers + single writer | 난이도 기준 | 난이도 기준 | PENDING |
-| 9 | documentation writer | 난이도 기준 | 난이도 기준 | PENDING |
-| 10 | PR role 또는 직접 push(--hard 모드) | 난이도 기준 | 난이도 기준 | PENDING |
-| 11 | reflection role | 난이도 기준 | 난이도 기준 | PENDING |
-| 12 | orchestrator | 현재 세션 | 현재 세션 | PENDING |
+| 1 | Sol High orchestrator + Luna edge-case | gpt-5.6-sol / gpt-5.6-luna | high / xhigh | DONE |
+| 2 | Sol High orchestrator | gpt-5.6-sol | high | DONE |
+| 3 | Sol High orchestrator | gpt-5.6-sol | high | DONE |
+| 4.2 | Luna reviewers + Sol High | gpt-5.6-luna / gpt-5.6-sol | xhigh / high | DONE |
+| 4.3 | fresh Sol Max advisor | gpt-5.6-sol | max | DONE |
+| 4.4 | Sol High approval relay | gpt-5.6-sol | high | DONE |
+| 5 | Sol High orchestrator | gpt-5.6-sol | high | IN_PROGRESS |
+| 6.1 | Terra executor | gpt-5.6-terra | high / max | PENDING |
+| 6.2 | Terra executor | gpt-5.6-terra | high / max | PENDING |
+| 7 | Sol High command + Terra fix | gpt-5.6-sol / gpt-5.6-terra | high / high-or-max | PENDING |
+| 8 | Sol High barriers + Luna review + Terra single writer | gpt-5.6-sol / gpt-5.6-luna / gpt-5.6-terra | high / xhigh / high-or-max | PENDING |
+| 9 | Terra documentation executor | gpt-5.6-terra | high / max | PENDING |
+| 10 | Sol High Gate + Terra approved push/PR | gpt-5.6-sol / gpt-5.6-terra | high / high-or-max | PENDING |
+| 11 | Luna reflection | gpt-5.6-luna | xhigh | PENDING |
+| 12 | Sol High report + Terra approved remediation | gpt-5.6-sol / gpt-5.6-terra | high / high-or-max | PENDING |
 
 ## Remaining Phases
 - Phase 6.1: 테스트 우선 (Red)
@@ -146,11 +148,11 @@ Phase 5 - 자율 실행 시작 (agent: orchestrator, model: 현재 세션, effor
    그 다음 Phase 6~11 결과를 종합해 **Workflow Report**를 작성한다 (템플릿 준수 — 섹션 머리글 변경 금지). `## 미결 질문`이 1건 이상이면 보고서 최상단에 "사용자 확인 필요" 블록을 자동 삽입한다.
 2. **TDD 미해결 항목 처리** (보고서 4.1 섹션이 비어있지 않을 때만): 자율 실행 중 이연된 `BLOCKED:*`·`[TestConflict]`·`[Breaking]`·`cannot_compile`을 각각 제시하고 결정을 받는다.
    Phase 6~8에서 유저 질문이 금지되어 이연된 항목들이므로 **여기가 첫 결정 지점**이다.
-   - 결정에 따른 수정이 필요하면 그 자리에서 수행하고 커밋한다. 승인 전에는 수정하지 않는다.
+   - 결정에 따른 작업 트리 수정이 필요하면 Terra executor가 수행하고 Sol High가 승인·상태·commit 조정을 한다. 승인 전에는 수정하지 않는다.
    - "이번 범위 외" 판단 항목은 보고서에 `보류`로 남긴다.
 3. **Read-back Diff 처리** (Phase 8.8 판정이 `WARN`/`FAIL`일 때만): 보고서 8번 섹션의 각 항목을 유저에게 제시하고 결정을 받는다.
    보완점 질문보다 **먼저** 처리한다 — 코드·Spec에 직접 영향을 주는 결정이기 때문이다.
-   - 결정에 따른 코드/Spec 수정이 필요하면 그 자리에서 수행하고 커밋한다. 유저가 승인하기 전에는 수정하지 않는다 (Spec 외 변경 금지 원칙).
+   - 결정에 따른 코드/Spec 수정이 필요하면 Terra executor가 수행하고 Sol High가 승인·상태·commit 조정을 한다. 유저가 승인하기 전에는 수정하지 않는다 (Spec 외 변경 금지 원칙).
    - 유저가 "이번 범위 외"로 판단한 항목은 보고서에 `보류`로 남기고 넘어간다.
 4. **보완점 적용** (Phase 11이 `DONE`일 때만): ① `.codex/be-harness/**` 로컬 저장 ② 건너뛰기 중
    결정받는다. 적용 절차·append 규칙은 아래 "보완점 적용 상세"를 따른다. 플러그인 원본은 절대
@@ -162,6 +164,10 @@ Phase 5 - 자율 실행 시작 (agent: orchestrator, model: 현재 세션, effor
    정리를 요청한 경우에만 `{RUN_DIR}`가 이번 실행의 검증된 임시 디렉터리인지 확인한 뒤 그 내부의
    `{STATE_FILE}`과 `{IMPL_NOTES}`를 삭제한다. 실행 중 시작한 서버 PID/세션도 모든 종료 경로에서 정리한다.
    HTML 산출물(`*-impl-notes.html`, `*-e2e-report.html`)은 자동 삭제하지 않는다.
+
+Phase 12에서 사용자 승인 remediation으로 diff가 바뀌면 Sol High는 Phase 10 Assumption Gate와 Phase 4.4의
+승인된 외부 효과 범위를 다시 확인한다. 필요한 작업 트리 수정과 승인된 push/PR은 Terra executor가 수행하고
+Sol High는 승인·상태·commit 조정만 한다.
 
 ## Phase 12: Implementation Notes HTML 렌더링
 

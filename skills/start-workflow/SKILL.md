@@ -11,6 +11,9 @@ BE 작업을 Build, Analyze, Verify 중 한 모드로 실행한다. 프로젝트
 
 사용자와의 대화는 profile의 `language`(기본 `ko`)를 따른다.
 
+모든 모드의 역할·모델·bootstrap·writer 경계는 [agent-topology.md](references/agent-topology.md)가
+canonical이다. 이 스킬에만 적용하는 고정 토폴로지 예외다.
+
 ## 모드와 플래그
 
 | 플래그 | 모드/효과 |
@@ -86,21 +89,12 @@ Build는 Phase 4.4 승인 후 Phase 5 진입 시, Analyze/Verify는 모드 범�
 
 ## 서브에이전트와 형제 스킬
 
-작업을 위임할 때 모델 이름을 고정하지 않는다. 탐색은 낮은 effort, 일반 구현·판정은 medium,
-보안·데이터·복잡 계약은 high 이상을 사용하고 현재 환경에서 사용할 수 있는 적절한 모델을 선택한다.
-각 프롬프트에는 `{CWD}`, `{STATE_FILE}`, `{IMPL_NOTES}`, 현재/남은 Phase, 파일 소유권, 읽기/쓰기
-허용 범위를 넣는다. 공통 프롬프트와 사망 처리는 [agent-prompts.md](references/agent-prompts.md)를,
+고정 모델·effort·`fork_turns:none`·재시도/대체 금지 규칙은
+[agent-topology.md](references/agent-topology.md)를 따른다. 난이도 1~8은 Terra High, 9~10은 Terra Max로
+Executor를 배정한다. Phase 2의 리스크 산정에는 보안, 데이터 이관, 복잡한 API/계약 변경을 반드시
+반영한다. 각 프롬프트에는 `{CWD}`, `{STATE_FILE}`, `{IMPL_NOTES}`, 현재/남은 Phase, 파일 소유권,
+읽기/쓰기 허용 범위를 넣는다. 공통 프롬프트와 사망 처리는 [agent-prompts.md](references/agent-prompts.md)를,
 역할별 판정 계약은 [references/agents/](references/agents/) 문서를 사용한다.
-
-| 등급 | 기준 | effort |
-|------|------|--------|
-| Simple | 난이도 1~3, 1~3개 파일, 단순 수정 | low |
-| Standard | 난이도 4~6, 일반 구현/리뷰 | medium |
-| Complex | 난이도 7~8, 다중 레이어/API/DB/계약 | high |
-| Critical | 난이도 9~10, 보안/이관/대규모 변경 | xhigh |
-
-리뷰 판정은 단순 탐색으로 강등하지 않는다. 사망 복구의 마지막 재시도만 한 단계 낮출 수 있고,
-최종 보고에 축소 사실을 남긴다.
 
 다른 기능이 필요할 때 호출 문자열에 위임하지 않는다. 해당 형제 스킬의 `SKILL.md`를 읽고 그 절차를
 현재 컨텍스트에서 수행하거나, 필요한 계약을 서브에이전트 프롬프트에 포함한다.
@@ -154,4 +148,5 @@ Phase 상태는 `DONE`, `IN_PROGRESS`, `PENDING`, `SKIPPED:{사유}`, `BLOCKED:{
 - TDD와 baseline: [tdd.md](references/tdd.md)
 - Phase 8: [quality-loop.md](references/quality-loop.md)
 - 위임 프롬프트: [agent-prompts.md](references/agent-prompts.md)
+- 고정 토폴로지: [agent-topology.md](references/agent-topology.md)
 - 상태·보고·HTML: [templates.md](references/templates.md)

@@ -7,9 +7,9 @@
 
 ```text
 for iteration in 1..3:
-  Batch A (read-only, parallel): 8.1 build+test / 8.2+8.3 quality scan / 8.4 scope
-  Phase 8.5 (single writer): collected issues를 한 역할이 통합 수정
-  Batch B (sequential): 8.6 E2E / 8.7 integration test
+  Batch A: Sol High 8.1 command + Luna xHigh(read-only, parallel) 8.2+8.3 / 8.4
+  Phase 8.5 (Terra single writer): collected issues를 한 역할이 통합 수정
+  Batch B: Terra 8.6 E2E / 8.7 integration fix, Sol High command and judgment
 
 after loop: Phase 8.8 isolated read-back exactly once
 ```
@@ -32,7 +32,7 @@ Batch A는 같은 기준 작업 트리를 읽으며 파일을 수정하지 않�
 
 ## Phase 8.2 + 8.3: Simplify + Convention
 
-한 읽기 전용 스캐너가 두 절차를 순서대로 실행하되 결과와 상태를 분리한다.
+`fork_turns:none`의 Luna xHigh 읽기 전용 스캐너가 두 절차를 순서대로 실행하되 결과와 상태를 분리한다.
 
 1. 오케스트레이터가 `../../simplify-loop/SKILL.md`를 읽고 `--dry-run` 계약을 스캐너에 전달해 후보만 수집한다.
 2. 오케스트레이터가 `../../convention-check/SKILL.md`를 읽고 검사 계약을 전달해 위반만 수집한다.
@@ -56,12 +56,12 @@ convention 위반: M건
 
 ## Phase 8.4: Scope review
 
-[agents/scope-reviewer.md](agents/scope-reviewer.md)를 읽고 Technical Spec 기준의 누락/불일치만 받는다.
+[agents/scope-reviewer.md](agents/scope-reviewer.md)를 읽고 `fork_turns:none`의 Luna xHigh 역할에서 Technical Spec 기준의 누락/불일치만 받는다.
 코드 스타일은 보지 않으며 파일을 수정하지 않는다. `EC-nn` ID를 보존한다.
 
 ## Phase 8.5: Integrated fix — single writer
 
-Batch A 이슈가 하나라도 있으면 한 수정 역할에 아래 순서로 전달한다.
+Batch A 이슈가 하나라도 있으면 `fork_turns:none`의 Terra executor 한 수정 역할에 아래 순서로 전달한다.
 
 1. build/test: `regression` → `new_red`
 2. Scope 누락
@@ -69,19 +69,22 @@ Batch A 이슈가 하나라도 있으면 한 수정 역할에 아래 순서로 �
 4. 안전한 Simplify 후보
 
 TDD 활성 시 테스트 파일과 `pre_existing` 실패는 수정하지 않는다. 테스트 충돌은 `[TestConflict]`로
-보고한다. 같은 파일의 여러 이슈는 한 번의 편집으로 합치고, 변경 전 Implementation Notes 규칙을
-적용한다. `buildCommand`가 있으면 수정 후 확인한다. 변경이 있으면 `modified = true`다.
+보고한다. 같은 파일의 여러 이슈는 한 번의 편집으로 합친다. Terra는 설계 결정·편차·트레이드오프·
+을 구조화 결과로 반환하고, Sol High만 Implementation Notes에 append한다.
+`buildCommand`가 있으면 수정 후 확인한다. 변경이 있으면 `modified = true`다.
 
 ## Phase 8.6: E2E test loop
 
-profile의 `e2eEnabled`, `runServerCommand`, `serverUrl`이 모두 유효할 때만 수행한다. 그렇지 않으면
+profile의 `e2eEnabled`, `runServerCommand`, `serverUrl`이 모두 유효할 때만 Terra executor가 수행하고
+PID/세션 핸들과 정리 결과를 Sol High에 반환한다. Sol High만 그 handle을 `{STATE_FILE}`에 기록한다. 그렇지 않으면
 명확한 `SKIPPED:{사유}`를 기록하고 `modified`에는 영향을 주지 않는다.
 
-오케스트레이터가 형제 `../../e2e-test-loop/SKILL.md`와 그 skill-relative assets를 읽고, 해결된
-절대 asset 경로와 절차를 E2E 역할에 전달한다. asset 경로를
+Sol High가 형제 `../../e2e-test-loop/SKILL.md`와 그 skill-relative assets를 읽고, 해결된
+절대 asset 경로와 계약을 같은 Terra executor에 전달한다. Terra는 중첩 agent spawn이나 직접 commit 없이
+E2E와 실패 수정까지 같은 배정 안에서 수행하고 구조화 결과만 반환한다. asset 경로를
 프로젝트 CWD나 plugin 전역 경로로 추측하지 않는다. 서버는 다음 생명주기 계약을 지킨다.
 
-- 시작한 PID 또는 실행 세션 핸들을 `{STATE_FILE}`에 기록한다.
+- Terra가 시작한 PID 또는 실행 세션 핸들과 정리 결과를 Sol High에 반환하고, Sol High가 `{STATE_FILE}`에 기록한다.
 - readiness와 lock polling은 매 wait를 60초 미만으로 yield하되 profile/형제 절차의 총 timeout을
   줄이지 않는다.
 - 성공, 테스트 실패, 수정 실패, 사용자 중단, 상위 Phase 중단을 포함한 모든 exit에서 자신이 시작한
@@ -92,8 +95,8 @@ profile의 `e2eEnabled`, `runServerCommand`, `serverUrl`이 모두 유효할 때
 
 ## Phase 8.7: Integration test
 
-`makeTestCommand`가 있으면 순차 실행한다. 없으면 `SKIPPED:PROFILE_EMPTY`다. 실패하면 8.5와 같은
-single-writer 수정 계약으로 실패 로그만 전달하고 재실행한다. 수정이 있으면 `modified = true`다.
+`makeTestCommand`가 있으면 Sol High가 순차 실행한다. 없으면 `SKIPPED:PROFILE_EMPTY`다. 실패하면 Terra executor에게 8.5와 같은
+single-writer 수정 계약으로 실패 로그만 전달하고 Sol High가 재실행한다. 수정이 있으면 `modified = true`다.
 
 ## Iteration 판정
 
@@ -112,7 +115,7 @@ TDD 활성 테스트 판정:
 | 그 외 | 변경 커밋 후 다음 iteration |
 | 3회 도달 및 미PASS | `BLOCKED:TEST_NOT_GREEN`, 이후 8.8 계속 |
 
-수정 커밋은 `Fix: 품질 루프 수정 (반복 N)`이며 실제 변경 파일만 stage한다.
+Sol High가 조정하는 수정 커밋은 `Fix: 품질 루프 수정 (반복 N)`이며 실제 변경 파일만 stage한다.
 
 # Phase 8.8 — Isolated Spec read-back
 
@@ -130,7 +133,7 @@ TDD 활성 테스트 판정:
 
 ## Isolation contract
 
-Read-back 역할에는 다음을 절대 전달하지 않는다.
+`fork_turns:none`의 Luna xHigh Read-back 역할에는 다음을 절대 전달하지 않는다.
 
 - `{STATE_FILE}` 경로
 - Spec, Plan, Edge Cases

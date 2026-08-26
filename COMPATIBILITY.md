@@ -66,7 +66,11 @@
 
 - Phase 1~4는 planning-only다. Phase 4.4의 명시적 사용자 승인이 기존 Plan mode 종료의 의미적 대체다.
 - workflow 상태는 run-scoped 임시 디렉토리에 저장하고 resolved path를 subagent에 전달한다.
-- custom agent model은 고정하지 않는다. parent 모델과 reasoning effort를 기본 상속한다.
+- 일반 custom agent model은 고정하지 않고 parent 모델과 reasoning effort를 기본 상속한다. 다만
+  `start-workflow`는 사용자 승인된 고정 topology(Sol High orchestrator, Terra High/Max executor,
+  Luna xHigh read-only, Sol Max Phase 4.3 advisor)를 사용한다. 모든 고정 spawn은 `fork_turns:none`이며,
+  모델 미가용/실행 중 사망은 구분해 기존 `CODEX-UNAVAILABLE`·`SKIPPED:AGENT_DIED`·
+  `DONE + degraded_fallback`·`BLOCKED:AGENT_DIED` 계약을 적용하고 타 모델로 대체하지 않는다.
 - project override agent 파일은 parent가 읽어 해당 subagent prompt에 추가한다.
 - fullstack 판정은 Phase 3에서 `BLOCKED:FULLSTACK_HANDOFF_REQUIRED`로 종료한다. 자동 BE 축소를 금지한다.
 
