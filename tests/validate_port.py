@@ -25,6 +25,13 @@ if manifest_path.is_file():
     require(manifest.get("name") == "codex-be-harness", "manifest name mismatch")
     require(manifest.get("skills") == "./skills/", "manifest skills path mismatch")
     require(bool(manifest.get("description")), "manifest description is empty")
+    manifest_version = str(manifest.get("version", ""))
+    require(bool(manifest_version), "manifest version is empty")
+    for doc in ["COMPATIBILITY.md", "README.md"]:
+        require(
+            f"codex-be-harness@{manifest_version}" in (ROOT / doc).read_text(encoding="utf-8"),
+            f"{doc} must reference codex-be-harness@{manifest_version}",
+        )
 
 required_skills = {
     "commit",
@@ -131,8 +138,27 @@ for contract in [
     "SKIPPED:REFLECT_NOT_REQUESTED",
     "planning-only",
     "Phase 4.4",
+    "BLOCKED:DUPLICATE_IN_PROGRESS",
+    "외부 CLI 리뷰어를 호출하지 않는다",
+    "{PROFILE_PATH}",
+    "같은 orchestrator task",
 ]:
     require(contract in workflow, f"start-workflow: missing contract {contract}")
+
+build_phases = (skills_dir / "start-workflow" / "references" / "build-phases.md").read_text(encoding="utf-8")
+for contract in ["git worktree list", "BLOCKED:DUPLICATE_IN_PROGRESS", "workflow-report.md", "`## 편차`에서 `[Assumption]`"]:
+    require(contract in build_phases, f"build-phases: missing contract {contract}")
+
+templates_doc = (skills_dir / "start-workflow" / "references" / "templates.md").read_text(encoding="utf-8")
+require("workflow-report.md" in templates_doc, "templates: missing workflow-report.md persistence")
+
+request_doc = (skills_dir / "request" / "SKILL.md").read_text(encoding="utf-8")
+require("기본값" in request_doc and "`[Assumption]`으로 표기" in request_doc, "request: missing default-answer batching rule")
+
+e2e_doc = (skills_dir / "e2e-test" / "SKILL.md").read_text(encoding="utf-8")
+for contract in ["mode: workflow", "{mainBranch}...HEAD", "SKIPPED:NO_AUTH"]:
+    require(contract in e2e_doc, f"e2e-test: missing contract {contract}")
+require("main...HEAD" not in e2e_doc.replace("{mainBranch}...HEAD", ""), "e2e-test: hardcoded main base ref")
 
 topology_path = skills_dir / "start-workflow" / "references" / "agent-topology.md"
 require(topology_path.is_file(), "start-workflow: missing agent topology")
@@ -225,6 +251,8 @@ require(
 
 agent_prompts = (skills_dir / "start-workflow" / "references" / "agent-prompts.md").read_text(encoding="utf-8")
 for contract in [
+    "## 대기 규약",
+    "mode: workflow",
     "Sol Max Phase 4.3이 실행 중 두 번 사망하면",
     "`CODEX-UNAVAILABLE` 결과로 Phase 4.4에 진행",
     "Terra는 중첩 agent spawn이나 직접 commit 없이 E2E와 실패 수정을 수행",
@@ -265,6 +293,7 @@ require(
     "profile 자체가 없으면 값을 추측하지 않는다" in profile,
     "PROFILE.md must agree with start-workflow's missing-profile stop rule",
 )
+require("## profile 해석" in profile and "{PROFILE_PATH}" in profile, "PROFILE.md must define the profile resolution rule")
 
 compatibility = (ROOT / "COMPATIBILITY.md").read_text(encoding="utf-8")
 source_inventory = [

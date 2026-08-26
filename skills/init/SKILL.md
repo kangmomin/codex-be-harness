@@ -56,41 +56,36 @@ description: "be-harness 플러그인의 project profile(.codex/be-harness.local
 
 ## Step 4: 값 확정
 
-프리셋 기본값을 기준으로 사용자에게 빠르게 override 여부만 확인한다.
-한꺼번에 여러 질문을 던지지 말고 **아래 네 그룹씩** 묻는다.
+프리셋 기본값과 감지 결과를 채운 **전체 필드 표를 한 번에** 제시하고 override 여부만 확인한다. 그룹별로
+나눠 여러 턴에 걸쳐 묻지 않는다.
 
-### Group A — 빌드/테스트
+| # | 필드 | 기본값/감지값 |
+|---|------|--------------|
+| 1 | `preset` | Step 3 선택 |
+| 2 | `language` | ko |
+| 3 | `buildCommand` | 프리셋 기본값 |
+| 4 | `testCommand` | 프리셋 기본값 |
+| 5 | `lintCommand` | 프리셋 기본값 |
+| 6 | `typeCheckCommand` | 프리셋 기본값 (선택) |
+| 7 | `makeTestCommand` | Makefile 있으면 제안 |
+| 8 | `runServerCommand` | 선택, 없으면 빈 값 |
+| 9 | `serverUrl` | http://localhost:8080 또는 :3000 |
+| 10 | `e2eEnabled` | true |
+| 11 | `apiDocsPath` | 선택 |
+| 12 | `e2eLockDir` | 빈 값(자동 해석) |
+| 13 | `reportDir` | 빈 값(`.codex/harness-reports`) |
+| 14 | `sourceDirs` | 프리셋 기본값 |
+| 15 | `testDirs` | 프리셋 기본값 |
+| 16 | `mainBranch` | 감지 결과 |
+| 17 | `featureBranchPrefix` | feat/ |
+| 18 | `hotfixBranchPrefix` | hotfix/ |
+| 19 | `commitPrefixes` | Add, Fix, Del, Refactor, Doc, Test, Chore, WIP |
+| 20 | `commitCoAuthor` | 선택, 비우면 Co-Authored-By 라인 생략 |
+| 21 | `projectConventions` | `["AGENTS.md"]`, 없으면 빈 배열 |
+| 22 | `feedbackUpstreamRepo` | 빈 값(`SKIPPED:NO_FEEDBACK_UPSTREAM`) |
 
-- `buildCommand`
-- `testCommand`
-- `lintCommand`
-- `typeCheckCommand` (선택)
-- `makeTestCommand` (Makefile 있으면 제안)
-
-### Group B — 서버/E2E
-
-- `runServerCommand` (선택, 없으면 빈 값)
-- `serverUrl` (기본 http://localhost:8080 또는 :3000)
-- `e2eEnabled` (기본 true)
-- `apiDocsPath` (선택)
-
-### Group C — 디렉토리/Git
-
-- `sourceDirs`
-- `testDirs`
-- `mainBranch` (감지 결과를 기본값으로)
-- `featureBranchPrefix`
-- `hotfixBranchPrefix`
-
-### Group D — 컨벤션
-
-- `commitPrefixes` (기본: Add, Fix, Del, Refactor, Doc, Test, Chore, WIP)
-- `commitCoAuthor` (선택, 비우면 Co-Authored-By 라인 생략)
-- `projectConventions` (기본: `["AGENTS.md"]`, 없으면 빈 배열)
-- `language` (ko/en, 기본 ko)
-
-> 각 그룹에서 값을 제시하고 "이대로 진행하시겠습니까? (변경할 항목 번호 또는 `ok`)" 식으로 확인한다.
-> 그룹 단위 확정으로 진행한다.
+> "이대로 진행하시겠습니까? `ok` 또는 `번호: 값`을 콤마로 나열해 주세요 (예: `5: make lint, 16: dev`)."
+> 수정이 있으면 반영한 표를 다시 보여 주고 한 번만 재확인한 뒤 확정한다.
 
 ## Step 5: Profile 생성
 
@@ -111,6 +106,9 @@ runServerCommand: "{runServerCommand}"
 serverUrl: "{serverUrl}"
 e2eEnabled: {e2eEnabled}
 apiDocsPath: "{apiDocsPath}"
+e2eLockDir: "{e2eLockDir}"
+
+reportDir: "{reportDir}"
 
 sourceDirs: {sourceDirs}
 testDirs:   {testDirs}
@@ -123,6 +121,7 @@ commitPrefixes: {commitPrefixes}
 commitCoAuthor: "{commitCoAuthor}"
 
 projectConventions: {projectConventions}
+feedbackUpstreamRepo: "{feedbackUpstreamRepo}"
 ---
 
 # Project Notes

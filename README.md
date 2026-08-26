@@ -10,11 +10,20 @@
 - profile, project override, TDD Test Map, 회귀 baseline, Assumption Gate
 - bounded simplify/quality/E2E loop와 기존 상태·보고 형식
 
-Fullstack으로 판정되면 BE로 조용히 진행하지 않고 `BLOCKED:FULLSTACK_HANDOFF_REQUIRED`로 종료한다. Minmos overlay와 원격 feedback 제출은 0.1.0 범위에 포함하지 않는다. 세부 차이는 [COMPATIBILITY.md](./COMPATIBILITY.md)를 참고한다.
+Fullstack으로 판정되면 BE로 조용히 진행하지 않고 `BLOCKED:FULLSTACK_HANDOFF_REQUIRED`로 종료한다. Minmos overlay와 원격 feedback 제출은 0.2.0 범위에도 포함하지 않는다. 세부 차이는 [COMPATIBILITY.md](./COMPATIBILITY.md)를 참고한다.
 
 `start-workflow`는 승인된 고정 topology를 사용한다. Sol High는 승인·상태·판정을 조정하고, Terra
 High/Max는 source/test/API 문서 등 업무 변경 파일의 유일한 writer 및 승인된 push/PR 실행자이며, Luna xHigh는 읽기 전용 검토를 맡는다.
 Phase 4.3은 매번 새 Sol Max advisor context로 Plan만 검증한다. 모든 고정 spawn은 `fork_turns:none`이다.
+
+## 0.2.0 변경
+
+현재 버전: `codex-be-harness@0.2.0`. 관찰 가능한 동작 차이는 [COMPATIBILITY.md](./COMPATIBILITY.md)의 "0.2.0 deviations"에 있다.
+
+- profile 해석: linked worktree는 메인 워크트리의 `.codex/be-harness.local.md`를 상속한다.
+- 질문 배칭: `request`는 spec-only에서 남은 질문을 한 턴에 묶고 기본값을 붙인다. `init`은 전체 필드 표를 한 번에 확인한다.
+- Phase 1 중복 작업 스캔(`BLOCKED:DUPLICATE_IN_PROGRESS`), Phase 12 Workflow Report md 저장, 서브에이전트 대기 규약.
+- `e2e-test` `mode: workflow`(인증 부재 시 `SKIPPED:NO_AUTH`), 기준 브랜치는 profile `mainBranch`.
 
 ## 주요 skill
 

@@ -1,8 +1,8 @@
 # be-harness Project Profile
 
 모든 be-harness 스킬은 프로젝트 루트의 **`.codex/be-harness.local.md`** 를 읽어 빌드/테스트/소스 경로 등을 결정한다.
-이 파일이 없으면 workflow는 자동 fallback하지 않고 `init` 실행을 안내한 뒤 종료한다. Go/Node 자동 탐지와
-프리셋은 `init`이 profile 초안을 만들 때만 사용한다.
+프로젝트 루트에 없고 linked worktree라면 메인 워크트리의 profile을 상속하며, 어디에도 없으면 값을 추측하지 않고
+`init` 실행을 안내한 뒤 종료한다(아래 "profile 해석"). Go/Node 자동 탐지와 프리셋은 `init`이 profile 초안을 만들 때만 사용한다.
 
 > profile 은 **값(settings)** 을 담는다. 스킬/에이전트 **동작**을 프로젝트별로 조정하려면 별도의 **Project Overrides** 레이어를 쓴다 → `OVERRIDES.md` 참조.
 
@@ -11,6 +11,19 @@
 ```
 <repo-root>/.codex/be-harness.local.md
 ```
+
+## profile 해석
+
+모든 스킬은 아래 순서로 `{PROFILE_PATH}`를 확정한다. 단독 실행 스킬도 같은 규칙을 쓴다.
+
+1. `{PROJECT_ROOT}` = `git rev-parse --show-toplevel`(git 저장소가 아니면 cwd). `{PROJECT_ROOT}/.codex/be-harness.local.md`가
+   있으면 그것이 `{PROFILE_PATH}`다.
+2. 없고 linked worktree라면(`git rev-parse --git-dir`과 `--git-common-dir`이 다르고 common-dir의 basename이 `.git`)
+   `{MAIN_WORKTREE}` = common-dir의 부모 디렉토리로 두고 `{MAIN_WORKTREE}/.codex/be-harness.local.md`를 상속한다.
+   보고에 `[Assumption] 메인 워크트리 profile 상속: {경로}`를 남긴다.
+3. 둘 다 없으면 `PROFILE_MISSING`이다. 값을 추측하지 않고 `init` 실행을 안내한 뒤 mutation 없이 종료한다.
+4. 확정한 `{PROFILE_PATH}`를 모든 형제 절차와 서브에이전트 envelope에 전달한다. 형제 절차는 전달받은 경로가 있으면 다시
+   해석하지 않는다.
 
 ## 포맷
 
@@ -38,7 +51,8 @@ e2eLockDir: ""             # E2E 실행 락 디렉토리. 비우면 자동 해�
                            # 환경변수 HARNESS_E2E_LOCK_DIR 로도 지정 가능.
 
 # 리포트 출력
-reportDir: ""              # E2E 자기 점검 HTML 등 리포트 저장 디렉토리. 비우면 `.codex/harness-reports`
+reportDir: ""              # E2E 자기 점검 HTML·Workflow Report 등 리포트 저장 디렉토리. 비우면 `.codex/harness-reports`
+feedbackUpstreamRepo: ""  # Phase 12 보완점 upstream. 비우면 `SKIPPED:NO_FEEDBACK_UPSTREAM`
 
 # 소스 레이아웃
 sourceDirs: ["internal/", "cmd/", "pkg/"]
@@ -101,10 +115,10 @@ testDirs:   ["src/", "tests/", "__tests__/"]
 
 profile이 존재할 때 값은 아래 순서로 결정한다:
 
-1. `.codex/be-harness.local.md` 의 YAML 값
+1. `{PROFILE_PATH}`(위 "profile 해석"으로 확정한 `.codex/be-harness.local.md`)의 YAML 값
 2. profile에 선언된 preset의 기본값
 
-profile 자체가 없으면 값을 추측하지 않는다. `go.mod` 또는 `package.json` 탐지는 `init`의 preset 추천에만
+profile 자체가 없으면 값을 추측하지 않는다(프로젝트 루트와 메인 워크트리 모두 부재). `go.mod` 또는 `package.json` 탐지는 `init`의 preset 추천에만
 사용하며, workflow는 사용자에게 `$codex-be-harness:init` 실행을 안내한다.
 
 ## 명령 실행 규칙

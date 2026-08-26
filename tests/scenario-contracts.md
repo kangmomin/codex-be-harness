@@ -4,7 +4,14 @@
 
 | 시나리오 | 필수 관찰 결과 |
 |---|---|
-| profile 부재 | `init` 안내 후 구현·브랜치 변경 없이 종료 |
+| profile 부재 (프로젝트 루트·메인 워크트리 모두) | `PROFILE_MISSING` — `init` 안내 후 구현·브랜치 변경 없이 종료 |
+| linked worktree에 profile 없음 + 메인 워크트리에 있음 | 메인 워크트리 profile 상속, `[Assumption] 메인 워크트리 profile 상속` 보고, 종료하지 않음 |
+| Phase 1 중복 스캔 — 다른 worktree/open PR의 변경 파일이 Spec 대상과 교차 | 후보 목록 보고 후 `BLOCKED:DUPLICATE_IN_PROGRESS`, 스캔 전후 mutation 0 |
+| Phase 1 중복 스캔 — 현재 브랜치/현재 PR만 매칭 | 차단하지 않음 |
+| Phase 1 중복 스캔 — worktree·PR에 연결되지 않은 단독 로컬 브랜치만 매칭 | 차단하지 않음 |
+| request 질문 기본값 승인 | 빈 응답/`skip`/"기본값으로 진행"이면 기본값 채택 + `[Assumption]` 표기 |
+| workflow 내부 E2E 인증 부재 | `mode: workflow`면 사용자 질문 없이 `SKIPPED:NO_AUTH` |
+| Phase 12 보고 | `{REPORT_DIR}`에 `*-impl-notes.html`과 `*-workflow-report.md` 둘 다 존재 |
 | custom profile 필수 필드 누락 | 누락 목록과 수정/중단 선택지를 제시 |
 | `--analyze --verify` 동시 입력 | 하나를 선택하기 전 분석을 시작하지 않음 |
 | fullstack 영향 발견 | Phase 3에서 `BLOCKED:FULLSTACK_HANDOFF_REQUIRED`, Phase 5 부작용 없음 |
@@ -38,3 +45,5 @@
 1. `$codex-be-harness:start-workflow --analyze .` — Phase A 보고 계약만 평가한다.
 2. `$codex-be-harness:start-workflow 결제 취소 API와 화면을 함께 변경해줘` — fullstack handoff를 평가한다.
 3. `$codex-be-harness:simplify-loop` — 변경 없는 저장소에서 즉시 수렴하는지 평가한다.
+4. linked worktree(`git worktree add`)에서 `$codex-be-harness:start-workflow --analyze .` — 메인 워크트리 profile 상속 보고를 평가한다.
+5. 다른 worktree에 같은 파일을 만지는 브랜치를 둔 뒤 `$codex-be-harness:start-workflow {같은 기능}` — Phase 1 `BLOCKED:DUPLICATE_IN_PROGRESS`와 mutation 0을 평가한다.

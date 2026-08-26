@@ -5,7 +5,7 @@
 - upstream: `kangmomin/harness-plugins`
 - commit: `e87949b127159759950a2247a5067d30e41292a1`
 - source plugin: `be-harness@1.1.0`
-- target plugin: `codex-be-harness@0.1.0`
+- target plugin: `codex-be-harness@0.2.0`
 
 호환성은 문장 일치가 아니라 관찰 가능한 workflow 동작을 기준으로 한다. Phase 순서, 승인·차단 게이트, 상태 코드, 루프 상한, 보고서 머리글을 invariant로 본다.
 
@@ -73,6 +73,19 @@
   `DONE + degraded_fallback`·`BLOCKED:AGENT_DIED` 계약을 적용하고 타 모델로 대체하지 않는다.
 - project override agent 파일은 parent가 읽어 해당 subagent prompt에 추가한다.
 - fullstack 판정은 Phase 3에서 `BLOCKED:FULLSTACK_HANDOFF_REQUIRED`로 종료한다. 자동 BE 축소를 금지한다.
+
+## 0.2.0 deviations (observed-behavior changes vs upstream)
+
+| 영역 | upstream 동작 | 0.2.0 동작 | 근거 |
+|---|---|---|---|
+| request 질문 | 한 턴에 질문 하나 | `spec-only`는 남은 질문 전부, `standalone`은 한 턴 최대 4개; 기본값 첨부, 무응답/`skip`은 기본값 + `[Assumption]` | 왕복 턴 수 절감 |
+| profile 부재 | 즉시 종료 | 프로젝트 루트 → linked worktree의 메인 워크트리 상속 → 둘 다 없을 때만 종료 (`PROFILE.md` "profile 해석") | 워크트리 세션의 원격 DB 부팅·설정 재발명 차단 |
+| Phase 1 | 없음 | 중복 작업 스캔, 강 신호는 `BLOCKED:DUPLICATE_IN_PROGRESS` | 동일 기능 병렬 착수 방지 |
+| Phase 12 | HTML 노트 + 대화 보고 | 추가로 `*-workflow-report.md` 저장, remediation 후 재렌더링 | 보고서 유실 방지 |
+| 서브에이전트 대기 | 명시 없음 | `agent-prompts.md` "대기 규약" (역할별 타임아웃, 재대기 1회, 폴링 금지) | 폴링·재촉 비용 제거 |
+| e2e-test 호출 | standalone만 | `mode: workflow` 전달 시 인증 부재는 질문 없이 `SKIPPED:NO_AUTH` | 자율 구간 무질문 계약 |
+| 기준 브랜치 | `main` 하드코딩 (e2e-test, simplify-loop) | profile `mainBranch` 우선 | `dev` 기반 레포의 과대 diff 방지 |
+| Assumption Gate | diff·커밋 본문 | + `{IMPL_NOTES}` `## 편차` (Spec `[Assumption]` 이월분) | push 전 Spec 가정 해소 |
 
 ## Explicit gaps in 0.1.0
 

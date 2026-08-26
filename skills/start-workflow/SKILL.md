@@ -33,14 +33,17 @@ Analyze 또는 Verify라면 [analyze-verify-modes.md](references/analyze-verify-
 
 ## Pre-flight
 
-모든 모드에서 `.codex/be-harness.local.md`를 읽어 다음 값을 추출한다.
+모든 모드에서 profile을 읽어 다음 값을 추출한다. profile 경로 `{PROFILE_PATH}`는 플러그인 루트 `PROFILE.md`의
+"profile 해석" 규칙으로 확정한다 — 프로젝트 루트의 `.codex/be-harness.local.md`가 우선이고, linked worktree에
+없으면 메인 워크트리의 것을 상속하며 `[Assumption] 메인 워크트리 profile 상속: {경로}`로 보고한다.
 
 `buildCommand`, `testCommand`, `lintCommand`, `typeCheckCommand`, `makeTestCommand`,
 `runServerCommand`, `serverUrl`, `e2eEnabled`, `apiDocsPath`, `sourceDirs`, `testDirs`,
 `mainBranch`, `featureBranchPrefix`, `hotfixBranchPrefix`, `commitPrefixes`, `commitCoAuthor`,
 `projectConventions`, `reportDir`, `feedbackUpstreamRepo`, `language`.
 
-profile이 없으면 `.codex/be-harness.local.md` 생성이 필요하다고 알리고 종료한다. Build에서는 누락된
+프로젝트 루트와 메인 워크트리 어디에도 profile이 없으면(`PROFILE_MISSING`) 값을 추측하지 않고
+`.codex/be-harness.local.md` 생성이 필요하다고 알린 뒤 mutation 없이 종료한다. Build에서는 누락된
 명령 때문에 생략될 Phase와 위험을 승인 전에 알린다. `buildCommand`, `testCommand`, E2E 3종 값,
 `apiDocsPath`, `makeTestCommand`을 검사한다. Analyze/Verify의 명령 누락은 해당 단계에
 `SKIPPED:PROFILE_EMPTY`로 기록한다.
@@ -59,6 +62,7 @@ Build는 Phase 4.4 승인 후 Phase 5 진입 시, Analyze/Verify는 모드 범�
 {IMPL_NOTES}={RUN_DIR}/implementation-notes.md
 {REPORT_DIR}=profile.reportDir 또는 .codex/harness-reports
 {CWD}=검증된 프로젝트 루트 절대 경로
+{PROFILE_PATH}=PROFILE.md의 "profile 해석"으로 확정한 profile 절대 경로
 ```
 
 해결된 절대 경로를 모든 서브에이전트에 전달한다. 상태에는 `Current Phase`, `Phase Assignments`,
@@ -86,6 +90,18 @@ Build는 Phase 4.4 승인 후 Phase 5 진입 시, Analyze/Verify는 모드 범�
   [quality-loop.md](references/quality-loop.md)를 따른다.
 - 외부 상태를 바꾸는 commit/push/PR 절차는 승인된 Phase 5 이후에만 실행한다. Phase 10 직전
   Assumption Gate를 다시 적용한다.
+- 독립 리뷰는 Phase 4.2 Luna 리뷰어(최대 3)와 Phase 4.3 Sol Max advisor다. 전역 지침의 이중/교차 리뷰
+  요건은 이로써 충족되며, `claude -p`·`gemini` 등 **외부 CLI 리뷰어를 호출하지 않는다**. 스킬 밖 작업이면
+  fresh-context 서브에이전트 1개로 대체한다.
+- 사용자 입력이 필요하면 `USER_INPUT_REQUIRED: {질문}`으로 사용자 대면 턴을 끝내고, 응답은
+  [agent-topology.md](references/agent-topology.md)의 계약대로 **같은 orchestrator task**에 follow-up한다(새
+  bootstrap 금지). 자율 구간 Phase 6~11에서는 질문하지 않고 `[Assumption]` 또는 `SKIPPED:{사유}`로 기록한다.
+- Phase 진입 체크: Phase 5는 `{STATE_FILE}`·`{IMPL_NOTES}` 생성과 baseline 수집(또는 명시적 `SKIPPED:*`
+  기록) 없이 Phase 6으로 가지 않는다. Phase 8은 [quality-loop.md](references/quality-loop.md)를 읽은 뒤
+  시작하며 8.4와 8.8은 생략하지 않는다. Phase 12는 Implementation Notes HTML과 Workflow Report md를 둘 다
+  `{REPORT_DIR}`에 남긴다.
+- Phase 1의 중복 작업 스캔에서 강 신호가 나오면 `BLOCKED:DUPLICATE_IN_PROGRESS`로 종료한다. 사용자가
+  계속을 지시하면 Phase 1부터 재개한다.
 
 ## 서브에이전트와 형제 스킬
 
@@ -122,7 +138,7 @@ Executor를 배정한다. Phase 2의 리스크 산정에는 보안, 데이터 �
 9. Phase 9: API 변경일 때 파일 기반 API 문서 동기화
 10. Phase 10: Assumption Gate 후 PR 또는 hard push
 11. Phase 11: `--reflect`일 때만 성찰
-12. Phase 12: HTML 노트, 최종 보고, 이연 결정, 정리
+12. Phase 12: HTML 노트, Workflow Report(md), 이연 결정, 정리
 
 세부 순서·판정·상한은 [build-phases.md](references/build-phases.md)가 canonical이다.
 
@@ -132,6 +148,7 @@ Phase 상태는 `DONE`, `IN_PROGRESS`, `PENDING`, `SKIPPED:{사유}`, `BLOCKED:{
 검증 판정은 `PASS/WARN/FAIL`이다. 다음 계약 상태를 보존한다.
 
 - `BLOCKED:FULLSTACK_HANDOFF_REQUIRED`, `BLOCKED:MAX_ITERATIONS`, `BLOCKED:BUILD_FAIL`
+- `BLOCKED:DUPLICATE_IN_PROGRESS`
 - `BLOCKED:NO_VALID_RED`, `BLOCKED:REGRESSION_AT_RED`, `BLOCKED:TEST_NOT_GREEN`
 - `BLOCKED:AGENT_DIED`, `BLOCKED:ASSUMPTION_UNRESOLVED`
 - `SKIPPED:PROFILE_EMPTY`, `SKIPPED:USER_OPT_OUT`, `SKIPPED:NO_TEST_BASIS`

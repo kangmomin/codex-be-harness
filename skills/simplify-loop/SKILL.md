@@ -30,7 +30,7 @@ description: "변경 코드의 동작을 보존하는 단순화 후보를 네 �
 git 저장소 안에서 다음 순서로 `{DIFF_CMD}`를 확정한다.
 
 1. `git status --porcelain`이 비어 있지 않으면 `git diff HEAD`를 사용한다.
-2. clean이면 `origin/main`, `main` 순으로 기준 브랜치를 탐색하고 `git diff $(git merge-base {기준브랜치} HEAD)`를 사용한다. 커밋 범위 `base..HEAD`는 쓰지 않는다. 루프가 적용한 작업 트리 변경이 다음 스캔에 포함되어야 하기 때문이다.
+2. clean이면 profile의 `mainBranch`(`origin/{mainBranch}` → `{mainBranch}`), 없으면 `origin/main`, `main` 순으로 기준 브랜치를 탐색하고 `git diff $(git merge-base {기준브랜치} HEAD)`를 사용한다. 커밋 범위 `base..HEAD`는 쓰지 않는다. 루프가 적용한 작업 트리 변경이 다음 스캔에 포함되어야 하기 때문이다.
 3. 기준 ref를 해석하지 못하면 대화형 실행에서는 비교 ref를 한 번 요청한다. ref를 받지 못하거나 비대화형 실행이면 `SKIPPED:BASE_REF_UNRESOLVED`로 종료한다.
 4. diff가 비어 있으면 `SKIPPED:NO_CHANGES`로 종료한다. dry-run에서는 `후보: 0건`도 함께 출력한다.
 

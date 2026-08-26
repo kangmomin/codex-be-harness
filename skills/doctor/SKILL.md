@@ -21,7 +21,7 @@ profile을 읽고, be-harness 스킬이 정상 동작할 수 있는지 진단한
 
 | # | 항목 | 확인 방법 | 필수/선택 |
 |---|------|----------|----------|
-| 1 | `.codex/be-harness.local.md` | 파일 읽기 | 필수 |
+| 1 | `.codex/be-harness.local.md` | 파일 읽기 (프로젝트 루트에 없으면 `PROFILE.md`의 "profile 해석"대로 메인 워크트리 상속 여부를 함께 보고) | 필수 |
 | 2 | `preset` 필드 | profile 파싱 | 필수 |
 | 3 | `buildCommand` 실행 가능 | 첫 실행 파일에 `command -v` | 필수 |
 | 4 | `testCommand` 실행 가능 | 동일 | 필수 |

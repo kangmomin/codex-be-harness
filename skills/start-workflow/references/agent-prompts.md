@@ -12,6 +12,7 @@
 실행 디렉터리: {RUN_DIR}
 상태 파일: {STATE_FILE} (Phase 8.8에는 전달 금지, 읽기 전용)
 구현 노트: {IMPL_NOTES} (모든 역할 읽기 전용)
+profile 경로: {PROFILE_PATH}
 현재 Phase: {PHASE}
 남은 Phase: {REMAINING}
 배정 model/effort: {agent-topology.md의 고정값}
@@ -38,6 +39,18 @@ Sol High가 Executor의 구조화 결과를 받은 뒤 기록할 때만 사용�
 설계 결정·편차·트레이드오프·미결 질문을 반환 결과에 명시한다. Sol High가 필요 시 {IMPL_NOTES}의
 해당 섹션에 append한다. 은 반드시 ## 편차에도 같은 항목으로 기록한다.
 ```
+
+## 대기 규약
+
+서브에이전트 결과는 단일 `wait_agent`로 기다린다. 역할별 1회 타임아웃은 Luna 리뷰/스캔 10분, Terra Red 10분,
+Terra Green·8.5 수정·E2E 30분, Sol Max advisor 15분, Terra 문서/PR 10분이다.
+
+- 타임아웃 1회 → 같은 길이로 1회 재대기한다. 2회째 타임아웃은 실행 중 사망으로 간주하고 아래 재시도 예산(최대 2회)에
+  편입한다.
+- 재대기 전에 `send_message`로 재촉하지 않는다. 대기 중 `git status`·작업 트리 파일을 폴링해 진행 여부를 추측하지
+  않는다 — 결과는 반환 계약으로만 판정한다.
+- 반환 형식에 필수 섹션이 빠졌으면 `followup_task` 1회로 누락 섹션만 요청한다(재시도로 세지 않는다). 그래도 누락이면
+  사망으로 처리한다.
 
 ## 사망/불완전 결과 처리
 
@@ -110,7 +123,8 @@ Terra executor가 {apiDocsPath}의 포맷을 내용으로 판정한다. 이번 S
 
 ## Phase 8.6 E2E
 
-Sol High가 `../../e2e-test-loop/SKILL.md`의 계약과 절대 asset 경로를 같은 Terra executor에 전달한다.
+Sol High가 `../../e2e-test-loop/SKILL.md`의 계약과 절대 asset 경로, `{PROFILE_PATH}`를 같은 Terra executor에 전달한다.
+호출에는 `mode: workflow`를 명시해 인증 토큰 확보 실패가 사용자 질문 대신 `SKIPPED:NO_AUTH`로 끝나게 한다.
 Terra는 중첩 agent spawn이나 직접 commit 없이 E2E와 실패 수정을 수행하고, PID/세션 핸들·정리 결과·
 수정 파일·검증 결과를 구조화해 반환한다. Sol High만 `{STATE_FILE}` 기록과 commit 조정을 한다.
 

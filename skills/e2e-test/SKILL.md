@@ -29,7 +29,7 @@ description: "기능 추가/수정 후 연관 HTTP API를 실제 요청으로 E2
 
 ## Prerequisites
 
-- profile(`.codex/be-harness.local.md`)의 아래 필드가 유효해야 한다:
+- profile(플러그인 루트 `PROFILE.md`의 "profile 해석" 규칙으로 확정한 `{PROFILE_PATH}`; 내부 호출자가 넘긴 경로가 있으면 그것)의 아래 필드가 유효해야 한다:
   - `e2eEnabled: true`
   - `serverUrl: "http://..."`
   - `runServerCommand`: 로컬 서버 기동 명령 (이미 서버가 떠 있으면 비워도 됨)
@@ -43,6 +43,7 @@ description: "기능 추가/수정 후 연관 HTTP API를 실제 요청으로 E2
 | `--skip-server` | `-ss` | 서버 기동/종료를 건너뛰고 이미 떠있는 서버를 사용 (**실행 락은 그대로 획득한다** — Step 3.5 참조) |
 | `--tag <id>` | | 특정 시나리오 ID(`EC-03`, `BASE-01` 등)만 실행 |
 | `--no-lock` | | 실행 락을 건너뛴다. 단독 실행/디버깅 전용 — 다른 에이전트와 동시에 돌면 포트·DB 시드가 충돌한다 |
+| `mode: workflow` | | 내부 호출자(`start-workflow` 자율 구간, `e2e-test-loop`)가 명시한다. 인증 토큰을 확보하지 못하면 사용자에게 묻지 않고 `SKIPPED:NO_AUTH`. 없으면 `standalone` |
 
 ### `--doctor`
 
@@ -58,7 +59,7 @@ description: "기능 추가/수정 후 연관 HTTP API를 실제 요청으로 E2
 
 사용자의 요청 또는 현재 브랜치의 `git diff`에서 변경된 API를 추출한다:
 
-1. `git diff --name-only main...HEAD` 로 변경 파일 목록.
+1. `git diff --name-only {mainBranch}...HEAD` 로 변경 파일 목록 (`{mainBranch}`는 profile 값, 없으면 `main`).
 2. profile의 `sourceDirs` 중 handler/route 계층에서 HTTP 엔드포인트(Method + Path) 변경을 찾는다.
 3. 각 엔드포인트에 대해 아래를 정리한다:
    - Method, Path
@@ -99,9 +100,9 @@ Spec에 엣지 케이스 표가 없거나 ID가 없으면(구버전 Spec) `EC-*`
 프로젝트마다 방식이 다르므로 **profile/프로젝트에 정의된 방식**을 따른다. 순위:
 
 1. 환경 변수 (`$E2E_AUTH_TOKEN` 등)가 있으면 사용
-2. profile 본문에 토큰 발급 절차가 적혀 있으면 그에 따름
+2. profile 본문·`projectNotes`가 가리키는 발급 절차/발급기(예: 작업 로그 공유 디렉토리의 토큰 발급 바이너리)가 있으면 그것을 실행
 3. 프로젝트 `Makefile` 또는 `scripts/` 디렉토리에 토큰 발급 스크립트가 있으면 실행
-4. 위 어느 것도 없으면 사용자에게 한 번 묻는다:
+4. 위 어느 것도 없으면 — `mode: workflow`면 묻지 않고 `SKIPPED:NO_AUTH`를 반환한다. `standalone`일 때만 사용자에게 한 번 묻는다:
    > "E2E 테스트용 인증 토큰을 어떻게 발급받나요?
    > 1. 발급 명령 입력 → 실행해 토큰 확보
    > 2. 토큰 직접 입력 → 그대로 사용
