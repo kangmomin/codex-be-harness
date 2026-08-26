@@ -1,0 +1,4 @@
+__pycache__/
+*.pyc
+.codex/be-harness.local.md
+.codex/harness-reports/

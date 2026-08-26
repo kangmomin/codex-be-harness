@@ -1,0 +1,22 @@
+{
+  "name": "codex-be-harness",
+  "version": "0.1.0",
+  "description": "Codex-native backend workflow harness preserving the be-harness Spec, Plan, TDD, quality, and PR lifecycle.",
+  "author": {
+    "name": "kangmomin"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Codex Be Harness",
+    "shortDescription": "BE Spec부터 TDD, 품질 검증, PR까지 실행",
+    "longDescription": "기존 be-harness의 Build, Analyze, Verify 워크플로우를 Codex-native skill과 bounded subagent orchestration으로 제공합니다.",
+    "developerName": "kangmomin",
+    "category": "Developer Tools",
+    "capabilities": ["Interactive", "Read", "Write"],
+    "defaultPrompt": [
+      "백엔드 기능을 Spec부터 TDD와 PR까지 진행해줘",
+      "이 백엔드 코드의 위험과 품질을 검증해줘",
+      "변경사항을 컨벤션 검사하고 논리 단위로 커밋해줘"
+    ]
+  }
+}

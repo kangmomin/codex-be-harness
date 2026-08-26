@@ -1,0 +1,123 @@
+---
+name: convention-check
+description: "프로젝트 컨벤션 위배 사항을 검사하고 보고한다 (보고 전용 — 코드를 수정하지 않음). 커밋/PR 전 점검, '컨벤션 검사해줘' 요청 시 사용. --init으로 적용 컨벤션 선택, --doctor로 설정 진단."
+---
+
+> **Project Overrides**: 실행 전 `.codex/be-harness/common.md`와 `.codex/be-harness/skills/convention-check.md`가 있으면 읽는다.
+> 존재하면 추가 규칙/예외로 흡수하고 충돌 시 오버라이드가 우선한다. 상세 규약: 플러그인 루트 `OVERRIDES.md`.
+
+
+## Prerequisites
+
+### 설정 파일
+- **`.convention-check.json`** (프로젝트 루트): 적용할 컨벤션 목록을 저장한다.
+- 이 파일이 없으면 기본값 (`default-conventions` + profile의 `projectConventions`)으로 동작한다.
+
+### `--init` (컨벤션 선택)
+
+호출 인수가 `--init`이면 아래 절차를 실행하고 종료한다:
+
+1. **사용 가능한 컨벤션 목록 제시**: 플러그인 내 컨벤션 스킬과 프로젝트의 AGENTS.md / projectConventions를 탐색하여 목록을 구성한다.
+
+   > "어떤 컨벤션을 적용할까요? (복수 선택 가능, 쉼표 구분)"
+   >
+   > **플러그인 내장:**
+   > 1. `default-conventions` — 범용 개발 가이드라인 (변경 범위, Assumption, 에러 일관성 등)
+   >
+   > **프로젝트:**
+   > 2. `AGENTS.md` — 프로젝트 아키텍처/레이어/에러 처리 컨벤션 (존재 시)
+   > 3. profile의 `projectConventions` 에 나열된 파일들
+   >
+   > 예: `1,2` (기본 + AGENTS.md) 또는 `1` (기본만)
+
+2. **유저 선택 수집**: 구조화된 사용자 입력 기능이 제공되면 사용하고, 없으면 짧은 일반 질문으로 선택을 받은 뒤 응답을 기다린다.
+
+3. **설정 파일 생성**: 선택 결과를 `.convention-check.json`으로 저장한다.
+   ```json
+   {
+     "conventions": [
+       { "name": "default-conventions", "source": "plugin", "skill": "codex-be-harness:default-conventions" },
+       { "name": "AGENTS.md", "source": "project", "path": "AGENTS.md" }
+     ]
+   }
+   ```
+
+4. **결과 보고**:
+   > "`.convention-check.json` 생성 완료. 적용 컨벤션: [선택 목록]"
+
+### `--doctor` (상태 진단)
+
+호출 인수가 `--doctor`이면 아래 항목을 점검하고 결과를 보고한 뒤 종료한다:
+
+```markdown
+## Convention Check — Doctor
+
+| 항목 | 상태 | 비고 |
+|------|------|------|
+| .convention-check.json | OK / MISSING | 없으면 기본값 사용 |
+| default-conventions 스킬 | OK / MISSING | 플러그인 스킬 확인 |
+| 프로젝트 컨벤션 파일 | 파일별 OK / MISSING | projectConventions 각 항목 |
+| 적용 컨벤션 목록 | [목록] | 현재 설정 표시 |
+```
+
+---
+
+## Execution
+
+### 설정 파일 로드
+
+1. 프로젝트 루트에서 `.convention-check.json`을 읽는다.
+2. 없으면 기본값으로 진행: `default-conventions` + profile의 `projectConventions` 파일들.
+
+### 컨벤션 검사
+
+설정된 각 컨벤션에 대해 위배 사항을 검사하고 보고한다:
+
+- **`source: "plugin"`**: 이 플러그인의 [`default-conventions`](../default-conventions/SKILL.md)를 읽고 그 내용을 기준으로 코드를 검사한다.
+- **`source: "project"`**: 해당 파일의 내용을 기준으로 코드를 검사한다.
+
+#### SQL 쿼리 패턴 검사
+
+변경된 Repository 코드에서 SQL 조건문 패턴을 검사한다:
+
+| 패턴 | 사용 기준 | 위반 조건 |
+|------|----------|----------|
+| `WHERE id IN (?)` | 후보 값이 **열거 가능**하고 개수가 유동적일 때 (e.g. 배치 조회, 다중 선택 삭제) | 단일 값 비교에 IN 사용 → `= ?`로 변경 권고 |
+| `WHERE value <= ?` | **범위 비교**일 때 (e.g. 가격 이하, 날짜 이전, 재고 수량 조건) | 범위가 아닌 열거 비교에 <= 사용 → IN 또는 = 로 변경 권고 |
+| `WHERE id IN (단일값)` | 금지 | `IN (?)`에 단일 값만 전달 → `= ?`로 변경 필수 |
+
+위반 시 `[SQL_PATTERN]` 태그로 보고:
+> "`repository.go:42` — `WHERE price IN (?)` → 범위 비교이므로 `WHERE price <= ?`가 적절합니다."
+
+#### `[Assumption]` 태그 누락 검사
+
+Spec(Technical Spec 또는 유저 지시)에 명시되지 않은 동작 변경이 코드에 존재하는지 검사한다:
+
+1. `git diff`에서 새로 추가/변경된 비즈니스 로직을 추출한다.
+2. 해당 변경이 Spec의 요구사항에 직접 대응하는지 확인한다.
+3. 대응하지 않는 변경(e.g. 추가 필터, 정렬 변경, 상태 체크 추가 등)에 `[Assumption]` 주석 또는 커밋 메시지 태그가 없으면 위반으로 보고한다.
+4. **예외**: 해당 변경이 PR 본문 또는 워크플로우 보고서의 "확정된 결정" 섹션에 기록되어 있으면 통과다 — Assumption Gate(`$codex-be-harness:commit-push` Step 3)에서 사용자 확인을 거쳐 태그가 제거된 정상 상태다.
+
+#### 외부 패키지 Import 규칙
+
+변경된 파일에 새로운 외부 패키지 import가 추가된 경우, 프로젝트 내 기존 사용 패턴과 일치하는지 자동 검사한다:
+
+1. `git diff`에서 새로 추가된 import 라인을 추출한다.
+2. 표준 라이브러리(`fmt`, `net/http` 등)와 프로젝트 내부 패키지는 제외한다.
+3. 남은 외부 패키지에 대해 `rg`로 프로젝트 내 기존 사용 여부를 확인한다:
+   - **기존에 사용 중**: 기존 import 방식(alias 등)과 일치하는지 확인
+   - **프로젝트 최초 도입**: `[NEW_DEPENDENCY]`로 표기하고 위반으로 보고 (의도적 도입인지 확인 필요)
+
+### 보고 형식
+
+```markdown
+## Convention Check 결과
+
+| # | 파일:라인 | 위반 규칙 | 태그 | 제안 수정 |
+|---|----------|----------|------|----------|
+
+위반: N건 (태그별: [SQL_PATTERN] a건, [Assumption] b건, [NEW_DEPENDENCY] c건)
+```
+
+- 본 스킬은 **보고만 한다**. 수정은 호출자(start-workflow 통합 수정 단계) 또는 유저 판단에 위임한다.
+- 위반 0건이면 "위반: 0건 — 통과" 한 줄로 보고한다.
