@@ -83,7 +83,7 @@ Build는 Phase 4.4 승인 후 Phase 5 진입 시, Analyze/Verify는 모드 범�
 - `## Flags`(SCHEMA·MODE·HARD_MODE·TDD·REFLECT·TIER·RUN_ID·START_SHA)는 컨텍스트 요약·세션 재개로 CLI 인자를 잃은 뒤 이어갈 때 **유일한 기준** — CLI 인자와 충돌하면 기록값 우선 + 고지. `RUN_ID`는 Phase 5에서 1회 생성하며 재생성하지 않는다.
 - 재개 시 Phase dispatch 전에 스키마를 검사한다: `## Flags` 정확히 1개 + 필수 키 8개 각 1회 + `SCHEMA: 2` / `## Profile Snapshot` 정확히 1개 + `profile_path`(비어 있지 않음)·`profile_sha256`(16진수 64자)·`resolved_report_dir`·`resolved_e2e_lock_dir`(절대 경로) + profile 키 22개 각 정확히 1회(`키: 값` 1줄, 배열은 인라인, 빈 값 허용) / `## Verification Tier` 정확히 1개 + `- 계산 티어:`·`- 최종 티어:` 각 1회 / `## Test Baseline` 헤더 0개 또는 1개. 하나라도 어긋나면 `BLOCKED:STATE_SCHEMA_MISMATCH`(누락·중복 항목 나열)로 종료하고 새 실행을 안내한다 — 구버전·쓰기 중단 상태 파일은 마이그레이션하지 않는다.
 - 검사를 통과한 뒤 `## Test Baseline` 완전성([tdd.md](references/tdd.md) Phase 5 canonical)이 미완이면 스키마 차단이 아니라 Phase 5 미완 재개로 처리한다.
-- 형제 스킬·서브에이전트·재개된 오케스트레이터는 `## Profile Snapshot` 값(resolved 경로 포함)만 쓰고 profile을 다시 읽지 않는다(live 아님). `profile_sha256`은 출처 기록용이며 재개 시 비교하지 않는다.
+- 형제 스킬·서브에이전트·재개된 오케스트레이터는 `## Profile Snapshot` 값(resolved 경로 포함)만 쓰고 profile을 다시 읽지 않는다(live 아님). `profile_sha256`은 출처 기록용이며 재개 시 비교하지 않는다. 본문(Project Notes)은 스냅샷 대상이 아니며 읽기 전용 참조만 허용한다(frontmatter 값 재독 금지).
 - 상태 파일 생성 이전 중단은 재개 대상이 아니라 Pre-flight부터 재시작한다(profile 재확정).
 
 상태 템플릿과 최종 보고는 [templates.md](references/templates.md)를 사용한다.

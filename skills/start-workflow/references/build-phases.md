@@ -174,7 +174,7 @@ baseline 수집 실패는 자율 구간 전 마지막 결정 지점이다. 회�
 ### Phase 6.1: Red
 
 TDD가 활성일 때만 `AC-nn`/`EC-nn`/`RC-nn` 근거의 실패 테스트와 최소 스텁을 작성한다. 형제
-`../../unit-test/SKILL.md`의 Red 절차를 읽어 적용한다.
+`../../unit-test/SKILL.md`의 Red 절차를 읽어 적용한다(profile 값은 envelope의 `## Profile Snapshot`, 재독 없음).
 
 - sequential: Terra executor 테스트 작성자 1명, 커밋 조정과 상태 기록은 Sol High 소유
 - parallel-slices: Terra executor 각 작성자는 자기 테스트/스텁만 편집하고 실행·상태 기록·커밋하지 않는다.

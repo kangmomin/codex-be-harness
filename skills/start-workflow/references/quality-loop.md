@@ -116,7 +116,7 @@ E2E와 실패 수정까지 같은 배정 안에서 수행하고 구조화 결과
   서버와 lock을 정리한다.
 - 기존 서버를 재사용했다면 종료하지 않는다.
 
-결과는 e2e-test-loop 종료 출력 줄을 **그대로** 옮긴 `이슈: N건, 수정: Y/N, 종료 상태: {DONE|BLOCKED:*|SKIPPED:*}, 실행 수준: {smoke|full|full(smoke 미적용: 사유)}, E2E 리포트: {경로|없음 (SKIPPED:사유|BLOCKED:LOCK_UNAVAILABLE)}`다. 수정 Y면 `modified = true`다. 필드 대응: `이슈: N` = `- 발견된 이슈:` 값, `수정: Y` ⇔ `- 수정된 이슈:` ≥ 1건(0건이면 `N`), 나머지 세 필드는 `- 종료 상태:`·`- 실행 수준:`·`- E2E 리포트:` 줄의 값 그대로.
+결과는 e2e-test-loop 종료 출력 줄을 **그대로** 옮긴 `이슈: N건, 수정: Y/N, 종료 상태: {DONE|BLOCKED:*|SKIPPED:*}, 실행 수준: {smoke|full|full(smoke 미적용: 사유)}, E2E 리포트: {경로|없음 (SKIPPED:사유|BLOCKED:LOCK_UNAVAILABLE)}`다. 수정 Y면 `modified = true`다. 필드 대응: `이슈: N` = `- 발견된 이슈:` 값, `수정: Y` ⇔ `- 수정된 이슈:` ≥ 1건(0건이면 `N`), 나머지 세 필드는 `- 종료 상태:`·`- 실행 수준:`·`- E2E 리포트:` 줄의 값 그대로. e2e-test-loop의 SKIPPED·BLOCKED 출력처럼 줄이 없는 필드는 `이슈: 0건`·`수정: N`으로, 종료 상태는 그 출력의 `SKIPPED:{사유}`/`BLOCKED:*`로, 실행 수준은 요청 수준(light면 `smoke`, 아니면 `full`)으로 채운다.
 
 - `SKIPPED:*` → `modified` 불변, `Phase Results` 8.6 행에 `E2E 리포트: 없음 (SKIPPED:{사유})`.
 - Sol High가 실행 수준·종료 상태를 `Phase Results` 8.6 행에, 리포트 경로를 `## Artifacts` `e2e-report:`에 기록한다 — 렌더러 stdout `경로:`/`상태:` 2줄을 그대로(`-2`/`-3` 접미 경로·`DEGRADED({사유})`·`(원시 기록, 렌더링 실패: …)` 포함; exit code가 아니라 출력 줄이 기준).

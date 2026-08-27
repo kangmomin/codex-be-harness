@@ -23,7 +23,7 @@
    보고에 `[Assumption] 메인 워크트리 profile 상속: {경로}`를 남긴다.
 3. 둘 다 없으면 `PROFILE_MISSING`이다. 값을 추측하지 않고 `init` 실행을 안내한 뒤 mutation 없이 종료한다.
 4. 확정한 `{PROFILE_PATH}`를 모든 형제 절차와 서브에이전트 envelope에 전달한다. 형제 절차는 전달받은 경로가 있으면 다시
-   해석하지 않는다.
+   해석하지 않는다. 워크플로우(`start-workflow`) 안에서 호출될 때는 호출자가 넘긴 `## Profile Snapshot`(frontmatter 값 + resolved 경로)을 profile 값으로 쓰고 frontmatter를 다시 읽지 않는다 — `{PROFILE_PATH}`는 식별·보고용이다. 본문(Project Notes)은 스냅샷 대상이 아니며 읽기 전용으로 참조할 수 있다.
 
 ## 포맷
 

@@ -304,6 +304,9 @@ require("`## Flags`의 `TDD`가 `true`" not in tier_doc, "verification-tier: Pha
 request_doc = (skills_dir / "request" / "SKILL.md").read_text(encoding="utf-8")
 require("기본값" in request_doc and "`[Assumption]`으로 표기" in request_doc, "request: missing default-answer batching rule")
 
+unit_test_doc = (skills_dir / "unit-test" / "SKILL.md").read_text(encoding="utf-8")
+require("## Profile Snapshot" in unit_test_doc, "unit-test: missing snapshot-first profile rule")
+
 e2e_doc = (skills_dir / "e2e-test" / "SKILL.md").read_text(encoding="utf-8")
 for contract in [
     "mode: workflow",
@@ -315,6 +318,7 @@ for contract in [
     "- 실행 수준:",
     "## Profile Snapshot",
     "resolved_e2e_lock_dir",
+    "Project Notes",
 ]:
     require(contract in e2e_doc, f"e2e-test: missing contract {contract}")
 require("main...HEAD" not in e2e_doc.replace("{mainBranch}...HEAD", ""), "e2e-test: hardcoded main base ref")
@@ -422,6 +426,7 @@ for contract in [
     "e2e-report:",
     "## Profile Snapshot",
     "- 수정된 이슈:",
+    "이슈: 0건",
 ]:
     require(contract in quality_loop, f"quality-loop: missing topology contract {contract}")
 require(
@@ -477,6 +482,7 @@ require(
     "PROFILE.md must agree with start-workflow's missing-profile stop rule",
 )
 require("## profile 해석" in profile and "{PROFILE_PATH}" in profile, "PROFILE.md must define the profile resolution rule")
+require("## Profile Snapshot" in profile, "PROFILE.md must define the workflow snapshot-first rule")
 
 profile_keys: set[str] = set()
 profile_delimiters = list(re.finditer(r"^---\s*$", profile, re.MULTILINE))
@@ -552,7 +558,7 @@ if snapshot_match:
     )
     invalid_snapshot_counts = sorted(key for key, count in snapshot_key_counts.items() if count != 1)
     require(not invalid_snapshot_counts, f"templates: Profile Snapshot duplicate keys: {invalid_snapshot_counts}")
-    for key, value in re.findall(r"^- ([A-Za-z0-9_]+):\s*(.*)$", snapshot_match.group(1), re.MULTILINE):
+    for key, value in re.findall(r"^- ([A-Za-z0-9_]+):[ \t]*(.*)$", snapshot_match.group(1), re.MULTILINE):
         require(
             re.fullmatch(r"\{.+\}", value) is not None,
             f"templates: Profile Snapshot row must be a placeholder: {key}",

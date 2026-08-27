@@ -115,7 +115,7 @@
 | Phase 12 아카이브 | HTML 노트 + md 재렌더링(0.2.0) | 슬림 리포트 1회 + 마감 후 `workflow_archive.py` 1회 배타 생성, 재렌더링 없음 | 결정 이력을 부록에 포함, 산출물 규칙 단일화 |
 | impl-notes HTML 제거 | `*-impl-notes.html` 독립 생성 | 아카이브 부록 C로 흡수 | 산출물 중복 제거 |
 | E2E 리포트 | HTML 렌더링 프롬프트 | `render_e2e_report.py` md + 기록 시점 정직성 마커 | 결정적 렌더링과 판정 근거 보존 |
-| profile 스냅샷 | 재개 시 profile 재독 | `## Profile Snapshot` 고정 — 재개·형제 스킬은 snapshot 값(resolved 경로 포함)만 사용 | 재개 사이 환경 변동 차단 |
+| profile 스냅샷 | 재개 시 profile 재독 | `## Profile Snapshot` 고정 — 재개·형제 스킬은 snapshot 값(resolved 경로 포함)만 사용, 본문(Project Notes)은 스냅샷 대상 아님(읽기 전용 참조) | 재개 사이 환경 변동 차단 |
 | 상태 스키마 fail-closed | 없음 | `SCHEMA` 키 + 필수 섹션 검사, 위반 시 `BLOCKED:STATE_SCHEMA_MISMATCH`·마이그레이션 없음 | 결정성 |
 | smoke 무효화 | full 폴백만 | 실효 full latch + `{MAX_ITER}` 5 복원 + `--level-note` | 상한 일관성 |
 | 리포트 이중 실패 | `{RUN_DIR}` 정리 | 렌더러·폴백 모두 실패 시 `{RUN_DIR}` 보존 + 리포트 없음 보고 | 원시 기록 보존 |
