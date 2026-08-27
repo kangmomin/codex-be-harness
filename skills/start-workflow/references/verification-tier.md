@@ -49,7 +49,7 @@ Spec 직후 **코드 복잡도(A)** 와 **영향 범위·회귀 리스크(B)** �
 |------|------|
 | 점수 | A ≤ 3 **그리고** B ≤ 3 (= 모든 요소가 `낮음` 밴드, `UNKNOWN` 0건) |
 | 금지 조건 | 0건 (아래 표) |
-| TDD | `## Flags`의 `TDD`가 `true` — `--no-tdd` 미지정 (`--no-tdd`는 회귀 안전망이 없어 standard 강제) |
+| TDD | TDD 활성 — `--no-tdd` 미지정(Phase 5부터는 `## Flags`의 `TDD: true`로 기록) (`--no-tdd`는 회귀 안전망이 없어 standard 강제) |
 | 실행 전략 | `parallel-slices`가 아님 (파일 ≥ 6 → A ≥ 4) |
 | 플래그 | `--tier standard` 미지정 |
 | 풀스택 | FE+BE 범위는 Phase 3에서 `BLOCKED:FULLSTACK_HANDOFF_REQUIRED`로 종료하므로 light 판정 대상이 아니다 (BE-only 축소 후 Phase 2부터 재산정) |

@@ -58,7 +58,7 @@ Phase 8.5의 단일 writer, Phase 6 barrier, Phase 8.8의 isolation은 이 경�
 |------|------|-----------|
 | Build 1~5, 6/8 barrier·commit, 7/8 명령·판정, 10 Assumption Gate, 12 상태·사용자 결정·보고 | Sol High | 승인과 상태를 소유하며 worktree를 직접 편집하지 않음 |
 | 1 edge-case 보강, 4.2, 8.2, 8.3, 8.4, 8.8, 11 | Luna xHigh | 읽기 전용; 8.8에는 Spec/Plan/state/Test Map을 전달하지 않음 |
-| 4.3 | Sol Max | 매 iteration 새 fresh context로 spawn, 최대 5회 |
+| 4.3 | Sol Max | 매 iteration 새 fresh context로 spawn, 최대 `{PLAN_MAX}`회(standard 5 / light 2) |
 | 6.1 Red, 6.2 Green, 7 build-fix, 8.5, 8.6, 8.7, 9, 10 승인된 push/PR, 12 승인된 remediation | Terra High/Max | Sol이 명령/승인/상태를 조정하고 Executor가 수정 또는 외부 효과를 수행 |
 | Analyze A1/A2/A4, Verify V1/V2/V5 | Sol High | 읽기/명령/보고 소유 |
 | Analyze A3, Verify V3/V4 | Luna xHigh | 읽기 전용 구조화 결과 반환 |

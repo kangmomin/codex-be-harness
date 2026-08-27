@@ -105,7 +105,7 @@ PID/세션 핸들과 정리 결과를 Sol High에 반환한다. Sol High만 그 
 명확한 `SKIPPED:{사유}`를 기록하고 `modified`에는 영향을 주지 않는다.
 
 Sol High가 형제 `../../e2e-test-loop/SKILL.md`와 그 skill-relative assets를 읽고, 해결된
-절대 asset 경로와 계약을 같은 Terra executor에 전달한다(light면 `--smoke` 인자를 함께 전달한다 — 형제 절차의 `{MAX_ITER}` = 3). Terra는 중첩 agent spawn이나 직접 commit 없이
+절대 asset 경로와 계약, `## Profile Snapshot` 전문(resolved 경로 포함)을 같은 Terra executor에 전달하고 profile 재독을 금지한다(light면 `--smoke` 인자를 함께 전달한다 — 형제 절차의 `{MAX_ITER}` = 3). Terra는 중첩 agent spawn이나 직접 commit 없이
 E2E와 실패 수정까지 같은 배정 안에서 수행하고 구조화 결과만 반환한다. asset 경로를
 프로젝트 CWD나 plugin 전역 경로로 추측하지 않는다. 서버는 다음 생명주기 계약을 지킨다.
 
@@ -116,7 +116,7 @@ E2E와 실패 수정까지 같은 배정 안에서 수행하고 구조화 결과
   서버와 lock을 정리한다.
 - 기존 서버를 재사용했다면 종료하지 않는다.
 
-결과는 e2e-test-loop 종료 출력 줄을 **그대로** 옮긴 `이슈: N건, 수정: Y/N, 종료 상태: {DONE|BLOCKED:*|SKIPPED:*}, 실행 수준: {smoke|full|full(smoke 미적용: 사유)}, E2E 리포트: {경로|없음 (SKIPPED:사유|BLOCKED:LOCK_UNAVAILABLE)}`다. 수정 Y면 `modified = true`다.
+결과는 e2e-test-loop 종료 출력 줄을 **그대로** 옮긴 `이슈: N건, 수정: Y/N, 종료 상태: {DONE|BLOCKED:*|SKIPPED:*}, 실행 수준: {smoke|full|full(smoke 미적용: 사유)}, E2E 리포트: {경로|없음 (SKIPPED:사유|BLOCKED:LOCK_UNAVAILABLE)}`다. 수정 Y면 `modified = true`다. 필드 대응: `이슈: N` = `- 발견된 이슈:` 값, `수정: Y` ⇔ `- 수정된 이슈:` ≥ 1건(0건이면 `N`), 나머지 세 필드는 `- 종료 상태:`·`- 실행 수준:`·`- E2E 리포트:` 줄의 값 그대로.
 
 - `SKIPPED:*` → `modified` 불변, `Phase Results` 8.6 행에 `E2E 리포트: 없음 (SKIPPED:{사유})`.
 - Sol High가 실행 수준·종료 상태를 `Phase Results` 8.6 행에, 리포트 경로를 `## Artifacts` `e2e-report:`에 기록한다 — 렌더러 stdout `경로:`/`상태:` 2줄을 그대로(`-2`/`-3` 접미 경로·`DEGRADED({사유})`·`(원시 기록, 렌더링 실패: …)` 포함; exit code가 아니라 출력 줄이 기준).

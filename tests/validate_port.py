@@ -297,6 +297,10 @@ for label, document in [("templates", templates_doc), ("tdd", tdd_doc)]:
 for contract in ["--emit-baseline", "script_fallback(test_failures:", "BLOCKED:STATE_SCHEMA_MISMATCH"]:
     require(contract in tdd_doc, f"tdd: missing baseline contract {contract}")
 
+tier_doc = (skills_dir / "start-workflow" / "references" / "verification-tier.md").read_text(encoding="utf-8")
+require("`--no-tdd` 미지정" in tier_doc, "verification-tier: missing --no-tdd light-tier gate")
+require("`## Flags`의 `TDD`가 `true`" not in tier_doc, "verification-tier: Phase 2 must not read Phase 5 flags")
+
 request_doc = (skills_dir / "request" / "SKILL.md").read_text(encoding="utf-8")
 require("기본값" in request_doc and "`[Assumption]`으로 표기" in request_doc, "request: missing default-answer batching rule")
 
@@ -309,6 +313,8 @@ for contract in [
     "SMOKE_OMITTED",
     "BLOCKED:LOCK_UNAVAILABLE",
     "- 실행 수준:",
+    "## Profile Snapshot",
+    "resolved_e2e_lock_dir",
 ]:
     require(contract in e2e_doc, f"e2e-test: missing contract {contract}")
 require("main...HEAD" not in e2e_doc.replace("{mainBranch}...HEAD", ""), "e2e-test: hardcoded main base ref")
@@ -321,8 +327,12 @@ for contract in [
     "BLOCKED:LOCK_UNAVAILABLE",
     "E2E 리포트:",
     "set -C",
+    "## Profile Snapshot",
+    "resolved_report_dir",
+    "- 실행 수준:",
 ]:
     require(contract in e2e_loop_doc, f"e2e-test-loop: missing contract {contract}")
+require('--level-note "smoke 미적용' not in e2e_loop_doc, "e2e-test-loop: renderer adds the smoke prefix itself")
 
 topology_path = skills_dir / "start-workflow" / "references" / "agent-topology.md"
 require(topology_path.is_file(), "start-workflow: missing agent topology")
@@ -356,6 +366,7 @@ if topology_path.is_file():
         "Assumption Gate와 Phase 4.4에서 승인된 외부 효과 범위를 다시 확인",
         "실행 중 두 번 사망하면 타 모델 대체 없이 기존",
         "`agent_died(...)`",
+        "{PLAN_MAX}",
     ]:
         require(contract in topology, f"start-workflow topology: missing {contract}")
     require(
@@ -409,6 +420,8 @@ for contract in [
     "E2E 리포트:",
     "BLOCKED:LOCK_UNAVAILABLE",
     "e2e-report:",
+    "## Profile Snapshot",
+    "- 수정된 이슈:",
 ]:
     require(contract in quality_loop, f"quality-loop: missing topology contract {contract}")
 require(
@@ -424,8 +437,11 @@ for contract in [
     "`CODEX-UNAVAILABLE` 결과로 Phase 4.4에 진행",
     "Terra는 중첩 agent spawn이나 직접 commit 없이 E2E와 실패 수정을 수행",
     "Sol High만 `{STATE_FILE}` 기록과 commit 조정을 한다",
+    "## Profile Snapshot",
+    "파일을 다시 읽지 않는다",
 ]:
     require(contract in agent_prompts, f"agent-prompts: missing topology contract {contract}")
+require("profile 경로: {PROFILE_PATH}" not in agent_prompts, "agent-prompts: envelope must pass the profile snapshot, not only the live path")
 require(
     "Luna xHigh 읽기 전용 역할" in agent_prompts
     and "low-effort 역할" not in agent_prompts
@@ -536,6 +552,11 @@ if snapshot_match:
     )
     invalid_snapshot_counts = sorted(key for key, count in snapshot_key_counts.items() if count != 1)
     require(not invalid_snapshot_counts, f"templates: Profile Snapshot duplicate keys: {invalid_snapshot_counts}")
+    for key, value in re.findall(r"^- ([A-Za-z0-9_]+):\s*(.*)$", snapshot_match.group(1), re.MULTILINE):
+        require(
+            re.fullmatch(r"\{.+\}", value) is not None,
+            f"templates: Profile Snapshot row must be a placeholder: {key}",
+        )
 
 compatibility = (ROOT / "COMPATIBILITY.md").read_text(encoding="utf-8")
 source_inventory = [

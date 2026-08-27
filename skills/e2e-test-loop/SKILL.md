@@ -16,7 +16,7 @@ description: "E2E 테스트 → 이슈 수정 → 재테스트를 반복한다 (
 - `{RENDERER}` = `{SKILL_DIR}/assets/render_e2e_report.py`
 - `{RUN_DIR}` = 실제 루프 진입 시 `mktemp -d`로 만드는 실행 전용 임시 디렉토리
 - `{RUN_REPORT}` = `{RUN_DIR}/e2e-run-report.md` (루프 중 누적하는 원시 기록)
-- `{REPORT_DIR}` = profile의 `reportDir` (없으면 `.codex/harness-reports`)
+- `{REPORT_DIR}` = 내부 호출자가 넘긴 profile 스냅샷의 `resolved_report_dir`(workflow 호출); 단독 실행이면 profile의 `reportDir`(없으면 `.codex/harness-reports`)
 - `{MAX_ITER}` = 5 (`--smoke` 시 3; smoke 무효화 latch 시 5로 복원)
 - `{CWD}` = 현재 작업 디렉토리 (프로젝트 루트)
 
@@ -38,7 +38,7 @@ description: "E2E 테스트 → 이슈 수정 → 재테스트를 반복한다 (
 `--skip-doctor` / `-sd` 가 **없으면**, 루프 진입 전 빠른 환경 probe를 실행한다.
 **환경 부재가 확정되면 루프를 한 번도 돌지 않고 즉시 `SKIPPED`를 반환한다** — 실패 후 판정이 아니라 진입 게이트에서 끊어낸다.
 
-profile(플러그인 루트 `PROFILE.md`의 "profile 해석" 규칙으로 확정한 `{PROFILE_PATH}`; 내부 호출자가 넘긴 경로가 있으면 그것)을 읽고 아래를 확인한다:
+profile 값을 확정하고 아래를 확인한다 — 내부 호출자(start-workflow)가 `## Profile Snapshot`(resolved 경로 포함)을 넘겼으면 그 값을 profile 값으로 쓰고 파일을 다시 읽지 않는다(`{PROFILE_PATH}`는 식별·보고용). 단독 실행이면 플러그인 루트 `PROFILE.md`의 "profile 해석" 규칙으로 `{PROFILE_PATH}`를 확정해 읽는다:
 
 | 점검 항목 | 실패 시 |
 |----------|--------|
@@ -128,13 +128,13 @@ profile(플러그인 루트 `PROFILE.md`의 "profile 해석" 규칙으로 확정
 
 ## Step 3: 루프 (최대 {MAX_ITER}회)
 
-1. 같은 플러그인에 포함된 `$codex-be-harness:e2e-test`를 실행한다(`--smoke`면 `--smoke`를 그대로 전달). 현재 플러그인의 실제 등록 이름으로 resolve하고, 다른 설치나 사용자 전역 스킬로 대체하지 않는다.
+1. 같은 플러그인에 포함된 `$codex-be-harness:e2e-test`를 실행한다(`--smoke`면 `--smoke`를, 스냅샷을 받았으면 같은 스냅샷을 그대로 전달). 현재 플러그인의 실제 등록 이름으로 resolve하고, 다른 설치나 사용자 전역 스킬로 대체하지 않는다.
    - 첫 iteration이면 e2e-test 리포트의 `- 실행 수준:` 값을 헤더 `> 수준:`에 옮겨 적는다.
    - 헤더의 E2E 메인 플로우가 `자동 도출 (git diff 기반)`이 아니면, 해당 플로우를 Happy Path 필수 시나리오로 포함하도록 e2e-test에 전달한다.
    - 첫 iteration이면 e2e-test가 도출한 엔드포인트 목록을 리포트의 `## 테스트 대상 엔드포인트` 섹션에 채운다.
-   - **smoke 무효화 latch**: 하위 e2e-test가 `- 실행 수준: full(smoke 미적용: {사유})`를 보고하면 그 즉시 실효 수준 = full로 latch한다 — `{MAX_ITER}` 3 → 5(현재 iteration 번호 유지), 헤더 `> 수준:` = 그 값, Step 4 렌더러 인자 `--level full --level-note "smoke 미적용: {사유}"`. 상한 평가는 latch 뒤에 한다.
+   - **smoke 무효화 latch**: 하위 e2e-test가 `- 실행 수준: full(smoke 미적용: {사유})`를 보고하면 그 즉시 실효 수준 = full로 latch한다 — `{MAX_ITER}` 3 → 5(현재 iteration 번호 유지), 헤더 `> 수준:` = 그 값, Step 4 렌더러 인자 `--level full --level-note "{사유}"`(렌더러가 `smoke 미적용:` 접두사를 붙인다). 상한 평가는 latch 뒤에 한다.
    - 하위 스킬이 `SKIPPED:*`를 반환하면 루프를 추가 진행하지 않는다. `{RUN_DIR}`을 정리하고 동일 SKIP 사유로 보고한다. **Step 4(md 렌더링)는 건너뛴다.**
-   - **하위 `BLOCKED:LOCK_UNAVAILABLE`**(락 미획득·서버 미기동·케이스 0건): 루프를 즉시 종료한다. `rm -f {RUN_REPORT}` 후 `rmdir {RUN_DIR}`(산출물 확인 규칙의 예외 — SKIP 경로와 동일), Step 4 렌더링 생략, 종료 출력은 `- 종료 상태: BLOCKED:LOCK_UNAVAILABLE` / `- E2E 리포트: 없음 (BLOCKED:LOCK_UNAVAILABLE)`.
+   - **하위 `BLOCKED:LOCK_UNAVAILABLE`**(락 미획득·서버 미기동·케이스 0건): 루프를 즉시 종료한다. `rm -f {RUN_REPORT}` 후 `rmdir {RUN_DIR}`(산출물 확인 규칙의 예외 — SKIP 경로와 동일), Step 4 렌더링 생략, 종료 출력은 `- 종료 상태: BLOCKED:LOCK_UNAVAILABLE` / `- 실행 수준: {요청 수준 smoke|full}` / `- E2E 리포트: 없음 (BLOCKED:LOCK_UNAVAILABLE)`.
    - 정상 실행되면, 이번 iteration의 **모든 테스트 케이스**(통과·실패 무관)를 Step 2의 "케이스 블록 형식"으로 append 한다.
 2. 결과를 확인한다:
    - **판정 `PASS`** (모든 시나리오 통과 + 미커버 0건) → 루프 종료 → Step 4
@@ -176,7 +176,7 @@ profile(플러그인 루트 `PROFILE.md`의 "profile 해석" 규칙으로 확정
    python3 {RENDERER} {RUN_REPORT} --out-dir {REPORT_DIR} --branch "$(git branch --show-current)" \
      --level {smoke|full} [--level-note "{사유}"] --status {DONE|BLOCKED:MAX_ITERATIONS|BLOCKED:NO_PROGRESS}
    ```
-   - 헤더 `> 수준:` 매핑: `smoke` → `--level smoke`, `full` → `--level full`, `full(smoke 미적용: X)` → `--level full --level-note "smoke 미적용: X"`.
+   - 헤더 `> 수준:` 매핑: `smoke` → `--level smoke`, `full` → `--level full`, `full(smoke 미적용: X)` → `--level full --level-note "X"`(접두사는 렌더러가 붙인다).
    - `--status`는 종료 표의 결과이며, 판정 `PASS`/`WARN` 탈출은 `DONE`이다. `--level`·`--status`는 둘 다 필수다.
    - 출력 파일: `{REPORT_DIR}/{YYYYMMDD-HHMMSS}-{slug(branch)}-e2e-report.md`(스크립트가 결정·배타 생성, 기존 파일이 있으면 `-2`/`-3` 접미). **파일명 컨벤션 고정** — 상위 워크플로우가 `*-e2e-report.md` 패턴에 의존한다.
    - stdout 두 줄 `경로: …` / `상태: OK|DEGRADED({사유})`를 그대로 캡처한다 — `DEGRADED`여도 파일은 생성된다.
@@ -211,6 +211,7 @@ E2E Test Loop — SKIPPED
 ```
 E2E Test Loop — BLOCKED
 - 종료 상태: BLOCKED:LOCK_UNAVAILABLE
+- 실행 수준: {요청 수준 smoke|full}
 - 총 iteration: {N}회
 - E2E 리포트: 없음 (BLOCKED:LOCK_UNAVAILABLE)
 ```

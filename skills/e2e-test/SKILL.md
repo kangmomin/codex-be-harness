@@ -29,7 +29,7 @@ description: "기능 추가/수정 후 연관 HTTP API를 실제 요청으로 E2
 
 ## Prerequisites
 
-- profile(플러그인 루트 `PROFILE.md`의 "profile 해석" 규칙으로 확정한 `{PROFILE_PATH}`; 내부 호출자가 넘긴 경로가 있으면 그것)의 아래 필드가 유효해야 한다:
+- profile의 아래 필드가 유효해야 한다 — 내부 호출자(e2e-test-loop/start-workflow)가 `## Profile Snapshot`(resolved 경로 포함)을 넘겼으면 그 값을 쓰고 파일을 다시 읽지 않는다(`{PROFILE_PATH}`는 식별·보고용); 단독 실행이면 플러그인 루트 `PROFILE.md`의 "profile 해석" 규칙으로 `{PROFILE_PATH}`를 확정해 읽는다:
   - `e2eEnabled: true`
   - `serverUrl: "http://..."`
   - `runServerCommand`: 로컬 서버 기동 명령 (이미 서버가 떠 있으면 비워도 됨)
@@ -140,7 +140,7 @@ Spec에 엣지 케이스 표가 없거나 ID가 없으면(구버전 Spec) `EC-*`
 
 각 대기 호출과 후속 poll은 60초 안에 제어권을 돌려줘야 한다. 도구가 session handle을 반환하면 같은 handle을 55초 이하 단위로 poll한다.
 
-profile 에 `e2eLockDir` 이 지정돼 있으면 `HARNESS_E2E_LOCK_DIR={e2eLockDir}` 을 앞에 붙여 실행한다 (비어있으면 자동 해석).
+락 디렉터리: 스냅샷을 받았으면 `HARNESS_E2E_LOCK_DIR={resolved_e2e_lock_dir}`를 앞에 붙여 실행한다. 단독 실행이면 profile에 `e2eLockDir`이 지정돼 있을 때 `HARNESS_E2E_LOCK_DIR={e2eLockDir}`을 앞에 붙인다(비어있으면 자동 해석).
 
 | 종료 코드 | 처리 |
 |-----------|------|

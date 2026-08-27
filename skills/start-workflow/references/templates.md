@@ -55,15 +55,15 @@ RUN_ID="$(date +%Y%m%d-%H%M%S)-${SHA7}-${HEX8}"; START_SHA=$(git rev-parse HEAD 
 - apiDocsPath: {값}
 - e2eLockDir: {값}
 - reportDir: {값}
-- feedbackUpstreamRepo:
+- feedbackUpstreamRepo: {값}
 - mainBranch: {값}
 - featureBranchPrefix: {값}
 - hotfixBranchPrefix: {값}
 - commitCoAuthor: {값}
-- sourceDirs: [internal, cmd]
-- testDirs: [tests]
-- commitPrefixes: [Add, Fix, Refactor, Test, Docs, Chore]
-- projectConventions: {값}
+- sourceDirs: {인라인 배열}
+- testDirs: {인라인 배열}
+- commitPrefixes: {인라인 배열}
+- projectConventions: {인라인 배열}
 
 ## Spec
 [Technical Spec 전문 그대로 복사]
