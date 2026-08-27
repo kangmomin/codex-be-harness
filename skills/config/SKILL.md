@@ -46,6 +46,7 @@ profile의 설정 값을 **조회**하고 `{키}={값}` 배치로 **수정**한�
 | bool | `e2eEnabled` | true \| false exact |
 | string | `buildCommand` `testCommand` `lintCommand` `typeCheckCommand` `makeTestCommand` `runServerCommand` `serverUrl` `apiDocsPath` `e2eLockDir` `reportDir` `feedbackUpstreamRepo` `mainBranch` `featureBranchPrefix` `hotfixBranchPrefix` `commitCoAuthor` | 자유 문자열 — 빈 문자열 유효 |
 | array | `sourceDirs` `testDirs` `commitPrefixes` `projectConventions` | 쉼표 구분 (원소 안의 쉼표 비지원) — 빈 배열 유효 |
+| block | `topologyModels` | 슬롯 레코드 블록 — compact {슬롯}={model}[@{effort}] 쉼표 나열 또는 {슬롯}=default, 빈 값은 전 슬롯 default; 규칙은 아래 "topologyModels 슬롯" 절 |
 <!-- config:keys-end -->
 
 문서 기본값(파일에 없을 때 조회에 표시 — 출처 병기):
@@ -58,8 +59,19 @@ profile의 설정 값을 **조회**하고 `{키}={값}` 배치로 **수정**한�
 | e2eEnabled | true | init |
 | projectConventions | ["AGENTS.md"] | init |
 | feedbackUpstreamRepo | 빈 값 → `SKIPPED:NO_FEEDBACK_UPSTREAM` | PROFILE.md |
+| topologyModels | default (agent-topology.md 기본값 표) | agent-topology.md |
 
 그 외 키: `preset: go|node`면 PROFILE.md 프리셋 표 값(출처 `preset`), 아니면 `미설정`.
+
+### topologyModels 슬롯
+
+슬롯은 `orchestrator` · `executor` · `readonly` · `advisor`다. start-workflow `references/agent-topology.md`의
+"슬롯 설정"이 canonical이다.
+
+- 레코드 `{ model, effort? }`: model은 `^[A-Za-z0-9._-]+$`, effort는 `minimal|low|medium|high|xhigh|max|tiered`이며 `tiered`는 `executor`만 사용할 수 있다. effort 생략은 해당 슬롯의 기본 effort다.
+- 입력(compact): `topologyModels={슬롯}={model}[@{effort}],…`로 지정하고 `{슬롯}=default`는 그 슬롯 자식 줄을 삭제해 기본값으로 복귀시킨다. 입력에서 생략한 기존 슬롯은 보존하며 `topologyModels=`는 전 슬롯 default다. 빈 항목·중복 슬롯·알 수 없는 슬롯·model 패턴 불일치·effort enum 밖·executor 외 tiered 중 하나라도 있으면 값 불일치로 전체를 무효 처리하고 Step 3.1의 `BLOCKED:INVALID_VALUE` 경로를 따른다.
+- 저장 형태: 블록 매핑 `topologyModels:`과 연속 자식 `  {슬롯}: { model: "{model}", effort: "{effort}" }`를 쓴다. 자식은 1줄 flow 매핑이고 effort 생략 시 `  {슬롯}: { model: "{model}" }`다. 전 슬롯 default는 자식을 삭제하고 키 줄을 `{}`로 기록한다.
+- 조회 셀: 자식 순서대로 compact 한 셀에 표시하고 effort 생략 슬롯은 `@` 없이 표시한다. 키 부재·`{}`는 `default`(출처 `기본값`)다. 자식이 비지원 형태이거나 알 수 없는 슬롯이면 `⚠ 비지원 레이아웃(수정 불가)`로 표시한다.
 
 ## Step 1: 로드·구조 판정
 
@@ -84,6 +96,7 @@ profile의 설정 값을 **조회**하고 `{키}={값}` 배치로 **수정**한�
 |------|--------------|------|
 | enum·bool·string | 1줄 스칼라: bare / `"…"` / `'…'` / 빈 렉심·`~`·`null`(조회 ⚠, 수정은 렉심 교체 허용) | 블록 스칼라(`\|`·`>`), 여러 줄, 앵커·태그, 따옴표 키 |
 | array | 1줄 flow `[…]`(따옴표·이스케이프 인지, 후행 쉼표 허용) / 블록 시퀀스 = `키:` + 연속 자식 `  - 항목` | 여러 줄 flow, 중첩 시퀀스, 자식 사이의 중립 줄 |
+| block | 블록 매핑 = `키:` + 연속 자식 `  {슬롯}: { model: …, effort: … }`(자식은 1줄 flow 매핑, 값은 bare 또는 따옴표) / 빈 flow `{}` | 여러 줄 자식, 중첩, 자식 사이의 중립 줄, 알 수 없는 슬롯 키, flow 매핑이 아닌 자식 값 |
 
    플레이스홀더 줄의 잔여부에도 같은 매트릭스를 적용한다.
 
@@ -100,8 +113,8 @@ profile의 설정 값을 **조회**하고 `{키}={값}` 배치로 **수정**한�
 
 - **스캐너**(상태 = 밖 / `"…"` 안 / `'…'` 안): 밖에서 공백·탭·CR·LF는 **항상** 항목 구분(`key= v` → `key=`와 `v` = 혼합 → 무효). `"…"` 안은 `\"`·`\\`만 이스케이프(`'`는 문자), `'…'` 안은 모두 문자(`\` 포함). **입력 전체 무효**: 입력 끝에서 따옴표 미종결 · `\` 뒤에 문자 없음 · 탭·CR·LF 외 제어 문자 · 따옴표 안의 탭·CR·LF · 항목 전체 또는 값 전체를 감싸는 위치 이외의 따옴표(`a"b"c`, `key=x"y"`). 유니코드는 허용한다.
 - **디코딩(순서 고정)**: ① 항목 전체가 짝 따옴표면 제거(큰따옴표였으면 `\"`→`"`, `\\`→`\` 해제) ② 첫 `=`로 키/값 분리(키 빈 문자열 무효, `=` 없으면 조회 항목) ③ 값 전체가 짝 따옴표면 제거 + 해제(①에서 해제했으면 재해제 없음) ④ 같은 키 중복 무효. 키는 대소문자 exact. 예: `"buildCommand=echo \"x\""` → `echo "x"` · `buildCommand='C:\'` → `C:\` · `commitPrefixes="[Add, Fix:, WIP]"`.
-- **값 해석(타입별)**: enum·bool = trim 후 exact(`key=` 무효) / string = 그대로(`key=` → 빈 문자열) / array = 감싼 `[ ]` 선택 제거 → `,` 분리 → 원소 trim → 원소를 감싼 짝 따옴표 제거. 빈 원소(`a,,b`·후행 쉼표)는 무효이며 `key=`·`key=[]`는 빈 배열이다. 원소 따옴표는 값 전체가 따옴표로 감싸인 경우에만 쓴다(`sourceDirs=["a","b"]`는 스캐너 무효, `sourceDirs=a,b` 또는 `sourceDirs='["a","b"]'`).
-- **기록 형태**: enum·bool bare / string 큰따옴표(내부 `"`·`\` 이스케이프, 빈 문자열은 `""`) / array flow `["a", "b"]`(원소는 string 기록 형태). 기존 블록 시퀀스는 블록을 유지하고 자식 `  - "항목"`도 같은 방식으로 이스케이프하며, 빈 배열은 flow `[]`로 기록한다.
+- **값 해석(타입별)**: enum·bool = trim 후 exact(`key=` 무효) / string = 그대로(`key=` → 빈 문자열) / array = 감싼 `[ ]` 선택 제거 → `,` 분리 → 원소 trim → 원소를 감싼 짝 따옴표 제거. 빈 원소(`a,,b`·후행 쉼표)는 무효이며 `key=`·`key=[]`는 빈 배열이다. 원소 따옴표는 값 전체가 따옴표로 감싸인 경우에만 쓴다(`sourceDirs=["a","b"]`는 스캐너 무효, `sourceDirs=a,b` 또는 `sourceDirs='["a","b"]'`) / block = 위 "topologyModels 슬롯" 절의 compact 규칙(`key=` → 전 슬롯 default).
+- **기록 형태**: enum·bool bare / string 큰따옴표(내부 `"`·`\` 이스케이프, 빈 문자열은 `""`) / array flow `["a", "b"]`(원소는 string 기록 형태). 기존 블록 시퀀스는 블록을 유지하고 자식 `  - "항목"`도 같은 방식으로 이스케이프하며, 빈 배열은 flow `[]`로 기록한다 / block은 블록 매핑 자식 `  {슬롯}: { model: "…", effort: "…" }`, 전 슬롯 default는 `{}`.
 - **인자 없음**: 조회 표 출력 → 비대화형은 `DONE`. 대화형 질문에는 구조화된 사용자 입력 기능이 제공되면 사용하고, 없으면 짧은 일반 질문으로 수집한다. Q1:
   > "1. 변경 없이 종료 2. 값 변경 — Other에 `{키}={값} …` 전체 입력"
   Other 텍스트 → Step 3. 선택 2(텍스트 없음) → Q2 "1. 취소 / Other에 입력" → 텍스트 없으면 `DONE`. 질문은 실행당 `{Q_MAX}`회까지다(Step 3 재입력 포함).
@@ -133,8 +146,9 @@ profile의 설정 값을 **조회**하고 `{키}={값}` 배치로 **수정**한�
 |------|------|------|
 | ① | 활성 키 + 1줄 스칼라/flow | 값 렉심만 기록 형태로 교체. 구분 공백·후행 공백·꼬리 주석·EOL 보존. 렉심이 비어 있었으면(`키:` 뒤 공백 전부 = 구분 공백) `키:` + 공백 1 + 새 렉심, 꼬리 주석이 있으면 이어서 (원래 구분 공백에서 1개 뺀 나머지, 없으면 공백 1) + 꼬리 주석, 없으면 아무것도 덧붙이지 않는다 |
 | ② | 활성 키 + 블록 시퀀스 | 자식 줄을 정규 형태 `  - "항목"`으로 재구성한다(`PROFILE.md`의 `projectConventions`가 실제 예). 들여쓰기·구분 공백·꼬리 주석·EOL은 같은 위치(i번째→i번째)의 기존 자식에서 유지하고, 신규 항목은 마지막 자식 뒤에 추가한다(들여쓰기·구분 공백 = 마지막 기존 자식과 동일, 꼬리 주석 없음, EOL = 대상 키 줄). 주석 없는 줄만 삭제하며 주석이 있으면 Step 3.2에서 차단한다. 빈 배열은 자식을 삭제하고 키 줄에 `[]`를 기록한다 |
-| ③ | 키 부재 + 플레이스홀더 줄 | 선두 `# `만 제거해 활성 키 줄로 전환한 뒤 ①(스칼라/flow)을 적용한다. 그 줄의 꼬리 주석·EOL을 보존하고 **뒤따르는 주석 줄(예시·설명)은 손대지 않는다** |
-| ④ | 그 외 | 닫는 구분선 직전에 스칼라 `키: 값` 또는 배열 flow를 삽입한다(EOL = 닫는 구분선 줄의 것, 그 줄에 종결자가 없으면 여는 구분선 줄의 것) |
+| ②′ | 활성 키 + 블록 매핑(block) | 슬롯별로 자식 줄을 재구성한다 — 기존 슬롯 자식은 같은 줄에서 값만 교체(들여쓰기·구분 공백·꼬리 주석·EOL 보존), `default` 슬롯의 자식 줄은 삭제(꼬리 주석이 있으면 Step 3.2 차단), 신규 슬롯은 마지막 자식 뒤에 추가(들여쓰기·EOL = 마지막 기존 자식, 없으면 공백 2·키 줄 EOL), 전 슬롯 default면 자식 삭제 + 키 줄 `{}` |
+| ③ | 키 부재 + 플레이스홀더 줄 | 선두 `# `만 제거해 활성 키 줄로 전환한 뒤 ①(스칼라/flow)을 적용한다. 그 줄의 꼬리 주석·EOL을 보존하고 **뒤따르는 주석 줄(예시·설명)은 손대지 않는다**. block은 전환한 키 줄 **바로 다음**에 자식 줄을 삽입한다(EOL = 키 줄) — 뒤따르는 주석 예시 줄은 그대로 블록 뒤에 남는다. |
+| ④ | 그 외 | 닫는 구분선 직전에 스칼라 `키: 값` 또는 배열 flow를 삽입한다(EOL = 닫는 구분선 줄의 것, 그 줄에 종결자가 없으면 여는 구분선 줄의 것). block은 키 줄 + 자식 줄 |
 
 렌더 후 자체 검증: 루트 키 중복 0 · 대상 키 값이 기록 형태와 일치 · 변경 대상 줄 외 바이트 동일. 통과하고 변경 키가 1개 이상이면 frontmatter 전체(여는 구분선부터 닫는 구분선까지)를 **한 번의** 치환으로 반영한다. 치환 직전의 파일 내용이 Step 1에서 읽은 스냅샷과 다르거나 대상 구간이 비유일하면 `FAIL`, 파일 불변.
 

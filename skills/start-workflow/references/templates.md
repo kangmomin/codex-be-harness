@@ -64,6 +64,7 @@ RUN_ID="$(date +%Y%m%d-%H%M%S)-${SHA7}-${HEX8}"; START_SHA=$(git rev-parse HEAD 
 - testDirs: {인라인 배열}
 - commitPrefixes: {인라인 배열}
 - projectConventions: {인라인 배열}
+- topologyModels: {profile 값의 compact 표기 | default}
 
 ## Spec
 [Technical Spec 전문 그대로 복사]

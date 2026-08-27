@@ -39,6 +39,7 @@ profile을 읽고, be-harness 스킬이 정상 동작할 수 있는지 진단한
 | 16 | `.codex/be-harness/common.md` | `test -f` | 선택 |
 | 17 | `.codex/be-harness/skills/*.md` 개수 | `rg --files` | 정보 |
 | 18 | `.codex/be-harness/agents/*.md` 개수 | `rg --files` | 정보 |
+| 19 | `topologyModels` 슬롯 | 정적 검증 — 슬롯 이름은 `orchestrator` · `executor` · `readonly` · `advisor`, model `^[A-Za-z0-9._-]+$`, effort minimal|low|medium|high|xhigh|max|tiered, `tiered`는 `executor`만, 자식은 1줄 flow 매핑; 키 없음·`{}`는 N/A | 선택 |
 
 ## 보고 형식
 
@@ -67,6 +68,7 @@ profile을 읽고, be-harness 스킬이 정상 동작할 수 있는지 진단한
 | serverUrl | OK / INVALID | |
 | .codex/be-harness/ 오버라이드 디렉토리 | OK / MISSING | 없으면 `$codex-be-harness:init` 또는 수동 생성 |
 | 오버라이드 파일 개수 | common:Y/N, skills:N개, agents:N개 | 로드 순서 표시 |
+| topologyModels | OK / N/A / INVALID_SLOT | 무효 슬롯 이름과 사유(알 수 없는 슬롯·model 패턴·effort·tiered 범위·레이아웃); 모델 존재 여부는 실행 시 판정 |
 
 ### 종합 판정
 | | |
@@ -86,10 +88,12 @@ profile을 읽고, be-harness 스킬이 정상 동작할 수 있는지 진단한
 3. 각 명령에 대해 첫 번째 토큰(`go`, `npm`, `make` 등)이 PATH에 있는지 `command -v` 로 확인.
 4. `sourceDirs`, `testDirs` 의 각 경로를 `test -d`로 확인.
 5. Git 초기화 및 `mainBranch` 존재 확인.
-6. 결과를 표 형식으로 보고.
+6. `topologyModels`가 있으면 슬롯 레코드를 정적으로 검증한다(spawn하지 않는다). 무효 슬롯은 start-workflow가 기본값으로 대체하고 경고하므로 `INVALID_SLOT`은 선택 항목 WARN이다.
+7. 결과를 표 형식으로 보고.
 
 ## 주의사항
 
 - 명령을 실제로 실행하지 않는다 (빌드/테스트는 느리고 side effect 발생 가능).
 - 서버 시작 명령(`runServerCommand`)은 실제로 실행하지 않고 실행 파일 존재 여부만 확인.
 - `preset: custom` 인 경우 프리셋 기본값을 적용하지 않고 모든 값이 명시되었는지 확인한다.
+- 모델 존재 여부·effort 수용 여부는 점검하지 않는다(정적 점검 불가) — 실행 시 `model_unavailable(...)` 진단으로 드러난다.

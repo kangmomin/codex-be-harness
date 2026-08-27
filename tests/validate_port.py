@@ -338,10 +338,70 @@ for contract in [
     require(contract in e2e_loop_doc, f"e2e-test-loop: missing contract {contract}")
 require('--level-note "smoke 미적용' not in e2e_loop_doc, "e2e-test-loop: renderer adds the smoke prefix itself")
 
+config_doc = (skills_dir / "config" / "SKILL.md").read_text(encoding="utf-8")
+doctor_doc = (skills_dir / "doctor" / "SKILL.md").read_text(encoding="utf-8")
 topology_path = skills_dir / "start-workflow" / "references" / "agent-topology.md"
+TOPOLOGY_BEGIN = "<!-- topology:defaults-begin -->"
+TOPOLOGY_END = "<!-- topology:defaults-end -->"
+TOPOLOGY_DEFAULTS = [
+    ("orchestrator", "Sol High", "gpt-5.6-sol", "high"),
+    ("executor", "Terra High·Max", "gpt-5.6-terra", "tiered"),
+    ("readonly", "Luna xHigh", "gpt-5.6-luna", "xhigh"),
+    ("advisor", "Sol Max", "gpt-5.6-sol", "max"),
+]
+topology = ""
 require(topology_path.is_file(), "start-workflow: missing agent topology")
 if topology_path.is_file():
     topology = topology_path.read_text(encoding="utf-8")
+    topology_begin_count = topology.count(TOPOLOGY_BEGIN)
+    topology_end_count = topology.count(TOPOLOGY_END)
+    require(topology_begin_count == 1, f"start-workflow topology: expected one defaults-begin marker, got {topology_begin_count}")
+    require(topology_end_count == 1, f"start-workflow topology: expected one defaults-end marker, got {topology_end_count}")
+    if topology_begin_count == 1 and topology_end_count == 1:
+        topology_begin_position = topology.find(TOPOLOGY_BEGIN)
+        topology_end_position = topology.find(TOPOLOGY_END)
+        require(
+            topology_begin_position < topology_end_position,
+            "start-workflow topology: defaults-begin marker must precede defaults-end marker",
+        )
+        if topology_begin_position < topology_end_position:
+            topology_defaults_body = topology[
+                topology_begin_position + len(TOPOLOGY_BEGIN):topology_end_position
+            ]
+            topology_default_rows = [
+                (slot, label.strip(), model, effort)
+                for slot, label, model, effort in re.findall(
+                    r"^\| `([a-z]+)` \| ([^|`]+?) \| `([^`]+)` \| `([^`]+)` \|$",
+                    topology_defaults_body,
+                    re.MULTILINE,
+                )
+            ]
+            require(
+                topology_default_rows == TOPOLOGY_DEFAULTS,
+                f"start-workflow topology: default rows mismatch: {topology_default_rows}",
+            )
+            topology_allowed_tokens = {
+                "orchestrator", "executor", "readonly", "advisor",
+                "gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna",
+                "minimal", "low", "medium", "high", "xhigh", "max", "tiered",
+                "fork_turns:none",
+            }
+            topology_default_tokens = set(re.findall(r"`([^`]+)`", topology_defaults_body))
+            require(
+                topology_default_tokens <= topology_allowed_tokens,
+                "start-workflow topology: unexpected backtick tokens in defaults marker: "
+                f"{sorted(topology_default_tokens - topology_allowed_tokens)}",
+            )
+            for slot, _, _, effort in topology_default_rows:
+                require(
+                    effort != "tiered" or slot == "executor",
+                    f"start-workflow topology: tiered effort is invalid for {slot}",
+                )
+            for match in re.finditer(r"gpt-5\.[0-9]+-", topology):
+                require(
+                    topology_begin_position + len(TOPOLOGY_BEGIN) <= match.start() < topology_end_position,
+                    f"start-workflow topology: model literal outside defaults marker at {match.start()}",
+                )
     for contract in [
         "gpt-5.6-sol",
         "gpt-5.6-terra",
@@ -357,6 +417,11 @@ if topology_path.is_file():
         "같은 orchestrator task",
         "새 bootstrap을 만들지 않으며",
         "fork_turns:none",
+        "{TOPOLOGY_MODELS}",
+        "model_unavailable({슬롯}:{사유})",
+        "--topology-models",
+        "provider 전환 미지원",
+        "bootstrap 실패 — 원인: model_unavailable(orchestrator:",
         "model_unavailable(...)",
         "CODEX-UNAVAILABLE",
         "SKIPPED:AGENT_DIED",
@@ -390,6 +455,18 @@ if topology_path.is_file():
     )
     for value in re.findall(r"fork_turns\s*[:=]\s*[`\"']?([A-Za-z_-]+)", topology):
         require(value == "none", f"start-workflow topology: fixed spawn must use fork_turns:none, got {value}")
+
+SLOT_PHRASE = "`orchestrator` · `executor` · `readonly` · `advisor`"
+TIERED_PHRASE = "`tiered`는 `executor`만"
+for document_name, document in [
+    ("start-workflow topology", topology),
+    ("config", config_doc),
+    ("doctor", doctor_doc),
+]:
+    require(SLOT_PHRASE in document, f"{document_name}: missing canonical slot phrase")
+    require(TIERED_PHRASE in document, f"{document_name}: missing canonical tiered phrase")
+for contract in ["INVALID_SLOT", "topologyModels"]:
+    require(contract in doctor_doc, f"doctor: missing topology contract {contract}")
 
 for relative in [
     "skills/start-workflow/references/build-phases.md",
@@ -498,8 +575,7 @@ if len(profile_delimiters) >= 2:
     require(not duplicate_profile_keys, f"PROFILE.md duplicate frontmatter keys: {duplicate_profile_keys}")
     profile_keys = set(profile_key_tokens)
 
-config_doc = (skills_dir / "config" / "SKILL.md").read_text(encoding="utf-8")
-for contract in ["BLOCKED:NO_PROFILE", "{PROFILE_PATH}", "한 번의", "config:keys-begin"]:
+for contract in ["BLOCKED:NO_PROFILE", "{PROFILE_PATH}", "한 번의", "config:keys-begin", "topologyModels"]:
     require(contract in config_doc, f"config: missing contract {contract}")
 
 begin_marker = "<!-- config:keys-begin"
