@@ -93,6 +93,7 @@ for path in runtime_files:
 
 known_resources = [
     "skills/start-workflow/references/agent-prompts.md",
+    "skills/start-workflow/references/agent-topology.md",
     "skills/start-workflow/references/analyze-verify-modes.md",
     "skills/start-workflow/references/quality-loop.md",
     "skills/start-workflow/references/tdd.md",
@@ -132,6 +133,112 @@ for contract in [
     "Phase 4.4",
 ]:
     require(contract in workflow, f"start-workflow: missing contract {contract}")
+
+topology_path = skills_dir / "start-workflow" / "references" / "agent-topology.md"
+require(topology_path.is_file(), "start-workflow: missing agent topology")
+if topology_path.is_file():
+    topology = topology_path.read_text(encoding="utf-8")
+    for contract in [
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-5.6-luna",
+        "Sol High",
+        "Terra High",
+        "Terra Max",
+        "Luna xHigh",
+        "Sol Max",
+        "topology_bootstrapped=true",
+        "topology_hop_limit=1",
+        "USER_INPUT_REQUIRED: {질문}",
+        "같은 orchestrator task",
+        "새 bootstrap을 만들지 않으며",
+        "fork_turns:none",
+        "model_unavailable(...)",
+        "CODEX-UNAVAILABLE",
+        "SKIPPED:AGENT_DIED",
+        "BLOCKED:AGENT_DIED",
+        "degraded_fallback(...)",
+        "Phase 8.8",
+        "Phase 4.3",
+        "Analyze A3",
+        "Verify V3/V4",
+        "결과를 Plan에 반영하거나 기각하는 판단은 Sol High만 한다",
+        "Assumption Gate와 Phase 4.4에서 승인된 외부 효과 범위를 다시 확인",
+        "실행 중 두 번 사망하면 타 모델 대체 없이 기존",
+        "`agent_died(...)`",
+    ]:
+        require(contract in topology, f"start-workflow topology: missing {contract}")
+    require(
+        "Sol High만 `{STATE_FILE}`" in topology
+        and "Executor, Luna, Advisor는 `{STATE_FILE}`과 Phase Results를 쓰지 않고" in topology
+        and "Executor, Luna, Advisor는 파일을 쓰지 않고" not in topology,
+        "start-workflow topology: state writer/result boundary missing",
+    )
+    require(
+        "트리 내용은 직접 편집하지 않는다" in topology
+        and "단일 writer는 해당 시점에 배정된 Terra executor" in topology,
+        "start-workflow topology: single-writer boundary missing",
+    )
+    require(
+        "Phase 5 전에 실패하면 상태 파일을 만들지 않는다" in topology,
+        "start-workflow topology: bootstrap pre-Phase-5 boundary missing",
+    )
+    for value in re.findall(r"fork_turns\s*[:=]\s*[`\"']?([A-Za-z_-]+)", topology):
+        require(value == "none", f"start-workflow topology: fixed spawn must use fork_turns:none, got {value}")
+
+for relative in [
+    "skills/start-workflow/references/build-phases.md",
+    "skills/start-workflow/references/analyze-verify-modes.md",
+    "skills/start-workflow/references/quality-loop.md",
+    "skills/start-workflow/references/tdd.md",
+    "skills/start-workflow/references/agent-prompts.md",
+]:
+    text = (ROOT / relative).read_text(encoding="utf-8")
+    require("fork_turns:none" in text, f"{relative}: topology spawn boundary missing")
+
+for path in (skills_dir / "start-workflow").rglob("*.md"):
+    for line_number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+        if "fork_turns" in line:
+            require("none" in line, f"{path.relative_to(ROOT)}:{line_number}: fixed spawn must use fork_turns:none")
+
+assignments = (skills_dir / "start-workflow" / "references" / "templates.md").read_text(encoding="utf-8")
+for contract in ["Sol High orchestrator", "Terra executor", "Luna reflection", "fresh Sol Max advisor"]:
+    require(contract in assignments, f"start-workflow templates: missing fixed assignment {contract}")
+require(
+    "Terra executor가 수행하고 Sol High가 승인·상태·commit 조정을 한다" in assignments,
+    "start-workflow templates: Phase 12 remediation ownership missing",
+)
+
+quality_loop = (skills_dir / "start-workflow" / "references" / "quality-loop.md").read_text(encoding="utf-8")
+for contract in [
+    "PID/세션 핸들과 정리 결과를 Sol High에 반환",
+    "Sol High만 그 handle을 `{STATE_FILE}`에 기록",
+    "중첩 agent spawn이나 직접 commit 없이",
+    "E2E와 실패 수정까지 같은 배정 안에서 수행하고 구조화 결과만 반환",
+    "Sol High만 Implementation Notes에 append",
+]:
+    require(contract in quality_loop, f"quality-loop: missing topology contract {contract}")
+require(
+    "Terra executor가 `{STATE_FILE}`에 기록" not in quality_loop,
+    "quality-loop: Terra must not write E2E handle to STATE_FILE",
+)
+
+agent_prompts = (skills_dir / "start-workflow" / "references" / "agent-prompts.md").read_text(encoding="utf-8")
+for contract in [
+    "Sol Max Phase 4.3이 실행 중 두 번 사망하면",
+    "`CODEX-UNAVAILABLE` 결과로 Phase 4.4에 진행",
+    "Terra는 중첩 agent spawn이나 직접 commit 없이 E2E와 실패 수정을 수행",
+    "Sol High만 `{STATE_FILE}` 기록과 commit 조정을 한다",
+]:
+    require(contract in agent_prompts, f"agent-prompts: missing topology contract {contract}")
+require(
+    "Luna xHigh 읽기 전용 역할" in agent_prompts
+    and "low-effort 역할" not in agent_prompts
+    and "더 높은 effort의 독립 검증" not in agent_prompts
+    and "Executor/Luna/Advisor는 `{STATE_FILE}`과 `{IMPL_NOTES}`를 직접 쓰지 않고" in agent_prompts
+    and "Terra executor의 작업 트리 편집 권한은 전달된 파일 소유권 범위에서 유지" in agent_prompts,
+    "agent-prompts: discovery role must use Luna xHigh topology",
+)
 
 simplify = (skills_dir / "simplify-loop" / "SKILL.md").read_text(encoding="utf-8")
 for contract in ["10", "seen", "pendingRetry", "holds", "noProgressStreak"]:

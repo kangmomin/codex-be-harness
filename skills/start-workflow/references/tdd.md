@@ -66,17 +66,17 @@ git rev-parse HEAD          # 기준 커밋
 ## sequential 모드
 
 ```
-Codex subagent:
+Terra executor (`fork_turns:none`):
   role: Red test writer
-  model: [Spec ID 개수·도메인 복잡도에 맞는 현재 환경 모델]
-  effort: [동일 기준]
+  model: gpt-5.6-terra
+  effort: high (난이도 9~10은 max)
   prompt: |
     오케스트레이터가 전달한 unit-test `--red` 절차를 수행하세요.
     프로젝트 루트는 검증된 절대 경로 {CWD}입니다.
-    상태 파일 `{STATE_FILE}`을 읽고 Phase 6.1 상태를 갱신하세요.
+    상태 파일 `{STATE_FILE}`은 읽기 전용입니다. Phase 6.1 상태를 갱신하지 말고 구조화 결과를 반환하세요.
     현재 Phase: Phase 6.1 (Red)
     남은 Phase: Phase 6.2, 7, 8, 9, 10, 11, 12
-    배정 model/effort: {model}/{effort}
+    배정 model/effort: gpt-5.6-terra/{high|max}
 
     ## 근거
     상태 파일의 `## Spec` / `## 정상 흐름` / `## Edge Cases` 표의 ID만을 테스트 근거로 사용하세요.
@@ -96,7 +96,7 @@ Codex subagent:
 
 ## parallel-slices 모드 (배리어 필수)
 
-병렬 에이전트는 빌드·커밋·테스트 실행·상태 파일 쓰기가 모두 금지되어 있다. 따라서 **오케스트레이터가 검증과 기록을 단독 소유한다.**
+병렬 Terra executor는 빌드·커밋·테스트 실행·상태 파일 쓰기가 모두 금지되어 있다. 따라서 **Sol High orchestrator가 검증과 기록을 단독 소유한다.**
 
 ```
 ① 슬라이스별 에이전트 병렬 (같은 메시지에서 동시 호출)
@@ -144,7 +144,7 @@ git commit -m "Test: {작업 요약} — 실패 테스트 선작성 (Red)"
 
 # Phase 6.2: 구현 (Green)
 
-Phase 6의 기존 구현 프롬프트(`agent-prompts.md`)를 사용하되, TDD가 활성일 때 아래 규칙을 **추가로** 전달한다.
+Phase 6의 Terra executor 구현 프롬프트(`agent-prompts.md`)를 사용하되, TDD가 활성일 때 아래 규칙을 **추가로** 전달한다.
 
 ```
     ## TDD 규칙 (Phase 6.1에서 테스트가 선작성되었습니다)
@@ -158,11 +158,11 @@ Phase 6의 기존 구현 프롬프트(`agent-prompts.md`)를 사용하되, TDD�
 
 ## `[TestConflict]` 판정 (오케스트레이터)
 
-자율 실행 구간이므로 유저에게 묻지 않고 판정한다. **기준은 Spec 원문이다.**
+자율 실행 구간이므로 Sol High가 유저에게 묻지 않고 판정한다. **기준은 Spec 원문이다.**
 
 | 상황 | 판정 | 행동 |
 |------|------|------|
-| 테스트 단언이 Spec 조항과 다름 | 테스트 오류 | 오케스트레이터가 테스트를 수정하고 Test Map을 갱신, 사유 기록 |
+| 테스트 단언이 Spec 조항과 다름 | 테스트 오류 | Sol High가 Terra executor에 테스트 수정을 지시하고 Test Map 갱신·사유 기록을 조정 |
 | Spec 조항이 모호하거나 부재 | Spec 문제 | 코드·테스트 **양쪽 다 유지**, `[Assumption]` 기록, 해당 ID를 미해결로 표시하고 진행 → Phase 12에서 유저 결정 |
 
 두 번째 경우 코드를 고치지 않는 이유는 `Spec 외 변경 금지 원칙`과 같다 — 유저가 승인한 Spec을 조용히 바꾸지 않는다.
@@ -208,7 +208,7 @@ Phase 8.5 통합 수정 에이전트에는 이 순서대로 이슈를 전달하�
 
 기존 격리 3규칙에 **네 번째 조항**을 추가한다:
 
-> ④ `## TDD Test Map`을 read-back 에이전트에 **전달하지 않는다.**
+> ④ `## TDD Test Map`을 Luna xHigh read-back 에이전트에 **전달하지 않는다.**
 > Test Map은 Spec ID ↔ 테스트 매핑이므로, 이를 본 에이전트는 Spec을 역추론하게 되어 격리가 무너진다.
 > Test Map은 **오케스트레이터의 대조 입력**으로만 쓴다.
 

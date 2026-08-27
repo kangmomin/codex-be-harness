@@ -20,6 +20,16 @@
 | simplify 10회 도달 | 잔존 이슈와 선택지를 포함한 BLOCKED |
 | simplify no-progress | 같은 방향 수정 반복 시 조기 차단 |
 | reviewer 일부 실패 | retry 상태를 유지하고 무검증 PASS 금지 |
+| topology bootstrap | entry agent가 `fork_turns:none` Sol High를 한 번만 만들고 marker/hop limit으로 재귀 spawn을 막음 |
+| bootstrap 실패 | Phase 5 전이면 상태 파일·코드·git 효과 없이 중단 사유를 보고 |
+| 고정 모델 미가용 | `model_unavailable(...)`은 진단에만 기록하고 타 모델로 조용히 대체하지 않음 |
+| executor 사망 | Terra writer/external-effect가 두 번 실패하면 `BLOCKED:AGENT_DIED`, Sol High가 worktree/push를 대행하지 않음 |
+| read-back 사망 | Phase 8.8 Luna가 두 번 실패하면 `SKIPPED:AGENT_DIED`, orchestrator가 대체 복원하지 않음 |
+| 상태 writer 경계 | Sol High만 `{STATE_FILE}`과 Phase Results를 쓰고 다른 역할은 구조화 결과만 반환 |
+| Phase 4.3 | 매 iteration 새 `fork_turns:none` Sol Max context이며 최대 5회와 Phase 4.4 승인 Gate를 유지 |
+| Phase 4.3 advisor 사망 | Sol Max가 두 번 사망하면 대체 모델 없이 `agent_died(...)` 진단과 `CODEX-UNAVAILABLE` 결과를 남기고 Phase 4.4로 진행 |
+| Phase 12 remediation | 사용자 승인 remediation으로 diff가 바뀌면 Phase 10 Assumption Gate와 Phase 4.4 외부 효과 범위를 다시 확인 |
+| E2E lifecycle | 같은 Terra가 중첩 spawn·직접 commit 없이 E2E와 실패 수정을 수행하고 PID/정리 결과를 반환하며 Sol High만 상태·commit을 조정 |
 
 ## Clean-room smoke prompts
 

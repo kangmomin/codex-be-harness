@@ -8,7 +8,9 @@
 - BE workflow의 Phase 순서, 상태 코드, 루프 상한, 출력 머리글을 호환성 계약으로 취급한다.
 - 원본과 달라지는 동작은 숨기지 말고 `COMPATIBILITY.md`에 근거와 함께 기록한다.
 - Claude 전용 도구명, 경로, 모델명, slash command를 runtime 파일에 추가하지 않는다.
-- 모델명은 고정하지 않고 parent 모델과 reasoning effort를 기본 상속한다.
+- 모델명은 고정하지 않고 parent 모델과 reasoning effort를 기본 상속한다. 단, 사용자 승인된
+  `start-workflow` 고정 topology는 `skills/start-workflow/references/agent-topology.md`의
+  Sol High / Terra High·Max / Luna xHigh / Sol Max 배정을 따른다.
 - 프로젝트별 값은 `.codex/be-harness.local.md`, 동작 override는 `.codex/be-harness/**`에서 읽는다.
 - push, PR, 원격 피드백 제출은 해당 작업에 대한 사용자 승인이 있을 때만 수행한다.
 - 관련 없는 리팩터링이나 포맷 변경을 섞지 않는다.
