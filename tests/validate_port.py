@@ -177,7 +177,7 @@ for markdown in ROOT.rglob("*.md"):
 workflow = (skills_dir / "start-workflow" / "SKILL.md").read_text(encoding="utf-8")
 for phase in range(1, 13):
     require(re.search(rf"\bPhase {phase}\b", workflow) is not None, f"start-workflow: missing Phase {phase}")
-for flag in ["--hard", "--no-tdd", "--reflect", "--analyze", "--verify"]:
+for flag in ["--hard", "--no-tdd", "--tier standard", "--reflect", "--analyze", "--verify"]:
     require(flag in workflow, f"start-workflow: missing flag {flag}")
 for contract in [
     "BLOCKED:FULLSTACK_HANDOFF_REQUIRED",
@@ -188,15 +188,96 @@ for contract in [
     "외부 CLI 리뷰어를 호출하지 않는다",
     "{PROFILE_PATH}",
     "같은 orchestrator task",
+    "SKIPPED:TIER_LIGHT",
+    "{PLAN_MAX}",
+    "{QL_MAX}",
+    "tier_escalated",
+    "script_fallback",
+    "RUN_ID",
+    "START_SHA",
+    "BLOCKED:STATE_SCHEMA_MISMATCH",
+    "{WORK_REPORT}",
+    "## Profile Snapshot",
 ]:
     require(contract in workflow, f"start-workflow: missing contract {contract}")
 
 build_phases = (skills_dir / "start-workflow" / "references" / "build-phases.md").read_text(encoding="utf-8")
-for contract in ["git worktree list", "BLOCKED:DUPLICATE_IN_PROGRESS", "workflow-report.md", "`## 편차`에서 `[Assumption]`"]:
+for contract in [
+    "git worktree list",
+    "BLOCKED:DUPLICATE_IN_PROGRESS",
+    "workflow-report.md",
+    "`## 편차`에서 `[Assumption]`",
+    "{PLAN_MAX}",
+    "{QL_MAX}",
+    "verification-tier.md",
+    "BLOCKED:LOCK_UNAVAILABLE",
+    "## Flags",
+    "## Profile Snapshot",
+    "START_SHA",
+]:
     require(contract in build_phases, f"build-phases: missing contract {contract}")
 
 templates_doc = (skills_dir / "start-workflow" / "references" / "templates.md").read_text(encoding="utf-8")
 require("workflow-report.md" in templates_doc, "templates: missing workflow-report.md persistence")
+
+state_begin_marker = "<!-- state-template-begin -->"
+state_end_marker = "<!-- state-template-end -->"
+state_begin_count = templates_doc.count(state_begin_marker)
+state_end_count = templates_doc.count(state_end_marker)
+require(state_begin_count == 1, f"templates: expected one state-template-begin marker, got {state_begin_count}")
+require(state_end_count == 1, f"templates: expected one state-template-end marker, got {state_end_count}")
+
+state_template = ""
+if state_begin_count == 1 and state_end_count == 1:
+    state_begin_position = templates_doc.find(state_begin_marker)
+    state_end_position = templates_doc.find(state_end_marker)
+    require(state_begin_position < state_end_position, "templates: state-template-begin must precede state-template-end")
+    if state_begin_position < state_end_position:
+        state_template = templates_doc[state_begin_position + len(state_begin_marker):state_end_position]
+        for contract in [
+            "## Flags",
+            "- SCHEMA: 2",
+            "- MODE: be",
+            "- RUN_ID:",
+            "- START_SHA:",
+            "- TIER:",
+            "## Verification Tier",
+            "- 계산 티어:",
+            "- 최종 티어:",
+            "## Profile Snapshot",
+            "- profile_path:",
+            "- profile_sha256:",
+            "- resolved_report_dir:",
+            "- resolved_e2e_lock_dir:",
+            "## Final Decisions",
+            "## Artifacts",
+            "workflow-report: 미생성",
+            "e2e-report: 미생성",
+            "tier_escalated(",
+            "script_fallback(",
+        ]:
+            require(contract in state_template, f"templates state template: missing contract {contract}")
+        require("## Test Baseline" not in state_template, "templates: initial state template must not contain Test Baseline")
+
+baseline_headers = re.findall(r"^## Test Baseline\s*$", templates_doc, re.MULTILINE)
+require(len(baseline_headers) == 1, f"templates: expected one append Test Baseline header, got {len(baseline_headers)}")
+
+tdd_doc = (skills_dir / "start-workflow" / "references" / "tdd.md").read_text(encoding="utf-8")
+baseline_table_header = "| suite | 명령 | 러너 완주 | 통과 | 실패 | 실패 목록 (식별자 :: 정규화 시그니처) |"
+for label, document in [("templates", templates_doc), ("tdd", tdd_doc)]:
+    require(baseline_table_header in document, f"{label}: missing baseline six-cell header")
+    for status in [
+        "SKIPPED:USER_OPT_OUT",
+        "SKIPPED:NO_TEST_COMMAND",
+        "SKIPPED:NO_TEST_INFRA",
+        "SKIPPED:TASK_TYPE",
+        "SKIPPED:NO_TEST_BASIS",
+    ]:
+        require(status in document, f"{label}: missing baseline status {status}")
+    require("수집 실패 — regression 판정 불가" in document, f"{label}: missing collect-failed baseline marker")
+
+for contract in ["--emit-baseline", "script_fallback(test_failures:", "BLOCKED:STATE_SCHEMA_MISMATCH"]:
+    require(contract in tdd_doc, f"tdd: missing baseline contract {contract}")
 
 request_doc = (skills_dir / "request" / "SKILL.md").read_text(encoding="utf-8")
 require("기본값" in request_doc and "`[Assumption]`으로 표기" in request_doc, "request: missing default-answer batching rule")
@@ -391,6 +472,30 @@ if len(profile_delimiters) >= 2 and config_keys_valid:
         not config_keys - profile_keys,
         f"config: marker keys missing from PROFILE.md: {sorted(config_keys - profile_keys)}",
     )
+
+snapshot_match = re.search(
+    r"^## Profile Snapshot\s*$\n(.*?)(?=^## |\Z)",
+    state_template,
+    re.MULTILINE | re.DOTALL,
+)
+require(snapshot_match is not None, "templates: missing Profile Snapshot section in state template")
+if snapshot_match:
+    snapshot_key_tokens = re.findall(r"^- ([A-Za-z0-9_]+):", snapshot_match.group(1), re.MULTILINE)
+    snapshot_key_counts = Counter(snapshot_key_tokens)
+    expected_snapshot_keys = profile_keys | {
+        "profile_path",
+        "profile_sha256",
+        "resolved_report_dir",
+        "resolved_e2e_lock_dir",
+    }
+    require(
+        set(snapshot_key_counts) == expected_snapshot_keys,
+        "templates: Profile Snapshot key mismatch: "
+        f"missing={sorted(expected_snapshot_keys - set(snapshot_key_counts))}, "
+        f"extra={sorted(set(snapshot_key_counts) - expected_snapshot_keys)}",
+    )
+    invalid_snapshot_counts = sorted(key for key, count in snapshot_key_counts.items() if count != 1)
+    require(not invalid_snapshot_counts, f"templates: Profile Snapshot duplicate keys: {invalid_snapshot_counts}")
 
 compatibility = (ROOT / "COMPATIBILITY.md").read_text(encoding="utf-8")
 source_inventory = [

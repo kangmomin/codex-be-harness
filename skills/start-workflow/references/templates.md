@@ -8,14 +8,62 @@
 
 Write tool로 `{STATE_FILE}`을 생성한다:
 
+`RUN_ID`·`START_SHA`는 생성 직전에 1회 계산한다(이후 재생성·갱신 금지). `START_SHA`는 `## Flags`와 `## Verification Tier`·`## Test Baseline`의 기준 커밋으로 같은 값을 쓴다:
+
+```bash
+SHA7=$(git rev-parse --short=7 HEAD 2>/dev/null || echo nogit); HEX8=$(od -An -N4 -tx1 /dev/urandom | tr -d ' \n')
+RUN_ID="$(date +%Y%m%d-%H%M%S)-${SHA7}-${HEX8}"; START_SHA=$(git rev-parse HEAD 2>/dev/null || echo 없음)
+```
+
+`## Profile Snapshot`의 `profile_sha256`은 `sha256sum {PROFILE_PATH}` 64자, `resolved_*` 2줄은 Pre-flight가 해석한 절대 경로다(재개·형제 스킬은 이 값만 쓴다).
+
+<!-- state-template-begin -->
 ```markdown
 # Workflow State
+
+## Flags
+- SCHEMA: 2
+- MODE: be
+- HARD_MODE: {true|false}
+- TDD: {true|false}
+- REFLECT: {true|false}
+- TIER: {light|standard}
+- RUN_ID: {RUN_ID}
+- START_SHA: {START_SHA}
 
 ## Run
 - run_dir: {RUN_DIR}
 - project_root: {CWD}
 - approved_at: {Phase 4.4 사용자 승인 시각}
 - approved_effects: {branch / edits / commits / push / PR}
+
+## Profile Snapshot
+- profile_path: {PROFILE_PATH}
+- profile_sha256: {64자}
+- resolved_report_dir: {REPORT_DIR 절대 경로}
+- resolved_e2e_lock_dir: {e2e-lock.sh 자동 해석 절대 경로}
+- preset: {값}
+- language: {값}
+- e2eEnabled: {값}
+- buildCommand: {값}
+- testCommand: {값}
+- lintCommand: {값}
+- typeCheckCommand: {값}
+- makeTestCommand: {값}
+- runServerCommand: {값}
+- serverUrl: {값}
+- apiDocsPath: {값}
+- e2eLockDir: {값}
+- reportDir: {값}
+- feedbackUpstreamRepo:
+- mainBranch: {값}
+- featureBranchPrefix: {값}
+- hotfixBranchPrefix: {값}
+- commitCoAuthor: {값}
+- sourceDirs: [internal, cmd]
+- testDirs: [tests]
+- commitPrefixes: [Add, Fix, Refactor, Test, Docs, Chore]
+- projectConventions: {값}
 
 ## Spec
 [Technical Spec 전문 그대로 복사]
@@ -25,6 +73,17 @@ Write tool로 `{STATE_FILE}`을 생성한다:
 
 ## Difficulty
 [N]/10
+
+## Verification Tier
+- 계산 티어: {light|standard} — A [a]/10, B [b]/10
+- 최종 티어: {light|standard} ({사유: 해당 없음 | 금지 조건 {항목} | TDD off | parallel-slices | --tier standard})
+- 근거: {요소별 밴드 요약 + risk_facts.py 출력 요약}
+- 시작 커밋: {START_SHA}
+- 축소 항목: {4.2 1역할 / PLAN_MAX 2 / QL_MAX 2 / 8.2 SKIP / 8.6 smoke / 8.8 SKIP | 없음}
+
+| 시점 | 트리거 | 근거 | 조치 |
+|------|--------|------|------|
+[승격 발생 시 append — 예: `6.2 완료 직후` | `② 변경 소스 파일 5 > 3` | `a.go, b.go, …` | `standard 전환, 미재실행: 4.2`]
 
 ## Current Phase
 Phase 5 - 자율 실행 시작 (agent: Sol High orchestrator, model: gpt-5.6-sol, effort: high)
@@ -67,18 +126,6 @@ Phase 5 - 자율 실행 시작 (agent: Sol High orchestrator, model: gpt-5.6-sol
 ## Edge Cases
 [Spec의 엣지 케이스 표를 **ID·참조 구현 열까지 그대로** 복사. Phase 8.6 커버리지 대조와 Phase 8.8 Diff 판정의 기준이므로 ID를 생략하거나 다시 매기지 않는다]
 
-## Test Baseline
-[Phase 5에서 수집. TDD SKIP 시 사유만 기록 — 예: `SKIPPED:NO_TEST_COMMAND`]
-
-- 커밋: {SHA}   |   수집 Phase: 5 (자율 실행 진입 전)   |   **불변 — 이후 갱신하지 않는다**
-
-| suite | 명령 | 러너 완주 | 통과 | 실패 | 실패 목록 (식별자 :: 정규화 시그니처) |
-|-------|------|----------|------|------|--------------------------------------|
-| unit | {testCommand} | Y | 142 | 2 | `TestFoo` :: `nil pointer` / `TestBar` :: `want 3 got 2` |
-
-**Tombstone** (Spec이 승인한 테스트 이름 변경·삭제만 기록. 대조 시 매핑에만 쓰고 위 판정 데이터는 바꾸지 않는다):
-- `{구 식별자}` → `{신 식별자}` 또는 `삭제({근거})`
-
 ## TDD Test Map
 [Phase 6.1에서 기록. Phase 8 회귀 대조와 Phase 12 보고서의 기준]
 > **Phase 8.8 read-back 에이전트에 이 표를 전달하지 않는다** — Spec 역추론으로 격리가 무너진다.
@@ -96,15 +143,26 @@ Phase 5 - 자율 실행 시작 (agent: Sol High orchestrator, model: gpt-5.6-sol
 [Phase 4.3 검증 루프의 Iteration Diff Log]
 
 ## Readback Diff
-[Phase 8.8 결과. Phase 8.8 실행 전에는 `미실행`]
+[Phase 8.8 결과. Phase 8.8 실행 전에는 `미실행`, light면 `SKIPPED:TIER_LIGHT`]
+
+## Final Decisions
+[Phase 10 Gate·Phase 12 ②~④에서 받은 유저 결정을 받는 즉시 append. 재개 시 기록된 항목은 다시 묻지 않는다]
+
+| 항목 | 결정 | 시각 |
+|------|------|------|
+
+## Artifacts
+- workflow-report: 미생성
+- e2e-report: 미생성
 
 ## Phase Results
 [Phase 완료 시 아래 표에 행 append. `Status`는 상태 코드(8.2/8.3처럼 Phase Assignments에 개별 행이 없는 하위 단계도 여기에 기록).
-`진단` 열은 발생 시에만 — `agent_retry({원인})` / `degraded_fallback({원인} / {축소 내용})`, 없으면 `-`]
+`진단` 열은 발생 시에만 — `agent_retry({원인})` / `degraded_fallback({원인} / {축소 내용})` / `tier_escalated({트리거})` / `script_fallback({스크립트}:{사유})`, 없으면 `-`]
 
 | Phase | Status | 결과 요약 | 진단 |
 |-------|--------|----------|------|
 ```
+<!-- state-template-end -->
 
 `parallel-slices`인 경우 아래를 추가한다:
 
@@ -114,6 +172,27 @@ Phase 5 - 자율 실행 시작 (agent: Sol High orchestrator, model: gpt-5.6-sol
 ```
 
 `--reflect` 미지정 시(기본): 생성 시점에 Phase 11 행의 Status를 `SKIPPED:REFLECT_NOT_REQUESTED`로 기록하고, `Remaining Phases`에서 "Phase 11: 성찰"을 제외한다.
+light 티어: `Phase Results`에 8.2·8.8 행을 `SKIPPED:TIER_LIGHT`로 미리 기록하지 않는다 — 승격으로 실행될 수 있으므로 해당 단계 도달 시점에 기록한다.
+
+### `## Test Baseline` append 블록 (수집 후 정확히 1회)
+
+초기 템플릿에는 없다. Phase 5에서 TDD 판정·baseline 수집을 마친 직후 `{STATE_FILE}`의 `## TDD Test Map` 헤더 바로 앞에 정확히 1회 삽입한다(헤더 중복 금지). 완전성 판정의 canonical은 [tdd.md](tdd.md) Phase 5 절이며 이 블록은 렌더링 형식이다.
+
+```markdown
+## Test Baseline
+- 커밋: {START_SHA}   |   수집 Phase: 5 (자율 실행 진입 전)   |   **불변 — 이후 갱신하지 않는다**
+
+| suite | 명령 | 러너 완주 | 통과 | 실패 | 실패 목록 (식별자 :: 정규화 시그니처) |
+|-------|------|----------|------|------|--------------------------------------|
+| unit | {testCommand} | Y | 142 | 2 | `TestFoo` :: `nil pointer` / `TestBar` :: `want 3 got 2` |
+| integration | {makeTestCommand} | Y | 30 | 0 | - |
+
+<!-- Tombstone(Spec이 승인한 테스트 이름 변경·삭제만; 대조 시 매핑에만 쓰고 판정 데이터는 바꾸지 않는다): "- `{구 식별자}` → `{신 식별자}`" 또는 "- `{식별자}` → 삭제({근거})" 형식으로 이 줄 아래에 append -->
+```
+
+표 행은 `test_failures.py --emit-baseline`의 `baseline 행:` 출력을 그대로 — 수집 대상 스위트(`unit`; `makeTestCommand`가 비어 있지 않으면 `integration`도)마다 정확히 1행, 수동 기록(`script_fallback`)도 같은 6셀. 예시 행은 실제 행으로 교체한다.
+TDD SKIP이면 표 대신 `SKIPPED:{USER_OPT_OUT|NO_TEST_COMMAND|NO_TEST_INFRA|TASK_TYPE|NO_TEST_BASIS} — {사유}` 1줄만 둔다(허용 값: `SKIPPED:USER_OPT_OUT`, `SKIPPED:NO_TEST_COMMAND`, `SKIPPED:NO_TEST_INFRA`, `SKIPPED:TASK_TYPE`, `SKIPPED:NO_TEST_BASIS`).
+수집 실패 후 '이대로 진행'이면 `수집 실패 — regression 판정 불가 — {에러 요약}` 1줄을 둔다(일부 스위트만 성공한 부분 실패는 성공 행과 공존 가능 — 이 줄이 있으면 섹션 전체가 `collect_failed`로 우선 판정). SKIP 줄과의 공존은 불완전이다.
 
 ## Phase 5: Implementation Notes 라이브 파일 초기화
 

@@ -21,10 +21,11 @@ canonical이다. 이 스킬에만 적용하는 고정 토폴로지 예외다.
 | `--analyze`, `-a` | Analyze: 코드 수정 없이 Phase A1~A4 실행 |
 | `--verify`, `-v` | Verify: Phase V1~V5 실행 후 `PASS/WARN/FAIL` 판정 |
 | `--hard`, `-h` | Build에서 브랜치 생성 없이 현재 브랜치에 일반 push; PR 생략 |
-| `--no-tdd` | Build의 Red 및 baseline 수집 생략 |
+| `--no-tdd` | Build의 Red 및 baseline 수집 생략. 검증 티어는 standard 강제. |
+| `--tier standard` | Build: Phase 2 판정과 무관하게 검증 티어를 standard로 강제한다(light 축소 비활성). light 강제 플래그는 없다 |
 | `--reflect` | Build의 Phase 11 실행; 기본은 `SKIPPED:REFLECT_NOT_REQUESTED` |
 
-`--analyze`와 `--verify`는 상호 배타적이다. 둘 다 있으면 하나를 선택받는다. 나머지 세 플래그는
+`--analyze`와 `--verify`는 상호 배타적이다. 둘 다 있으면 하나를 선택받는다. 나머지 네 플래그는
 Build 전용이며 다른 모드에서는 무시한다. 모드 플래그 뒤 경로는 범위이고, 없으면 profile의
 `sourceDirs`를 기본 후보로 사용한다.
 
@@ -37,10 +38,10 @@ Analyze 또는 Verify라면 [analyze-verify-modes.md](references/analyze-verify-
 "profile 해석" 규칙으로 확정한다 — 프로젝트 루트의 `.codex/be-harness.local.md`가 우선이고, linked worktree에
 없으면 메인 워크트리의 것을 상속하며 `[Assumption] 메인 워크트리 profile 상속: {경로}`로 보고한다.
 
-`buildCommand`, `testCommand`, `lintCommand`, `typeCheckCommand`, `makeTestCommand`,
+`preset`, `buildCommand`, `testCommand`, `lintCommand`, `typeCheckCommand`, `makeTestCommand`,
 `runServerCommand`, `serverUrl`, `e2eEnabled`, `apiDocsPath`, `sourceDirs`, `testDirs`,
 `mainBranch`, `featureBranchPrefix`, `hotfixBranchPrefix`, `commitPrefixes`, `commitCoAuthor`,
-`projectConventions`, `reportDir`, `feedbackUpstreamRepo`, `language`.
+`projectConventions`, `reportDir`, `feedbackUpstreamRepo`, `e2eLockDir`, `language`.
 
 프로젝트 루트와 메인 워크트리 어디에도 profile이 없으면(`PROFILE_MISSING`) 값을 추측하지 않고
 `.codex/be-harness.local.md` 생성이 필요하다고 알린 뒤 mutation 없이 종료한다. Build에서는 누락된
@@ -60,15 +61,30 @@ Build는 Phase 4.4 승인 후 Phase 5 진입 시, Analyze/Verify는 모드 범�
 {RUN_DIR}=mktemp -d "${TMPDIR:-/tmp}/codex-be-workflow.XXXXXX"
 {STATE_FILE}={RUN_DIR}/workflow-state.md
 {IMPL_NOTES}={RUN_DIR}/implementation-notes.md
+{WORK_REPORT}={RUN_DIR}/workflow-report.md
+{RUN_ID}=`## Flags`의 RUN_ID (Phase 5에서 1회 생성)
+{START_SHA}=`## Flags`의 START_SHA (Phase 5 기준 커밋)
 {REPORT_DIR}=profile.reportDir 또는 .codex/harness-reports
 {CWD}=검증된 프로젝트 루트 절대 경로
 {PROFILE_PATH}=PROFILE.md의 "profile 해석"으로 확정한 profile 절대 경로
+{SKILL_DIR}=이 SKILL.md가 있는 디렉터리의 절대 경로 (assets/·references/ 해석 기준)
+{PLAN_MAX}=Phase 4.3 상한 — standard 5 / light 2
+{QL_MAX}=Phase 8 상한 — standard 3 / light 2
 ```
 
-해결된 절대 경로를 모든 서브에이전트에 전달한다. 상태에는 `Current Phase`, `Phase Assignments`,
-`Remaining Phases`, `Phase Results`를 유지하고 Phase 전후에 `IN_PROGRESS`와 최종 상태를 기록한다.
+해결된 절대 경로를 모든 서브에이전트에 전달한다. 상태에는 `Flags`, `Run`, `Profile Snapshot`,
+`Verification Tier`, `Current Phase`, `Phase Assignments`, `Remaining Phases`, `Final Decisions`, `Artifacts`,
+`Phase Results`를 유지하고 Phase 전후에 `IN_PROGRESS`와 최종 상태를 기록한다.
 서버를 띄운 Phase는 PID 또는 세션 핸들을 저장하고 성공·실패·중단 모든 종료 경로에서 정리한다.
 상태와 노트는 기본 보관하며, 사용자가 정리를 요청했을 때만 검증된 `{RUN_DIR}` 내부를 삭제한다.
+
+### 재개 규칙
+
+- `## Flags`(SCHEMA·MODE·HARD_MODE·TDD·REFLECT·TIER·RUN_ID·START_SHA)는 컨텍스트 요약·세션 재개로 CLI 인자를 잃은 뒤 이어갈 때 **유일한 기준** — CLI 인자와 충돌하면 기록값 우선 + 고지. `RUN_ID`는 Phase 5에서 1회 생성하며 재생성하지 않는다.
+- 재개 시 Phase dispatch 전에 스키마를 검사한다: `## Flags` 정확히 1개 + 필수 키 8개 각 1회 + `SCHEMA: 2` / `## Profile Snapshot` 정확히 1개 + `profile_path`(비어 있지 않음)·`profile_sha256`(16진수 64자)·`resolved_report_dir`·`resolved_e2e_lock_dir`(절대 경로) + profile 키 22개 각 정확히 1회(`키: 값` 1줄, 배열은 인라인, 빈 값 허용) / `## Verification Tier` 정확히 1개 + `- 계산 티어:`·`- 최종 티어:` 각 1회 / `## Test Baseline` 헤더 0개 또는 1개. 하나라도 어긋나면 `BLOCKED:STATE_SCHEMA_MISMATCH`(누락·중복 항목 나열)로 종료하고 새 실행을 안내한다 — 구버전·쓰기 중단 상태 파일은 마이그레이션하지 않는다.
+- 검사를 통과한 뒤 `## Test Baseline` 완전성([tdd.md](references/tdd.md) Phase 5 canonical)이 미완이면 스키마 차단이 아니라 Phase 5 미완 재개로 처리한다.
+- 형제 스킬·서브에이전트·재개된 오케스트레이터는 `## Profile Snapshot` 값(resolved 경로 포함)만 쓰고 profile을 다시 읽지 않는다(live 아님). `profile_sha256`은 출처 기록용이며 재개 시 비교하지 않는다.
+- 상태 파일 생성 이전 중단은 재개 대상이 아니라 Pre-flight부터 재시작한다(profile 재확정).
 
 상태 템플릿과 최종 보고는 [templates.md](references/templates.md)를 사용한다.
 
@@ -86,7 +102,8 @@ Build는 Phase 4.4 승인 후 Phase 5 진입 시, Analyze/Verify는 모드 범�
   결정받는다.
 - TDD baseline은 불변이다. Red/Green, Test Map, TestConflict, 회귀 분류 계약은
   [tdd.md](references/tdd.md)를 따른다.
-- Phase 8은 최대 3회이며 single-writer 수정과 격리 Read-back을 보장한다.
+- 검증 티어(`light`/`standard`)는 Phase 2에서 판정하고 Phase 4.4에서 함께 승인받는다. 티어 승격(light → standard, 단방향 latch)은 항상 해당 루프의 종료 조건·상한 평가보다 **먼저** 적용한다. 규칙은 [verification-tier.md](references/verification-tier.md)가 canonical이다.
+- Phase 8은 최대 `{QL_MAX}`회이며 single-writer 수정과 격리 Read-back을 보장한다.
   [quality-loop.md](references/quality-loop.md)를 따른다.
 - 외부 상태를 바꾸는 commit/push/PR 절차는 승인된 Phase 5 이후에만 실행한다. Phase 10 직전
   Assumption Gate를 다시 적용한다.
@@ -97,7 +114,7 @@ Build는 Phase 4.4 승인 후 Phase 5 진입 시, Analyze/Verify는 모드 범�
   [agent-topology.md](references/agent-topology.md)의 계약대로 **같은 orchestrator task**에 follow-up한다(새
   bootstrap 금지). 자율 구간 Phase 6~11에서는 질문하지 않고 `[Assumption]` 또는 `SKIPPED:{사유}`로 기록한다.
 - Phase 진입 체크: Phase 5는 `{STATE_FILE}`·`{IMPL_NOTES}` 생성과 baseline 수집(또는 명시적 `SKIPPED:*`
-  기록) 없이 Phase 6으로 가지 않는다. Phase 8은 [quality-loop.md](references/quality-loop.md)를 읽은 뒤
+  기록) 없이 Phase 6으로 가지 않는다(`## Test Baseline` 완전성은 [tdd.md](references/tdd.md) Phase 5 정의). Phase 8은 [quality-loop.md](references/quality-loop.md)를 읽은 뒤
   시작하며 8.4와 8.8은 생략하지 않는다. Phase 12는 Implementation Notes HTML과 Workflow Report md를 둘 다
   `{REPORT_DIR}`에 남긴다.
 - Phase 1의 중복 작업 스캔에서 강 신호가 나오면 `BLOCKED:DUPLICATE_IN_PROGRESS`로 종료한다. 사용자가
@@ -128,13 +145,13 @@ Executor를 배정한다. Phase 2의 리스크 산정에는 보안, 데이터 �
 ## Phase 요약
 
 1. Phase 1: 범위 수집 및 Technical Spec 사용자 확인
-2. Phase 2: 코드 복잡도와 영향 리스크 난이도 산정
+2. Phase 2: 코드 복잡도와 영향 리스크 난이도 산정 + 검증 티어(light/standard) 판정
 3. Phase 3: `sequential` / `parallel-slices` / fullstack handoff 판정
-4. Phase 4: Plan 작성 → 다관점 보강 → 최대 5회 독립 검증 → 4.4 실행 승인
+4. Phase 4: Plan 작성 → 다관점 보강 → 최대 `{PLAN_MAX}`회 독립 검증 → 4.4 실행 승인
 5. Phase 5: 브랜치, 상태/노트, TDD baseline 생성
 6. Phase 6: Red 테스트 후 Green 구현
 7. Phase 7: 강제 빌드, 실패 수정 최대 3회
-8. Phase 8: 품질 루프 최대 3회 후 격리 Read-back 1회
+8. Phase 8: 품질 루프 최대 `{QL_MAX}`회 후 격리 Read-back 1회(light: 8.2·8.8 SKIP, 8.6 smoke)
 9. Phase 9: API 변경일 때 파일 기반 API 문서 동기화
 10. Phase 10: Assumption Gate 후 PR 또는 hard push
 11. Phase 11: `--reflect`일 때만 성찰
@@ -150,17 +167,19 @@ Phase 상태는 `DONE`, `IN_PROGRESS`, `PENDING`, `SKIPPED:{사유}`, `BLOCKED:{
 - `BLOCKED:FULLSTACK_HANDOFF_REQUIRED`, `BLOCKED:MAX_ITERATIONS`, `BLOCKED:BUILD_FAIL`
 - `BLOCKED:DUPLICATE_IN_PROGRESS`
 - `BLOCKED:NO_VALID_RED`, `BLOCKED:REGRESSION_AT_RED`, `BLOCKED:TEST_NOT_GREEN`
-- `BLOCKED:AGENT_DIED`, `BLOCKED:ASSUMPTION_UNRESOLVED`
-- `SKIPPED:PROFILE_EMPTY`, `SKIPPED:USER_OPT_OUT`, `SKIPPED:NO_TEST_BASIS`
+- `BLOCKED:AGENT_DIED`, `BLOCKED:ASSUMPTION_UNRESOLVED`, `BLOCKED:STATE_SCHEMA_MISMATCH`
+- `SKIPPED:PROFILE_EMPTY`, `SKIPPED:TIER_LIGHT`, `SKIPPED:USER_OPT_OUT`, `SKIPPED:NO_TEST_BASIS`
 - `SKIPPED:REFLECT_NOT_REQUESTED`, `SKIPPED:BUDGET_PRESERVED`, `SKIPPED:AGENT_DIED`
 - Phase 12 feedback: `SKIPPED:NO_FEEDBACK_UPSTREAM` when `feedbackUpstreamRepo` is absent
 
 `red_assertion`, `already_satisfied`, `cannot_compile`, `deferred_e2e`, `regression`,
-`pre_existing`, `new_red`, `flaky`, `agent_retry`, `degraded_fallback`은 진단 데이터이며 Phase 상태가 아니다.
+`pre_existing`, `new_red`, `flaky`, `agent_retry`, `degraded_fallback`, `tier_escalated`, `script_fallback`,
+`unparsed`, `rerun_incomplete`는 진단 데이터이며 Phase 상태가 아니다.
 
 ## Reference routing
 
 - Build 상세: [build-phases.md](references/build-phases.md)
+- 검증 티어: [verification-tier.md](references/verification-tier.md)
 - Analyze/Verify: [analyze-verify-modes.md](references/analyze-verify-modes.md)
 - TDD와 baseline: [tdd.md](references/tdd.md)
 - Phase 8: [quality-loop.md](references/quality-loop.md)
