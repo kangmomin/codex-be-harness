@@ -183,9 +183,11 @@ Phase 6의 Terra executor 구현 프롬프트(`agent-prompts.md`)를 사용하�
 
 # Phase 8: 회귀 대조
 
-Phase 8.1에서 `{testCommand}` 실행 결과를 `## Test Baseline`과 대조해 실패를 분류한다.
+Phase 8.1에서 `{testCommand}` 실행 결과를 `## Test Baseline`과 대조해 실패를 분류한다. 대조는 `{SKILL_DIR}/assets/test_failures.py --runner auto --exit-code $EXIT --suite unit --baseline {STATE_FILE} {로그}`가 수행한다(호출: [quality-loop.md](quality-loop.md) Phase 8.1). 스크립트가 exit ≠ 0이면 오케스트레이터가 아래 규칙으로 직접 대조하고 진단 `script_fallback(test_failures:{사유})`를 남긴다.
 
 ## 분류 우선순위 (위에서부터 먼저 적용)
+
+Tombstone 매핑(`## Test Baseline`)은 분류 **전에** 식별자에 적용한다. 셀 파싱 실패·항목 수 불일치·Tombstone 중복 매핑이면 해당 suite 행 전체를 `unparsed`로 취급한다.
 
 | # | 조건 | 분류 |
 |---|------|------|
@@ -196,6 +198,8 @@ Phase 8.1에서 `{testCommand}` 실행 결과를 `## Test Baseline`과 대조해
 | 5 | 3·4 판정 전 **1회 재실행**, 결과가 뒤집히면 | `flaky` |
 
 - `flaky`는 regression 집계에서 제외하고 보고만 한다. 유령을 쫓는 수정을 막기 위한 장치다.
+  재실행은 러너별 verbose 옵션 필수(go `-v`, jest `--verbose`, vitest `--reporter=verbose`) — `--rerun FILE2 --rerun-exit-code M`으로 전달한다. `flaky` ⇔ 재실행이 완주했고 **그 식별자가 PASS로 명시**됨(go `--- PASS: {ID}`, jest/vitest `✓ {ID}`). 그 외(미완주·PASS 줄 부재)는 원 분류 유지 + `rerun_incomplete` 표기 — 필터 문자열·테스트 수는 증거로 인정하지 않는다.
+- `unparsed`·러너 완주 `N`이 남아 있으면 `PASS` 판정을 내릴 수 없다. 오케스트레이터가 로그를 직접 읽어 분류하고, 그래도 분류하지 못하면 **판정 불가** = 테스트 판정 `FAIL`로 취급한다(light: 승격 ③).
 - **이름 변경·삭제**: Spec이 승인한 경우에만 허용하고 `## Test Baseline`에 tombstone(`{구 식별자} → {신 식별자}` 또는 `{식별자} → 삭제(근거)`)을 append한다. 승인 없는 소멸은 `regression`으로 취급한다.
   tombstone은 baseline의 **판정 데이터를 바꾸지 않는다** — 대조 시 매핑에만 쓰인다.
 
@@ -210,7 +214,7 @@ Phase 8.5 통합 수정 에이전트에는 이 순서대로 이슈를 전달하�
 |------|------|
 | `PASS` | `regression` 0건 + `new_red` 0건 |
 | `WARN` | `flaky`만 존재 |
-| `FAIL` | `regression` 1건+ 또는 `new_red` 1건+ |
+| `FAIL` | `regression` 1건+ 또는 `new_red` 1건+ 또는 판정 불가(`unparsed`·완주 `N` 잔존을 분류하지 못함) |
 
 이 판정이 Phase 8 루프의 종료 조건에 들어간다 (SKILL.md 본문 참조).
 
@@ -234,6 +238,6 @@ Phase 8.5 통합 수정 에이전트에는 이 순서대로 이슈를 전달하�
 |------|--------|----------|
 | Phase 상태 | `DONE` `IN_PROGRESS` `PENDING` `SKIPPED:{사유}` `BLOCKED:{사유}` `FAIL` | Phase Assignments의 Status 열 |
 | 판정 | `PASS` `WARN` `FAIL` | 테스트 판정, Read-back 판정 |
-| **진단 분류 (데이터)** | `red_assertion` `already_satisfied` `cannot_compile` `deferred_e2e` `regression` `pre_existing` `new_red` `flaky` | `## TDD Test Map` 과 회귀 대조 표의 셀 안에서만 |
+| **진단 분류 (데이터)** | `red_assertion` `already_satisfied` `cannot_compile` `deferred_e2e` `regression` `pre_existing` `new_red` `flaky` `unparsed` `rerun_incomplete` | `## TDD Test Map` 과 회귀 대조 표의 셀 안에서만 |
 
 **진단 분류가 Phase Assignments의 Status 열에 등장하면 규약 위반이다.**
