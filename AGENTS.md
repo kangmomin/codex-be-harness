@@ -28,3 +28,5 @@ done
 ```
 
 `shellcheck`가 설치되어 있으면 `skills/e2e-test/assets/e2e-lock.sh`도 검사한다.
+
+`tests/validate_port.py`는 `skills/*/assets/*.py` 문법 검사(내장 `compile()` — 바이트코드 파일 없음)와 upstream `2d7a01c` 기준 SHA-256 고정 검사를 포함한다(별도 `py_compile` 명령은 없다).

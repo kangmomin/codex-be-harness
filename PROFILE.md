@@ -51,7 +51,7 @@ e2eLockDir: ""             # E2E 실행 락 디렉토리. 비우면 자동 해�
                            # 환경변수 HARNESS_E2E_LOCK_DIR 로도 지정 가능.
 
 # 리포트 출력
-reportDir: ""              # E2E 자기 점검 HTML·Workflow Report 등 리포트 저장 디렉토리. 비우면 `.codex/harness-reports`
+reportDir: ""              # E2E 자기 점검·Workflow Report(md) 저장 디렉토리. 비우면 `.codex/harness-reports`
 feedbackUpstreamRepo: ""  # Phase 12 보완점 upstream. 비우면 `SKIPPED:NO_FEEDBACK_UPSTREAM`
 
 # 소스 레이아웃

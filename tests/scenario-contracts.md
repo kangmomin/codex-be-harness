@@ -11,7 +11,7 @@
 | Phase 1 중복 스캔 — worktree·PR에 연결되지 않은 단독 로컬 브랜치만 매칭 | 차단하지 않음 |
 | request 질문 기본값 승인 | 빈 응답/`skip`/"기본값으로 진행"이면 기본값 채택 + `[Assumption]` 표기 |
 | workflow 내부 E2E 인증 부재 | `mode: workflow`면 사용자 질문 없이 `SKIPPED:NO_AUTH` |
-| Phase 12 보고 | `{REPORT_DIR}`에 `*-impl-notes.html`과 `*-workflow-report.md` 둘 다 존재 |
+| Phase 12 보고 | `{REPORT_DIR}`에 `*-workflow-report.md` 아카이브 1개(부록 A/B/C) — HTML 없음 |
 | custom profile 필수 필드 누락 | 누락 목록과 수정/중단 선택지를 제시 |
 | `--analyze --verify` 동시 입력 | 하나를 선택하기 전 분석을 시작하지 않음 |
 | fullstack 영향 발견 | Phase 3에서 `BLOCKED:FULLSTACK_HANDOFF_REQUIRED`, Phase 5 부작용 없음 |
@@ -41,6 +41,18 @@
 | config 배치 수정 | 전건 검증 후 한 번의 치환 — 전건 `DONE` 또는 전건 미반영(부분 반영 없음) |
 | config 상속 profile 수정 | linked worktree에서 메인 워크트리 profile을 수정하고 절대 경로 + `[Assumption] 메인 워크트리 profile 상속` 보고 |
 | config 비지원 레이아웃 | 대상 키가 비지원 저장 형태면 `BLOCKED:UNSUPPORTED_LAYOUT`, 파일 바이트 불변 |
+| 락 acquire exit 1 | e2e-test는 `BLOCKED:LOCK_UNAVAILABLE`·서버 미기동 → e2e-test-loop는 즉시 종료·렌더링 생략·`E2E 리포트: 없음 (BLOCKED:LOCK_UNAVAILABLE)` → quality-loop 8.6 행 기록·루프 계속 → Phase 10 Gate 보류·3택(락 재시도 / E2E 없이 진행 / 중단) |
+| `## Test Baseline` 완전성 | 헤더 1개 + (`수집 실패 — regression 판정 불가` 줄 1개(있으면 행 유무 무관 완료·우선; SKIP 줄과 공존은 불완전) 또는 SKIP 줄 1개 또는 스위트별 6셀 baseline 행 1개), 불완전하면 `## Notes` 헤더 확인 후 재수집·교체 |
+| Phase 10 Gate 락 재시도 | 승격 ⑥ 미적용, `수정: N` ∧ DONE/WARN만 즉시 복귀, `수정: Y`이면 Phase 7 → 새 standard Phase 8 루프 → Phase 9 재판정 → Phase 10 |
+| light 판정과 축소 | A ≤ 3 ∧ B ≤ 3 ∧ 금지 조건 0 ∧ TDD 활성 ∧ ≠ parallel-slices ∧ `--tier standard` 없음 → 4.2 Luna 1역할·`{PLAN_MAX}` 2·`{QL_MAX}` 2·8.2 `SKIPPED:TIER_LIGHT`·8.6 `--smoke`·8.8 `SKIPPED:TIER_LIGHT` |
+| 승격 latch | 루프 종료·상한 평가보다 먼저 적용, 단방향, 카운터 단조 증가; Phase 8 재진입(⑦·락 재시도 후 수정)만 새 루프 |
+| `--smoke` 무효화 | 실효 full latch·`{MAX_ITER}` 5·`실행 수준: full(smoke 미적용)` |
+| 렌더러·아카이버 exit ≠ 0 | 폴백 + `script_fallback`, stdout `경로:`/`상태:`를 그대로 기록 |
+| 렌더러·폴백 모두 실패 | `{RUN_DIR}` 보존·리포트 없음 보고·루프 판정 불변 |
+| `## Flags`와 CLI 인자 충돌 | `## Flags`가 우선하며 기록값 사용 + 충돌 고지 |
+| 상태 파일 스키마 불일치 | `## Flags` 부재·필수 키 누락·`## Profile Snapshot`/`## Verification Tier` 누락 시 `BLOCKED:STATE_SCHEMA_MISMATCH` |
+| 재개·형제 스킬 profile 해석 | `## Profile Snapshot`만 사용하며 config로 profile이 바뀌어도 실행 중 값 불변 |
+| 상태 파일 생성 이전 중단 | Pre-flight 재시작 |
 
 ## Clean-room smoke prompts
 

@@ -5,7 +5,7 @@
 - upstream: `kangmomin/harness-plugins`
 - commit: `e87949b127159759950a2247a5067d30e41292a1`
 - source plugin: `be-harness@1.1.0`
-- target plugin: `codex-be-harness@0.3.0`
+- target plugin: `codex-be-harness@0.4.0`
 
 호환성은 문장 일치가 아니라 관찰 가능한 workflow 동작을 기준으로 한다. Phase 순서, 승인·차단 게이트, 상태 코드, 루프 상한, 보고서 머리글을 invariant로 본다.
 
@@ -13,7 +13,7 @@
 
 | upstream 버전 | 핵심 변경 | 포팅 상태 | 포팅 버전 |
 |---|---|---|---|
-| 1.2.0 | start-workflow 검증 티어·성찰 opt-in·md 리포트·결정적 단계 스크립트화 | 미이식 — 0.4.0 예정 | 0.4.0 (예정) |
+| 1.2.0 | start-workflow 검증 티어·성찰 opt-in·md 리포트·결정적 단계 스크립트화 | 이식 — 0.4.0(`--reflect` opt-in은 0.2.0에 선반영) | 0.4.0 |
 | 1.3.0 | start-workflow Codex 사용 모드 codexMode(none/mix/max)·Claude 패널 폴백 | N/A — 포팅은 고정 토폴로지(대체 금지) | — |
 | 1.4.0 | Codex 위임 모델 슬롯화(codexModels)·provider/슬롯 범위 폴백 | 슬롯 설정으로 0.5.0 예정(provider 전환은 Codex spawn 제약으로 미지원) | 0.5.0 (예정) |
 | 1.5.0 | config 스킬 — profile 값 조회·수정 | 이식 — 0.3.0 | 0.3.0 |
@@ -57,9 +57,13 @@
 | `start-workflow/references/quality-loop.md` | same relative target | bounded Codex subagents | Phase 8.1~8.7 유지 |
 | `start-workflow/references/tdd.md` | same relative target | unit-test 절차를 sibling에서 로드 | Red barrier/Test Map 유지 |
 | `start-workflow/references/templates.md` | same relative target | `.codex`와 feedback gap 반영 | 상태·최종 보고 머리글 유지 |
+| `start-workflow/references/verification-tier.md` | same relative target | `{SKILL_DIR}`·Phase 4.4 승인·Luna 1역할·`CODEX-UNAVAILABLE` 어휘 치환 | 점수표·게이트·금지 조건·승격 ①~⑦ 유지 |
+| `start-workflow/assets/risk_facts.py` | same relative target | 바이트 동일 사본(2d7a01c, SHA-256 고정) | 검증 티어 사실 수집 유지 |
+| `start-workflow/assets/test_failures.py` | same relative target | 바이트 동일 사본(2d7a01c, SHA-256 고정) | baseline·rerun 회귀 대조 유지 |
+| `start-workflow/assets/workflow_archive.py` | same relative target | 바이트 동일 사본(2d7a01c, SHA-256 고정) | Workflow Report md 아카이브 배타 생성 유지 |
 | `simplify-loop/references/workflow-script.md` | same relative target | 실행 JS가 아닌 상태 머신 명세 | 기존 상태 필드와 종료 판정 유지 |
 | `e2e-test/assets/e2e-lock.sh` | same relative target | work-log fallback 제거 | acquire/heartbeat/release/timeout 유지 |
-| `e2e-test-loop/assets/api-test-cases-prompt.md` | same relative target | provider-neutral prompt | 테스트 케이스 생성 목적 유지 |
+| `e2e-test-loop/assets/render_e2e_report.py` | same relative target | 바이트 동일 사본(2d7a01c, SHA-256 고정) | md 렌더링·verdict·GAP·직답 규칙 유지 |
 
 ### Inlined common dependencies
 
@@ -91,7 +95,6 @@
 | request 질문 | 한 턴에 질문 하나 | `spec-only`는 남은 질문 전부, `standalone`은 한 턴 최대 4개; 기본값 첨부, 무응답/`skip`은 기본값 + `[Assumption]` | 왕복 턴 수 절감 |
 | profile 부재 | 즉시 종료 | 프로젝트 루트 → linked worktree의 메인 워크트리 상속 → 둘 다 없을 때만 종료 (`PROFILE.md` "profile 해석") | 워크트리 세션의 원격 DB 부팅·설정 재발명 차단 |
 | Phase 1 | 없음 | 중복 작업 스캔, 강 신호는 `BLOCKED:DUPLICATE_IN_PROGRESS` | 동일 기능 병렬 착수 방지 |
-| Phase 12 | HTML 노트 + 대화 보고 | 추가로 `*-workflow-report.md` 저장, remediation 후 재렌더링 | 보고서 유실 방지 |
 | 서브에이전트 대기 | 명시 없음 | `agent-prompts.md` "대기 규약" (역할별 타임아웃, 재대기 1회, 폴링 금지) | 폴링·재촉 비용 제거 |
 | e2e-test 호출 | standalone만 | `mode: workflow` 전달 시 인증 부재는 질문 없이 `SKIPPED:NO_AUTH` | 자율 구간 무질문 계약 |
 | 기준 브랜치 | `main` 하드코딩 (e2e-test, simplify-loop) | profile `mainBranch` 우선 | `dev` 기반 레포의 과대 diff 방지 |
@@ -103,6 +106,21 @@
 |---|---|---|---|
 | config 쓰기 대상 | `.claude/be-harness.local.md` 고정 | `{PROFILE_PATH}` — linked worktree에서는 상속된 메인 워크트리 profile에 반영, 보고에 절대 경로 + `[Assumption]` | 워크트리 세션에서 값을 고칠 경로 유지(0.2.0 상속 의도) |
 | config 수정 고지 | codexMode/codexModels 변경 시에만 "상태 파일 값 유지" 고지 | 모든 키 수정에 "진행 중·재개되는 워크플로우는 상태 파일 스냅샷 값을 유지하며 새 값은 다음 실행부터 적용" 고지 | 실행 중 값 고정 원칙의 일반화 |
+
+## 0.4.0 deviations (observed-behavior changes vs upstream)
+
+| 영역 | upstream 동작 | 0.4.0 동작 | 근거 |
+|---|---|---|---|
+| 검증 티어 | upstream 1.1.0 기준 없음 | 1.2.0과 동일한 `light`·`standard` — 4.2 light는 Luna xHigh 1역할, 승격 ⑤는 `CODEX-UNAVAILABLE` | 저위험 작업의 검증 비용 축소 |
+| Phase 12 아카이브 | HTML 노트 + md 재렌더링(0.2.0) | 슬림 리포트 1회 + 마감 후 `workflow_archive.py` 1회 배타 생성, 재렌더링 없음 | 결정 이력을 부록에 포함, 산출물 규칙 단일화 |
+| impl-notes HTML 제거 | `*-impl-notes.html` 독립 생성 | 아카이브 부록 C로 흡수 | 산출물 중복 제거 |
+| E2E 리포트 | HTML 렌더링 프롬프트 | `render_e2e_report.py` md + 기록 시점 정직성 마커 | 결정적 렌더링과 판정 근거 보존 |
+| profile 스냅샷 | 재개 시 profile 재독 | `## Profile Snapshot` 고정 — 재개·형제 스킬은 snapshot 값(resolved 경로 포함)만 사용 | 재개 사이 환경 변동 차단 |
+| 상태 스키마 fail-closed | 없음 | `SCHEMA` 키 + 필수 섹션 검사, 위반 시 `BLOCKED:STATE_SCHEMA_MISMATCH`·마이그레이션 없음 | 결정성 |
+| smoke 무효화 | full 폴백만 | 실효 full latch + `{MAX_ITER}` 5 복원 + `--level-note` | 상한 일관성 |
+| 리포트 이중 실패 | `{RUN_DIR}` 정리 | 렌더러·폴백 모두 실패 시 `{RUN_DIR}` 보존 + 리포트 없음 보고 | 원시 기록 보존 |
+| E2E 폴백 저장 | `cp`·raw branch·덮어쓰기 가능 | slug + `set -C` 배타 생성(base→-2→-3) | 파일명 규칙·덮어쓰기 방지 |
+| 상태 파일 `SCHEMA` 키·Snapshot resolved 경로 | Flags에 없음 | `- SCHEMA: 2`, `resolved_report_dir`·`resolved_e2e_lock_dir` | 스키마 버전·해석 고정 |
 
 ## Explicit gaps in 0.1.0
 
