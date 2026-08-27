@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import re
 import sys
+from collections import Counter
 from pathlib import Path
 
 
@@ -38,6 +39,7 @@ required_skills = {
     "commit-hard-push",
     "commit-pr",
     "commit-push",
+    "config",
     "convention-check",
     "default-conventions",
     "doc-gen",
@@ -295,11 +297,62 @@ require(
 )
 require("## profile 해석" in profile and "{PROFILE_PATH}" in profile, "PROFILE.md must define the profile resolution rule")
 
+profile_keys: set[str] = set()
+profile_delimiters = list(re.finditer(r"^---\s*$", profile, re.MULTILINE))
+require(len(profile_delimiters) >= 2, "PROFILE.md must contain two frontmatter delimiters")
+if len(profile_delimiters) >= 2:
+    profile_frontmatter = profile[profile_delimiters[0].end():profile_delimiters[1].start()]
+    profile_key_tokens = [
+        *re.findall(r"^([A-Za-z0-9_-]+):", profile_frontmatter, re.MULTILINE),
+        *re.findall(r"^# ([A-Za-z0-9_-]+):", profile_frontmatter, re.MULTILINE),
+    ]
+    profile_key_counts = Counter(profile_key_tokens)
+    duplicate_profile_keys = sorted(key for key, count in profile_key_counts.items() if count != 1)
+    require(not duplicate_profile_keys, f"PROFILE.md duplicate frontmatter keys: {duplicate_profile_keys}")
+    profile_keys = set(profile_key_tokens)
+
+config_doc = (skills_dir / "config" / "SKILL.md").read_text(encoding="utf-8")
+for contract in ["BLOCKED:NO_PROFILE", "{PROFILE_PATH}", "한 번의", "config:keys-begin"]:
+    require(contract in config_doc, f"config: missing contract {contract}")
+
+begin_marker = "<!-- config:keys-begin"
+end_marker = "<!-- config:keys-end"
+begin_count = config_doc.count(begin_marker)
+end_count = config_doc.count(end_marker)
+require(begin_count == 1, f"config: expected one keys-begin marker, got {begin_count}")
+require(end_count == 1, f"config: expected one keys-end marker, got {end_count}")
+
+config_keys: set[str] = set()
+config_keys_valid = False
+if begin_count == 1 and end_count == 1:
+    begin_position = config_doc.find(begin_marker)
+    end_position = config_doc.find(end_marker)
+    require(begin_position < end_position, "config: keys-begin marker must precede keys-end marker")
+    begin_line_end = config_doc.find("\n", begin_position)
+    require(begin_line_end != -1 and begin_line_end < end_position, "config: keys-begin marker must end before keys-end marker")
+    if begin_position < end_position and begin_line_end != -1 and begin_line_end < end_position:
+        config_key_tokens = re.findall(r"`([^`]+)`", config_doc[begin_line_end + 1:end_position])
+        config_key_counts = Counter(config_key_tokens)
+        duplicate_config_keys = sorted(key for key, count in config_key_counts.items() if count != 1)
+        require(not duplicate_config_keys, f"config: duplicate key marker tokens: {duplicate_config_keys}")
+        config_keys = set(config_key_tokens)
+        config_keys_valid = True
+
+if len(profile_delimiters) >= 2 and config_keys_valid:
+    require(
+        not profile_keys - config_keys,
+        f"config: keys missing from marker: {sorted(profile_keys - config_keys)}",
+    )
+    require(
+        not config_keys - profile_keys,
+        f"config: marker keys missing from PROFILE.md: {sorted(config_keys - profile_keys)}",
+    )
+
 compatibility = (ROOT / "COMPATIBILITY.md").read_text(encoding="utf-8")
 source_inventory = [
     *[f"be-harness/skills/{name}/**" for name in [
         "start-workflow", "request", "unit-test", "simplify-loop", "convention-check",
-        "default-conventions", "e2e-test", "e2e-test-loop", "init", "doctor",
+        "default-conventions", "e2e-test", "e2e-test-loop", "init", "doctor", "config",
     ]],
     *[f"be-harness/agents/{name}.md" for name in [
         "code-analyzer", "code-verifier", "edge-case-analyzer", "scope-reviewer",

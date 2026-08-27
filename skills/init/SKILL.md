@@ -184,6 +184,7 @@ mkdir -p .codex/be-harness/skills .codex/be-harness/agents
 
 다음 단계:
 - `$codex-be-harness:doctor` — 상태 검증
+- `$codex-be-harness:config {키}={값}` — 값 조회·수정
 - `$codex-be-harness:start-workflow` — 워크플로우 시작
 ```
 

@@ -37,6 +37,10 @@
 | Phase 4.3 advisor 사망 | Sol Max가 두 번 사망하면 대체 모델 없이 `agent_died(...)` 진단과 `CODEX-UNAVAILABLE` 결과를 남기고 Phase 4.4로 진행 |
 | Phase 12 remediation | 사용자 승인 remediation으로 diff가 바뀌면 Phase 10 Assumption Gate와 Phase 4.4 외부 효과 범위를 다시 확인 |
 | E2E lifecycle | 같은 Terra가 중첩 spawn·직접 commit 없이 E2E와 실패 수정을 수행하고 PID/정리 결과를 반환하며 Sol High만 상태·commit을 조정 |
+| config 전체 조회 | 조회만 수행하고 mutation 0 (profile·상태 파일·기타 파일 불변) |
+| config 배치 수정 | 전건 검증 후 한 번의 치환 — 전건 `DONE` 또는 전건 미반영(부분 반영 없음) |
+| config 상속 profile 수정 | linked worktree에서 메인 워크트리 profile을 수정하고 절대 경로 + `[Assumption] 메인 워크트리 profile 상속` 보고 |
+| config 비지원 레이아웃 | 대상 키가 비지원 저장 형태면 `BLOCKED:UNSUPPORTED_LAYOUT`, 파일 바이트 불변 |
 
 ## Clean-room smoke prompts
 

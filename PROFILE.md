@@ -130,3 +130,4 @@ profile 자체가 없으면 값을 추측하지 않는다(프로젝트 루트와
 ## profile 생성
 
 `$codex-be-harness:init` 을 실행하여 대화형으로 생성한다. 기존 파일이 있으면 diff를 보여준 뒤 업데이트.
+값 하나를 조회·수정할 때는 `$codex-be-harness:config {키}` / `$codex-be-harness:config {키}={값} …`을 쓴다(init 재실행 없이, 파일 생성은 하지 않음).
