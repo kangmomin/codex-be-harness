@@ -26,6 +26,7 @@ description: "E2E 테스트 → 이슈 수정 → 재테스트를 반복한다 (
 |--------|------|------|
 | `--skip-doctor` | `-sd` | 루프 진입 전 환경 probe를 건너뛴다 (사용자 책임) |
 | `--no-lock` | | 하위 `e2e-test` 에 그대로 전달해 실행 락을 건너뛴다 (단독 실행/디버깅 전용) |
+| `mode: workflow` | | 내부 호출자가 명시하면 하위 `e2e-test` 에 그대로 전달한다 (인증 토큰 부재 시 질문 없이 `SKIPPED:NO_AUTH`) |
 
 ## Language Rule
 
@@ -36,7 +37,7 @@ description: "E2E 테스트 → 이슈 수정 → 재테스트를 반복한다 (
 `--skip-doctor` / `-sd` 가 **없으면**, 루프 진입 전 빠른 환경 probe를 실행한다.
 **환경 부재가 확정되면 루프를 한 번도 돌지 않고 즉시 `SKIPPED`를 반환한다** — 실패 후 판정이 아니라 진입 게이트에서 끊어낸다.
 
-profile(`.codex/be-harness.local.md`)을 읽고 아래를 확인한다:
+profile(플러그인 루트 `PROFILE.md`의 "profile 해석" 규칙으로 확정한 `{PROFILE_PATH}`; 내부 호출자가 넘긴 경로가 있으면 그것)을 읽고 아래를 확인한다:
 
 | 점검 항목 | 실패 시 |
 |----------|--------|

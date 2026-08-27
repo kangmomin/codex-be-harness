@@ -29,6 +29,22 @@ Luna xHigh 읽기 전용 역할에 `incremental` 모드로 전달한다. 고정 
 Spec 전문을 사용자에게 보여주고 확인받는다. 불명확한 요구는 대안을 제시하고 결정받으며 임의로
 확정하지 않는다.
 
+### 중복 작업 스캔
+
+Spec 확인 전에 같은 기능이 이미 진행 중인지 확인한다. 먼저 `{CURRENT_WORKTREE}`(`git rev-parse --show-toplevel`)와
+`{CURRENT_BRANCH}`(`git branch --show-current`)를 확정한다.
+
+- 후보 집합 = (`git worktree list --porcelain`에서 현재 경로가 아닌 worktree에 checkout된 브랜치) ∪
+  (`gh pr list --state open --limit 100 --json headRefName,title,files`의 head 브랜치). 현재 브랜치와 그 PR은
+  제외하고 브랜치명으로 dedupe한다. `gh`가 없거나 미인증이면 진단 한 줄을 남기고 계속한다.
+- `git branch --list 'feat/*' 'codex/*'`는 ref 존재 확인에만 쓴다. worktree나 open PR에 연결되지 않은 단독
+  로컬 브랜치는 후보가 아니다.
+- **강 신호**: 후보의 변경 파일(`git diff --name-only {mainBranch}...{branch}` 또는 PR files)이 Spec 대상
+  파일/엔드포인트와 교집합을 가진다 → 후보 목록을 보고하고 `BLOCKED:DUPLICATE_IN_PROGRESS`로 턴을 끝낸다.
+  사용자가 계속을 지시하면 재개한다.
+- **약 신호**: 브랜치/PR 제목의 키워드만 겹친다 → Phase 1 질문 1개(계속/중단)로 결정받는다.
+- 신호 없음 → 진행. 스캔은 읽기 전용이며 어떤 mutation도 하지 않는다.
+
 ## Phase 2: 난이도
 
 코드 복잡도 A와 영향 범위 리스크 B를 각각 1~10으로 산정하고 `max(A,B)`를 종합 난이도로 사용한다.
@@ -115,6 +131,7 @@ Plan 모드 전환 명령에 의존하지 않는다. 아래 승인 블록을 사
 ```markdown
 ## 실행 승인 요청
 - 확정 Spec/Plan: [요약과 잔존 이슈]
+- 미해소 [Assumption]: [Spec의 [Assumption] 목록 또는 없음 — Phase 5에서 구현 노트 `## 편차`로 이월되고 Phase 10 Gate가 검사한다]
 - 예상 변경 파일: [목록]
 - 브랜치: [생성할 이름 / --hard로 현재 브랜치 유지]
 - 로컬 변경: 코드·테스트·문서 편집, 논리 단위 커밋
@@ -135,7 +152,8 @@ Plan 모드 전환 명령에 의존하지 않는다. 아래 승인 블록을 사
 - 일반 모드: 현재 브랜치가 `feat/**`/`hotfix/**`가 아니면 profile prefix로 feature 브랜치를 만든다.
   보호 브랜치에 직접 커밋하지 않는다.
 - `--hard`: 브랜치를 만들지 않고 현재 브랜치를 사용한다.
-- [templates.md](templates.md)의 상태/Implementation Notes 템플릿을 `{RUN_DIR}`에 생성한다.
+- [templates.md](templates.md)의 상태/Implementation Notes 템플릿을 `{RUN_DIR}`에 생성한다. Spec에
+  `[Assumption]`이 있으면 각 항목을 `{IMPL_NOTES}` `## 편차`에 태그 그대로 이월한다(없으면 섹션은 비워 둔다).
 - [tdd.md](tdd.md)의 적용 판정과 baseline 수집을 수행한다.
 
 baseline 수집 실패는 자율 구간 전 마지막 결정 지점이다. 회귀 판정 저하를 감수하고 진행, 중단,
@@ -196,7 +214,7 @@ TDD가 생략됐으면 수정 0건만으로 종료할 수 있다. 3회 뒤에도
 
 ## Phase 10: Assumption Gate와 PR/push
 
-base diff의 추가 라인과 미push 커밋 본문에서 `[Assumption]`을 검색한다. 하나라도 있으면 push/PR을
+base diff의 추가 라인, 미push 커밋 본문, `{IMPL_NOTES}`의 `## 편차`에서 `[Assumption]`을 검색한다. 하나라도 있으면 push/PR을
 금지하고 `BLOCKED:ASSUMPTION_UNRESOLVED`와 위치 목록을 기록한 뒤 Phase 11~12로 간다. 사용자가
 결정하고 태그가 제거된 후 Phase 10만 재실행한다.
 
@@ -217,11 +235,14 @@ Phase 4.4에서 승인되지 않은 원격 효과가 새로 필요하면 여기�
 
 [templates.md](templates.md)의 순서를 바꾸지 않는다.
 
-1. Implementation Notes HTML과 Workflow Report 생성
+1. Implementation Notes HTML과 Workflow Report 생성 — Workflow Report는
+   `{REPORT_DIR}/{YYYYMMDD}-{task-name-kebab}-workflow-report.md`로도 저장한다
 2. TDD 미해결 항목 결정
 3. Read-back Diff 결정
 4. Phase 11이 DONE이면 보완점의 로컬 저장 여부 결정
-5. 상태 마감과 산출물 경로 보고
+5. 상태 마감, 2~4의 결정이 diff/상태를 바꿨으면 같은 md 파일을 최종 상태로 재렌더링, 산출물 경로 보고
+
+전역 보고 양식이 따로 있어도 Workflow Report의 섹션 머리글(§1~§9)은 바꾸지 않는다.
 
 `feedbackUpstreamRepo`가 없으므로 첫 릴리스는 feedback PR을 만들지 않고
 `SKIPPED:NO_FEEDBACK_UPSTREAM`을 기록한다. 값이 있더라도 Phase 4.4 승인 범위를 벗어난 외부 제출은

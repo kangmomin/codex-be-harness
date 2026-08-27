@@ -139,6 +139,7 @@ Phase 5 - 자율 실행 시작 (agent: Sol High orchestrator, model: gpt-5.6-sol
 ```
 
 > 4개 섹션 헤더(`## 설계 결정`, `## 편차`, `## 트레이드오프`, `## 미결 질문`)는 정확히 이 형태로 유지한다. Phase 12 HTML 렌더링이 헤더 텍스트로 섹션을 식별한다.
+> Spec에 `[Assumption]`이 있으면 Phase 5에서 각 항목을 `## 편차`에 태그 그대로 이월한다(`- 5 | Spec — [Assumption] {내용} — 사유: Spec 단계 유추`). Assumption이 없으면 섹션을 비워 둔다.
 
 ## Phase 12 실행 절차
 
@@ -146,6 +147,7 @@ Phase 5 - 자율 실행 시작 (agent: Sol High orchestrator, model: gpt-5.6-sol
 
 1. **HTML 렌더링**: `{IMPL_NOTES}` → `{REPORT_DIR}/{YYYYMMDD}-{task-name-kebab}-impl-notes.html` (아래 템플릿 준수, 디렉토리 없으면 생성).
    그 다음 Phase 6~11 결과를 종합해 **Workflow Report**를 작성한다 (템플릿 준수 — 섹션 머리글 변경 금지). `## 미결 질문`이 1건 이상이면 보고서 최상단에 "사용자 확인 필요" 블록을 자동 삽입한다.
+   보고서는 대화 출력과 함께 `{REPORT_DIR}/{YYYYMMDD}-{task-name-kebab}-workflow-report.md`로 저장한다(HTML과 같은 보관 규칙). 전역 보고 양식이 따로 있어도 §1~§9 머리글을 유지한다.
 2. **TDD 미해결 항목 처리** (보고서 4.1 섹션이 비어있지 않을 때만): 자율 실행 중 이연된 `BLOCKED:*`·`[TestConflict]`·`[Breaking]`·`cannot_compile`을 각각 제시하고 결정을 받는다.
    Phase 6~8에서 유저 질문이 금지되어 이연된 항목들이므로 **여기가 첫 결정 지점**이다.
    - 결정에 따른 작업 트리 수정이 필요하면 Terra executor가 수행하고 Sol High가 승인·상태·commit 조정을 한다. 승인 전에는 수정하지 않는다.
@@ -160,10 +162,11 @@ Phase 5 - 자율 실행 시작 (agent: Sol High orchestrator, model: gpt-5.6-sol
    외부 feedback 제출은 첫 릴리스에서 수행하지 않는다.
    Phase 11이 `SKIPPED:*`면 이 단계를 건너뛰고 보고서 §6에 **실제 상태 코드**로 스킵 사유를 기입한다 (§6 템플릿의 사유별 분기 문구를 따른다).
 5. **정리**: 상태 파일의 모든 Phase를 `DONE`/`SKIPPED:{사유}`로 갱신하고 `Remaining Phases`를 `없음`으로 기록.
-   기본은 상태 파일과 라이브 노트를 **보관** (HTML 산출물은 `{REPORT_DIR}`에 영구 저장). 사용자가
+   2~4의 사용자 결정으로 diff 또는 상태가 바뀌었으면 `*-workflow-report.md`를 최종 상태로 다시 렌더링하고 최종 경로를 보고한다.
+   기본은 상태 파일과 라이브 노트를 **보관** (HTML·md 산출물은 `{REPORT_DIR}`에 영구 저장). 사용자가
    정리를 요청한 경우에만 `{RUN_DIR}`가 이번 실행의 검증된 임시 디렉터리인지 확인한 뒤 그 내부의
    `{STATE_FILE}`과 `{IMPL_NOTES}`를 삭제한다. 실행 중 시작한 서버 PID/세션도 모든 종료 경로에서 정리한다.
-   HTML 산출물(`*-impl-notes.html`, `*-e2e-report.html`)은 자동 삭제하지 않는다.
+   산출물(`*-impl-notes.html`, `*-e2e-report.html`, `*-workflow-report.md`)은 자동 삭제하지 않는다.
 
 Phase 12에서 사용자 승인 remediation으로 diff가 바뀌면 Sol High는 Phase 10 Assumption Gate와 Phase 4.4의
 승인된 외부 효과 범위를 다시 확인한다. 필요한 작업 트리 수정과 승인된 push/PR은 Terra executor가 수행하고
