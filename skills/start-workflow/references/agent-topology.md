@@ -55,7 +55,7 @@ start-workflow Pre-flight는 모든 모드에서 한 번만 슬롯 레코드 단
 `executor=N/A`로 기록한다. spawn 인자로는 확정값만 전달한다. `tiered`·`N/A`·`-`는 절대 전달하지
 않으며 미확정 슬롯의 spawn은 금지한다.
 
-provider 전환 미지원(Codex spawn 제약)
+provider 전환 미지원(Codex spawn 제약): `model`은 OpenAI 모델 id만 받으며 spawn 단위 provider 전환은 지원하지 않는다.
 
 설정된 슬롯의 model/effort가 거부되면 진단에 `model_unavailable({슬롯}:{사유})`를 남기고 해당 Phase의
 기존 `CODEX-UNAVAILABLE` / `SKIPPED:AGENT_DIED` / `BLOCKED:AGENT_DIED` 계약을 적용한다. 기본값으로

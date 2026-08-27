@@ -15,19 +15,20 @@ SHA7=$(git rev-parse --short=7 HEAD 2>/dev/null || echo nogit); HEX8=$(od -An -N
 RUN_ID="$(date +%Y%m%d-%H%M%S)-${SHA7}-${HEX8}"; START_SHA=$(git rev-parse HEAD 2>/dev/null || echo 없음)
 ```
 
-`## Profile Snapshot`의 `profile_sha256`은 `sha256sum {PROFILE_PATH}` 64자, `resolved_*` 2줄은 Pre-flight가 해석한 절대 경로다(재개·형제 스킬은 이 값만 쓴다).
+`## Profile Snapshot`의 `profile_sha256`은 `sha256sum {PROFILE_PATH}` 64자, `resolved_*` 2줄은 Pre-flight가 해석한 절대 경로다(재개·형제 스킬은 이 값만 쓴다). `- topologyModels:`는 profile 값의 compact 표기(`default` 가능)이며 확정값은 `## Flags`의 `TOPOLOGY_MODELS`다.
 
 <!-- state-template-begin -->
 ```markdown
 # Workflow State
 
 ## Flags
-- SCHEMA: 2
+- SCHEMA: 3
 - MODE: be
 - HARD_MODE: {true|false}
 - TDD: {true|false}
 - REFLECT: {true|false}
 - TIER: {light|standard}
+- TOPOLOGY_MODELS: {TOPOLOGY_MODELS}
 - RUN_ID: {RUN_ID}
 - START_SHA: {START_SHA}
 
@@ -87,26 +88,26 @@ RUN_ID="$(date +%Y%m%d-%H%M%S)-${SHA7}-${HEX8}"; START_SHA=$(git rev-parse HEAD 
 [승격 발생 시 append — 예: `6.2 완료 직후` | `② 변경 소스 파일 5 > 3` | `a.go, b.go, …` | `standard 전환, 미재실행: 4.2`]
 
 ## Current Phase
-Phase 5 - 자율 실행 시작 (agent: Sol High orchestrator, model: gpt-5.6-sol, effort: high)
+Phase 5 - 자율 실행 시작 (agent: Sol High orchestrator, model: {orchestrator.model}, effort: {orchestrator.effort})
 
 ## Phase Assignments
 | Phase | Agent | Model | Effort | Status |
 |-------|-------|-------|--------|--------|
-| 1 | Sol High orchestrator + Luna edge-case | gpt-5.6-sol / gpt-5.6-luna | high / xhigh | DONE |
-| 2 | Sol High orchestrator | gpt-5.6-sol | high | DONE |
-| 3 | Sol High orchestrator | gpt-5.6-sol | high | DONE |
-| 4.2 | Luna reviewers + Sol High | gpt-5.6-luna / gpt-5.6-sol | xhigh / high | DONE |
-| 4.3 | fresh Sol Max advisor | gpt-5.6-sol | max | DONE |
-| 4.4 | Sol High approval relay | gpt-5.6-sol | high | DONE |
-| 5 | Sol High orchestrator | gpt-5.6-sol | high | IN_PROGRESS |
-| 6.1 | Terra executor | gpt-5.6-terra | high / max | PENDING |
-| 6.2 | Terra executor | gpt-5.6-terra | high / max | PENDING |
-| 7 | Sol High command + Terra fix | gpt-5.6-sol / gpt-5.6-terra | high / high-or-max | PENDING |
-| 8 | Sol High barriers + Luna review + Terra single writer | gpt-5.6-sol / gpt-5.6-luna / gpt-5.6-terra | high / xhigh / high-or-max | PENDING |
-| 9 | Terra documentation executor | gpt-5.6-terra | high / max | PENDING |
-| 10 | Sol High Gate + Terra approved push/PR | gpt-5.6-sol / gpt-5.6-terra | high / high-or-max | PENDING |
-| 11 | Luna reflection | gpt-5.6-luna | xhigh | PENDING |
-| 12 | Sol High report + Terra approved remediation | gpt-5.6-sol / gpt-5.6-terra | high / high-or-max | PENDING |
+| 1 | Sol High orchestrator + Luna edge-case | {orchestrator.model} / {readonly.model} | {orchestrator.effort} / {readonly.effort} | DONE |
+| 2 | Sol High orchestrator | {orchestrator.model} | {orchestrator.effort} | DONE |
+| 3 | Sol High orchestrator | {orchestrator.model} | {orchestrator.effort} | DONE |
+| 4.2 | Luna reviewers + Sol High | {readonly.model} / {orchestrator.model} | {readonly.effort} / {orchestrator.effort} | DONE |
+| 4.3 | fresh Sol Max advisor | {advisor.model} | {advisor.effort} | DONE |
+| 4.4 | Sol High approval relay | {orchestrator.model} | {orchestrator.effort} | DONE |
+| 5 | Sol High orchestrator | {orchestrator.model} | {orchestrator.effort} | IN_PROGRESS |
+| 6.1 | Terra executor | {executor.model} | {executor.effort} | PENDING |
+| 6.2 | Terra executor | {executor.model} | {executor.effort} | PENDING |
+| 7 | Sol High command + Terra fix | {orchestrator.model} / {executor.model} | {orchestrator.effort} / {executor.effort} | PENDING |
+| 8 | Sol High barriers + Luna review + Terra single writer | {orchestrator.model} / {readonly.model} / {executor.model} | {orchestrator.effort} / {readonly.effort} / {executor.effort} | PENDING |
+| 9 | Terra documentation executor | {executor.model} | {executor.effort} | PENDING |
+| 10 | Sol High Gate + Terra approved push/PR | {orchestrator.model} / {executor.model} | {orchestrator.effort} / {executor.effort} | PENDING |
+| 11 | Luna reflection | {readonly.model} | {readonly.effort} | PENDING |
+| 12 | Sol High report + Terra approved remediation | {orchestrator.model} / {executor.model} | {orchestrator.effort} / {executor.effort} | PENDING |
 
 ## Remaining Phases
 - Phase 6.1: 테스트 우선 (Red)
@@ -271,6 +272,7 @@ python3 {SKILL_DIR}/assets/workflow_archive.py report \
 - **작업 유형**: [생성/수정/검토/디버깅]
 - **난이도**: [N]/10 (산정) → [M]/10 (체감)
 - **검증 티어**: [light | standard | light → standard ({트리거}, 미재실행: 4.2)]
+- **토폴로지 모델**: [기본 | {변경 슬롯 요약 — 슬롯=model@effort, …}]
 - **PR**: [PR URL]
 
 ### 2. 구현 내역

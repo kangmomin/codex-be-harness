@@ -5,7 +5,7 @@
 - upstream: `kangmomin/harness-plugins`
 - commit: `e87949b127159759950a2247a5067d30e41292a1`
 - source plugin: `be-harness@1.1.0`
-- target plugin: `codex-be-harness@0.4.0`
+- target plugin: `codex-be-harness@0.5.0`
 
 호환성은 문장 일치가 아니라 관찰 가능한 workflow 동작을 기준으로 한다. Phase 순서, 승인·차단 게이트, 상태 코드, 루프 상한, 보고서 머리글을 invariant로 본다.
 
@@ -15,7 +15,7 @@
 |---|---|---|---|
 | 1.2.0 | start-workflow 검증 티어·성찰 opt-in·md 리포트·결정적 단계 스크립트화 | 이식 — 0.4.0(`--reflect` opt-in은 0.2.0에 선반영) | 0.4.0 |
 | 1.3.0 | start-workflow Codex 사용 모드 codexMode(none/mix/max)·Claude 패널 폴백 | N/A — 포팅은 고정 토폴로지(대체 금지) | — |
-| 1.4.0 | Codex 위임 모델 슬롯화(codexModels)·provider/슬롯 범위 폴백 | 슬롯 설정으로 0.5.0 예정(provider 전환은 Codex spawn 제약으로 미지원) | 0.5.0 (예정) |
+| 1.4.0 | Codex 위임 모델 슬롯화(codexModels)·provider/슬롯 범위 폴백 | 이식 — 0.5.0: `topologyModels` 슬롯 설정 + `--topology-models`(레코드 `{model, effort?}`; provider 전환은 Codex spawn 제약으로 미지원 — 에이전트 config 레이어의 `model_provider`가 무시됨을 실증(T3/T4)) | 0.5.0 |
 | 1.5.0 | config 스킬 — profile 값 조회·수정 | 이식 — 0.3.0 | 0.3.0 |
 
 ## Source inventory mapping
@@ -121,6 +121,17 @@
 | 리포트 이중 실패 | `{RUN_DIR}` 정리 | 렌더러·폴백 모두 실패 시 `{RUN_DIR}` 보존 + 리포트 없음 보고 | 원시 기록 보존 |
 | E2E 폴백 저장 | `cp`·raw branch·덮어쓰기 가능 | slug + `set -C` 배타 생성(base→-2→-3) | 파일명 규칙·덮어쓰기 방지 |
 | 상태 파일 `SCHEMA` 키·Snapshot resolved 경로 | Flags에 없음 | `- SCHEMA: 2`, `resolved_report_dir`·`resolved_e2e_lock_dir` | 스키마 버전·해석 고정 |
+
+## 0.5.0 deviations (observed-behavior changes vs upstream)
+
+| 영역 | upstream 동작 | 0.5.0 동작 | 근거 |
+|---|---|---|---|
+| 슬롯 레코드 | codexModels `{provider/agentType, model, effort}` | `topologyModels` `{model, effort?}` — provider·agentType 없음, `tiered`는 executor만 | Codex는 spawn 단위 provider 전환 미지원(실증 T3/T4) |
+| 실행 플래그 | 플래그 값을 profile에 기록 | `--topology-models`는 실행 한정(ephemeral), profile 불변 | planning-only 경계 |
+| 폴백 | 3계층 latch·Claude 패널 폴백 | 없음 — `model_unavailable({슬롯}:{사유})` + 기존 `CODEX-UNAVAILABLE`/`SKIPPED:AGENT_DIED`/`BLOCKED:AGENT_DIED`, bootstrap 실패는 상태 파일 없음 | 대체 금지 계약 |
+| 무효 슬롯 | — | profile 무효 슬롯은 기본값 + 경고(doctor `INVALID_SLOT`), 플래그 무효는 재입력 1회/무시 + 경고 | profile 불변 |
+| 역할 라벨 | 모델명 기반 표기 | Sol High / Terra High·Max / Luna xHigh / Sol Max 라벨 고정, model·effort만 교체 | 문서·계약 문자열 안정 |
+| 상태 스키마 3 | — | `## Flags` `TOPOLOGY_MODELS`(Phase 5 기록 시 executor 확정값, Analyze/Verify는 `N/A`), Snapshot `topologyModels`; `SCHEMA: 2` 재개 시 기본값 보완 + 원자 교체(난이도 기록 없으면 차단) | 결정성 |
 
 ## Explicit gaps in 0.1.0
 

@@ -83,6 +83,7 @@ description: "be-harness 플러그인의 project profile(.codex/be-harness.local
 | 20 | `commitCoAuthor` | 선택, 비우면 Co-Authored-By 라인 생략 |
 | 21 | `projectConventions` | `["AGENTS.md"]`, 없으면 빈 배열 |
 | 22 | `feedbackUpstreamRepo` | 빈 값(`SKIPPED:NO_FEEDBACK_UPSTREAM`) |
+| 23 | `topologyModels` | 기본 배정(생략 — 주석 플레이스홀더만 생성). 슬롯 교체는 `$codex-be-harness:config topologyModels=…` 또는 실행 시 `--topology-models` |
 
 > "이대로 진행하시겠습니까? `ok` 또는 `번호: 값`을 콤마로 나열해 주세요 (예: `5: make lint, 16: dev`)."
 > 수정이 있으면 반영한 표를 다시 보여 주고 한 번만 재확인한 뒤 확정한다.
@@ -122,6 +123,11 @@ commitCoAuthor: "{commitCoAuthor}"
 
 projectConventions: {projectConventions}
 feedbackUpstreamRepo: "{feedbackUpstreamRepo}"
+
+# 에이전트 토폴로지 슬롯 (선택. 생략 시 기본 배정 — 규칙: start-workflow references/agent-topology.md "슬롯 설정")
+# topologyModels:
+#   executor: { model: {model}, effort: high }   # executor의 model·effort 교체
+#   advisor:  { model: {model}, effort: xhigh }  # advisor effort만 조정
 ---
 
 # Project Notes

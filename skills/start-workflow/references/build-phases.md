@@ -58,7 +58,9 @@ Spec 확인 전에 같은 기능이 이미 진행 중인지 확인한다. 먼저
 `--tier standard` 미지정 → `light`(추가 리뷰 레이어·루프 상한·E2E 범위만 축소). 그 외 `standard`(기존 절차
 무변경). 풀스택은 Phase 3에서 종료되므로 판정 대상이 아니다.
 
-출력: `난이도: 코드 [A]/10 + 리스크 [B]/10 — [근거]` / `검증 티어: light|standard — A [a]/B [b], 금지 조건 [해당 없음|{항목}], [사유]`
+**executor effort 확정**: `{TOPOLOGY_MODELS}`의 executor effort가 `tiered`이면 종합 난이도 1~8 → `high`, 9~10 → `max`로 치환해 `{TOPOLOGY_MODELS}`를 확정한다(고정 effort면 그대로). 이후 모든 executor spawn은 이 값을 쓴다.
+
+출력: `난이도: 코드 [A]/10 + 리스크 [B]/10 — [근거]` / `검증 티어: light|standard — A [a]/B [b], 금지 조건 [해당 없음|{항목}], [사유]` / `executor effort: {high|max} ({tiered 확정 | 고정})`
 
 ## Phase 3: 실행 전략
 
@@ -158,7 +160,7 @@ Plan 모드 전환 명령에 의존하지 않는다. Plan의 파일 목록으로
   보호 브랜치에 직접 커밋하지 않는다.
 - `--hard`: 브랜치를 만들지 않고 현재 브랜치를 사용한다.
 - `RUN_ID`·`START_SHA`를 [templates.md](templates.md)의 bash로 1회 계산한다(재생성 금지).
-- 초기 생성 Write는 [templates.md](templates.md) 앵커 안 템플릿 전체 — `## Flags`(`SCHEMA: 2`, MODE·HARD_MODE·TDD·REFLECT·TIER·RUN_ID·START_SHA), `## Profile Snapshot`(Pre-flight 확정값 22키 + `profile_path`·`profile_sha256`·`resolved_report_dir`·`resolved_e2e_lock_dir`), `## Verification Tier`(Phase 2 판정·승격 이력)를 반드시 함께 포함한다. `## Test Baseline`은 초기 템플릿에 없다. 이어서 같은 문서의 Implementation Notes 템플릿을 `{IMPL_NOTES}`에 생성한다. Spec에 `[Assumption]`이 있으면 각 항목을 `{IMPL_NOTES}` `## 편차`에 태그 그대로 이월한다(없으면 섹션은 비워 둔다).
+- 초기 생성 Write는 [templates.md](templates.md) 앵커 안 템플릿 전체 — `## Flags`(`SCHEMA: 3`, MODE·HARD_MODE·TDD·REFLECT·TIER·TOPOLOGY_MODELS·RUN_ID·START_SHA), `## Profile Snapshot`(Pre-flight 확정값 23키 + `profile_path`·`profile_sha256`·`resolved_report_dir`·`resolved_e2e_lock_dir`), `## Verification Tier`(Phase 2 판정·승격 이력)를 반드시 함께 포함한다. `## Test Baseline`은 초기 템플릿에 없다. 이어서 같은 문서의 Implementation Notes 템플릿을 `{IMPL_NOTES}`에 생성한다. Spec에 `[Assumption]`이 있으면 각 항목을 `{IMPL_NOTES}` `## 편차`에 태그 그대로 이월한다(없으면 섹션은 비워 둔다).
 - [tdd.md](tdd.md)의 적용 판정과 baseline 수집을 수행한다.
 - 수집(또는 SKIP 판정) 직후 `## Test Baseline` 블록을 `## TDD Test Map` 앞에 정확히 1회 삽입한다(완전성 canonical: [tdd.md](tdd.md) Phase 5).
 

@@ -23,6 +23,7 @@ canonical이다. 이 스킬에만 적용하는 고정 토폴로지 예외다.
 | `--hard`, `-h` | Build에서 브랜치 생성 없이 현재 브랜치에 일반 push; PR 생략 |
 | `--no-tdd` | Build의 Red 및 baseline 수집 생략. 검증 티어는 standard 강제. |
 | `--tier standard` | Build: Phase 2 판정과 무관하게 검증 티어를 standard로 강제한다(light 축소 비활성). light 강제 플래그는 없다 |
+| `--topology-models {슬롯}={model}[@{effort}],…` | 모든 모드: 이번 실행에 한해 토폴로지 슬롯의 model/effort를 교체한다(`{슬롯}=default` 허용). profile에는 기록하지 않는다 — 영구 변경은 `$codex-be-harness:config topologyModels=…`. 규칙: [agent-topology.md](references/agent-topology.md) "슬롯 설정" |
 | `--reflect` | Build의 Phase 11 실행; 기본은 `SKIPPED:REFLECT_NOT_REQUESTED` |
 
 `--analyze`와 `--verify`는 상호 배타적이다. 둘 다 있으면 하나를 선택받는다. 나머지 네 플래그는
@@ -41,7 +42,7 @@ Analyze 또는 Verify라면 [analyze-verify-modes.md](references/analyze-verify-
 `preset`, `buildCommand`, `testCommand`, `lintCommand`, `typeCheckCommand`, `makeTestCommand`,
 `runServerCommand`, `serverUrl`, `e2eEnabled`, `apiDocsPath`, `sourceDirs`, `testDirs`,
 `mainBranch`, `featureBranchPrefix`, `hotfixBranchPrefix`, `commitPrefixes`, `commitCoAuthor`,
-`projectConventions`, `reportDir`, `feedbackUpstreamRepo`, `e2eLockDir`, `language`.
+`projectConventions`, `reportDir`, `feedbackUpstreamRepo`, `e2eLockDir`, `language`, `topologyModels`.
 
 프로젝트 루트와 메인 워크트리 어디에도 profile이 없으면(`PROFILE_MISSING`) 값을 추측하지 않고
 `.codex/be-harness.local.md` 생성이 필요하다고 알린 뒤 mutation 없이 종료한다. Build에서는 누락된
@@ -51,6 +52,8 @@ Analyze 또는 Verify라면 [analyze-verify-modes.md](references/analyze-verify-
 
 Build에 누락이 있으면 영향 Phase를 구체적으로 나열하고, 해당 Phase를 `SKIPPED:{사유}`로 기록한 채
 진행할지 profile을 보완한 뒤(또는 `$codex-be-harness:config {키}={값}`으로 누락 값만 추가한 뒤) 재시작할지 결정받는다. 누락을 Phase 내부 실패로 뒤늦게 판정하지 않는다.
+
+**토폴로지 슬롯 resolve**(모든 모드, 1회): [agent-topology.md](references/agent-topology.md) "슬롯 설정" 규칙대로 슬롯 레코드 단위 `--topology-models` > profile `topologyModels` > 기본값 순으로 `{TOPOLOGY_MODELS}`를 확정한다. profile의 무효 슬롯은 그 슬롯만 기본값으로 대체하고 경고한다(profile 불변, `$codex-be-harness:doctor`가 `INVALID_SLOT`으로 보고). 플래그가 무효면 대화형은 재입력 1회, 비대화형은 플래그를 무시하고 경고한다. executor effort는 profile/플래그가 고정 effort를 지정하지 않는 한 `tiered`로 두었다가 Phase 2에서 난이도로 확정한다(Analyze/Verify는 `executor=N/A`). Pre-flight 보고에 `토폴로지 모델: 기본 | {변경 슬롯 요약 — 슬롯=model@effort, …}` 1줄을 넣는다. spawn 인자로는 확정값만 전달한다(`tiered`·`N/A`·`-` 금지).
 
 ## 실행별 상태
 
@@ -70,6 +73,7 @@ Build는 Phase 4.4 승인 후 Phase 5 진입 시, Analyze/Verify는 모드 범�
 {SKILL_DIR}=이 SKILL.md가 있는 디렉터리의 절대 경로 (assets/·references/ 해석 기준)
 {PLAN_MAX}=Phase 4.3 상한 — standard 5 / light 2
 {QL_MAX}=Phase 8 상한 — standard 3 / light 2
+{TOPOLOGY_MODELS}=Pre-flight 확정 슬롯 문자열 — Phase 5부터는 `## Flags`의 TOPOLOGY_MODELS(Phase 2 이후 executor 확정값 포함)
 ```
 
 해결된 절대 경로를 모든 서브에이전트에 전달한다. 상태에는 `Flags`, `Run`, `Profile Snapshot`,
@@ -80,8 +84,8 @@ Build는 Phase 4.4 승인 후 Phase 5 진입 시, Analyze/Verify는 모드 범�
 
 ### 재개 규칙
 
-- `## Flags`(SCHEMA·MODE·HARD_MODE·TDD·REFLECT·TIER·RUN_ID·START_SHA)는 컨텍스트 요약·세션 재개로 CLI 인자를 잃은 뒤 이어갈 때 **유일한 기준** — CLI 인자와 충돌하면 기록값 우선 + 고지. `RUN_ID`는 Phase 5에서 1회 생성하며 재생성하지 않는다.
-- 재개 시 Phase dispatch 전에 스키마를 검사한다: `## Flags` 정확히 1개 + 필수 키 8개 각 1회 + `SCHEMA: 2` / `## Profile Snapshot` 정확히 1개 + `profile_path`(비어 있지 않음)·`profile_sha256`(16진수 64자)·`resolved_report_dir`·`resolved_e2e_lock_dir`(절대 경로) + profile 키 22개 각 정확히 1회(`키: 값` 1줄, 배열은 인라인, 빈 값 허용) / `## Verification Tier` 정확히 1개 + `- 계산 티어:`·`- 최종 티어:` 각 1회 / `## Test Baseline` 헤더 0개 또는 1개. 하나라도 어긋나면 `BLOCKED:STATE_SCHEMA_MISMATCH`(누락·중복 항목 나열)로 종료하고 새 실행을 안내한다 — 구버전·쓰기 중단 상태 파일은 마이그레이션하지 않는다.
+- `## Flags`(SCHEMA·MODE·HARD_MODE·TDD·REFLECT·TIER·TOPOLOGY_MODELS·RUN_ID·START_SHA)는 컨텍스트 요약·세션 재개로 CLI 인자를 잃은 뒤 이어갈 때 **유일한 기준** — CLI 인자와 충돌하면 기록값 우선 + 고지. `RUN_ID`는 Phase 5에서 1회 생성하며 재생성하지 않는다.
+- 재개 시 Phase dispatch 전에 스키마를 검사한다: `## Flags` 정확히 1개 + 필수 키 9개 각 1회 + `SCHEMA: 3` / `## Profile Snapshot` 정확히 1개 + `profile_path`(비어 있지 않음)·`profile_sha256`(16진수 64자)·`resolved_report_dir`·`resolved_e2e_lock_dir`(절대 경로) + profile 키 23개(`topologyModels` 포함) 각 정확히 1회(`키: 값` 1줄, 배열은 인라인, 빈 값 허용) / `## Verification Tier` 정확히 1개 + `- 계산 티어:`·`- 최종 티어:` 각 1회 / `## Test Baseline` 헤더 0개 또는 1개. 하나라도 어긋나면 `BLOCKED:STATE_SCHEMA_MISMATCH`(누락·중복 항목 나열)로 종료하고 새 실행을 안내한다 — 구버전·쓰기 중단 상태 파일은 마이그레이션하지 않는다. **유일한 예외**: `SCHEMA: 2` 파일(0.4.0)은 `TOPOLOGY_MODELS`·`topologyModels`를 제외한 검사를 통과하면 Phase dispatch 전에 1회 보완한다 — `## Flags`에 `- TOPOLOGY_MODELS:`(기본값; executor effort는 상태 파일에 기록된 난이도 `[N]/10`으로 `high|max` 확정, 난이도 기록이 없으면 Phase 2 이전이므로 `BLOCKED:STATE_SCHEMA_MISMATCH`), `## Profile Snapshot`에 `- topologyModels: default`를 추가하고 `SCHEMA: 3`으로 올린다. 같은 디렉터리의 임시 파일 `mktemp "{RUN_DIR}/.workflow-state.XXXXXX"`에 전체를 쓰고 스키마 3 검사를 통과시킨 뒤 `mv -f`로 교체한다(실패 시 임시 파일만 삭제, 원본 불변, `BLOCKED:STATE_SCHEMA_MISMATCH`). 보완 사실을 고지하고 이후 Flags는 다시 불변이다.
 - 검사를 통과한 뒤 `## Test Baseline` 완전성([tdd.md](references/tdd.md) Phase 5 canonical)이 미완이면 스키마 차단이 아니라 Phase 5 미완 재개로 처리한다.
 - 형제 스킬·서브에이전트·재개된 오케스트레이터는 `## Profile Snapshot` 값(resolved 경로 포함)만 쓰고 profile을 다시 읽지 않는다(live 아님). `profile_sha256`은 출처 기록용이며 재개 시 비교하지 않는다. 본문(Project Notes)은 스냅샷 대상이 아니며 읽기 전용 참조만 허용한다(frontmatter 값 재독 금지).
 - 상태 파일 생성 이전 중단은 재개 대상이 아니라 Pre-flight부터 재시작한다(profile 재확정).
@@ -129,6 +133,8 @@ Executor를 배정한다. Phase 2의 리스크 산정에는 보안, 데이터 �
 읽기/쓰기 허용 범위를 넣는다. 공통 프롬프트와 사망 처리는 [agent-prompts.md](references/agent-prompts.md)를,
 역할별 판정 계약은 [references/agents/](references/agents/) 문서를 사용한다.
 
+모든 고정 spawn의 model/effort는 `{TOPOLOGY_MODELS}`의 해당 슬롯 확정값이며 역할 라벨(Sol High / Terra High·Max / Luna xHigh / Sol Max)은 슬롯 설정과 무관하게 유지된다.
+
 다른 기능이 필요할 때 호출 문자열에 위임하지 않는다. 해당 형제 스킬의 `SKILL.md`를 읽고 그 절차를
 현재 컨텍스트에서 수행하거나, 필요한 계약을 서브에이전트 프롬프트에 포함한다.
 
@@ -145,7 +151,7 @@ Executor를 배정한다. Phase 2의 리스크 산정에는 보안, 데이터 �
 ## Phase 요약
 
 1. Phase 1: 범위 수집 및 Technical Spec 사용자 확인
-2. Phase 2: 코드 복잡도와 영향 리스크 난이도 산정 + 검증 티어(light/standard) 판정
+2. Phase 2: 코드 복잡도와 영향 리스크 난이도 산정 + 검증 티어(light/standard) 판정 + executor effort 확정
 3. Phase 3: `sequential` / `parallel-slices` / fullstack handoff 판정
 4. Phase 4: Plan 작성 → 다관점 보강 → 최대 `{PLAN_MAX}`회 독립 검증 → 4.4 실행 승인
 5. Phase 5: 브랜치, 상태/노트, TDD baseline 생성

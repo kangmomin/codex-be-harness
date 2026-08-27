@@ -42,7 +42,7 @@
 | config 상속 profile 수정 | linked worktree에서 메인 워크트리 profile을 수정하고 절대 경로 + `[Assumption] 메인 워크트리 profile 상속` 보고 |
 | config 비지원 레이아웃 | 대상 키가 비지원 저장 형태면 `BLOCKED:UNSUPPORTED_LAYOUT`, 파일 바이트 불변 |
 | 락 acquire exit 1 | e2e-test는 `BLOCKED:LOCK_UNAVAILABLE`·서버 미기동 → e2e-test-loop는 즉시 종료·렌더링 생략·`E2E 리포트: 없음 (BLOCKED:LOCK_UNAVAILABLE)` → quality-loop 8.6 행 기록·루프 계속 → Phase 10 Gate 보류·3택(락 재시도 / E2E 없이 진행 / 중단) |
-| `## Test Baseline` 완전성 | 헤더 1개 + (`수집 실패 — regression 판정 불가` 줄 1개(있으면 행 유무 무관 완료·우선; SKIP 줄과 공존은 불완전) 또는 SKIP 줄 1개 또는 스위트별 6셀 baseline 행 1개), 불완전하면 `## Notes` 헤더 확인 후 재수집·교체 |
+| `## Test Baseline` 완전성 | 헤더 1개 + (`수집 실패 — regression 판정 불가` 줄 1개(있으면 행 유무 무관 완료·우선; SKIP 줄과 공존은 불완전) 또는 SKIP 줄 1개 또는 스위트별 6셀 baseline 행 1개), 불완전하면 Implementation Notes 템플릿 헤더 확인 후 재수집·교체 |
 | Phase 10 Gate 락 재시도 | 승격 ⑥ 미적용, `수정: N` ∧ DONE/WARN만 즉시 복귀, `수정: Y`이면 Phase 7 → 새 standard Phase 8 루프 → Phase 9 재판정 → Phase 10 |
 | light 판정과 축소 | A ≤ 3 ∧ B ≤ 3 ∧ 금지 조건 0 ∧ TDD 활성 ∧ ≠ parallel-slices ∧ `--tier standard` 없음 → 4.2 Luna 1역할·`{PLAN_MAX}` 2·`{QL_MAX}` 2·8.2 `SKIPPED:TIER_LIGHT`·8.6 `--smoke`·8.8 `SKIPPED:TIER_LIGHT` |
 | 승격 latch | 루프 종료·상한 평가보다 먼저 적용, 단방향, 카운터 단조 증가; Phase 8 재진입(⑦·락 재시도 후 수정)만 새 루프 |
@@ -53,6 +53,11 @@
 | 상태 파일 스키마 불일치 | `## Flags` 부재·필수 키 누락·`## Profile Snapshot`/`## Verification Tier` 누락 시 `BLOCKED:STATE_SCHEMA_MISMATCH` |
 | 재개·형제 스킬 profile 해석 | `## Profile Snapshot`만 사용하며 config로 profile이 바뀌어도 실행 중 값 불변 |
 | 상태 파일 생성 이전 중단 | Pre-flight 재시작 |
+| 토폴로지 슬롯 설정 적용 | profile `topologyModels`/`--topology-models`의 유효 슬롯은 해당 역할 spawn의 model/effort로 쓰이고 `## Flags` `TOPOLOGY_MODELS`·Phase Assignments에 확정값으로 기록, 라벨은 불변 |
+| 무효 슬롯 | profile 무효 슬롯 → 그 슬롯만 기본값 + 경고(profile 불변, doctor `INVALID_SLOT`); 플래그 무효 → 대화형 재입력 1회 / 비대화형 무시 + 경고 |
+| 설정 model/effort 거부 | `model_unavailable({슬롯}:{사유})` 진단 + 해당 Phase 기존 계약, 대체·강등 재시도 없음; orchestrator 슬롯이면 상태 파일 없이 bootstrap 실패 보고 |
+| 플래그 ephemeral | `--topology-models`는 profile을 바꾸지 않으며 다음 실행에 남지 않음 |
+| `SCHEMA: 2` 재개 | 0.4.0 상태 파일은 `TOPOLOGY_MODELS`·`topologyModels` 기본값 보완 + `SCHEMA: 3`으로 임시 파일 원자 교체 후 재개; 난이도 기록 없으면 `BLOCKED:STATE_SCHEMA_MISMATCH` |
 
 ## Clean-room smoke prompts
 
