@@ -16,7 +16,7 @@ profile: {PROFILE_PATH} (식별·보고용 — 값은 아래 스냅샷만 쓰고
 profile 스냅샷: {Pre-flight 확정값 — Phase 5부터는 {STATE_FILE}의 ## Profile Snapshot 전문과 동일, resolved_report_dir·resolved_e2e_lock_dir 포함}
 현재 Phase: {PHASE}
 남은 Phase: {REMAINING}
-배정 model/effort: {agent-topology.md의 고정값}
+배정 model/effort: {TOPOLOGY_MODELS}의 해당 슬롯 확정값 (orchestrator / executor / readonly / advisor)
 파일 소유권: {읽기 범위 / 수정 허용 범위}
 반환 계약: {해당 Phase 출력 형식}
 ```
@@ -25,7 +25,7 @@ profile 스냅샷: {Pre-flight 확정값 — Phase 5부터는 {STATE_FILE}의 ##
 상태와 Phase Results를 작성하며 Executor/Luna/Advisor는 `{STATE_FILE}`과 `{IMPL_NOTES}`를 직접 쓰지 않고
 구조화 결과만 반환한다. Terra executor의 작업 트리 편집 권한은 전달된 파일 소유권 범위에서 유지한다.
 읽기 전용 역할이 파일을 수정했다면 그 변경은 결과로 채택하지 않고, 이슈 목록만 사용한다. 모든 고정 spawn은
-`fork_turns:none`이며 역할/effort는 [agent-topology.md](agent-topology.md)를 따른다.
+`fork_turns:none`이며 역할/effort는 [agent-topology.md](agent-topology.md)의 슬롯 설정 규칙과 `{TOPOLOGY_MODELS}`를 따른다.
 
 탐색·수집 질문이 3개 이상이면 3~10개를 한 Luna xHigh 읽기 전용 역할에 묶는다. 한 질문마다 새 역할을 만들지
 않는다. 반환은 질문별 `file:line`, 핵심 snippet 최대 5줄, 한 줄 결론으로 제한한다. `없음` 결론에는

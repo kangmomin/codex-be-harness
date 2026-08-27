@@ -5,30 +5,79 @@
 
 ## 역할과 모델
 
-| 역할 | 고정 모델 | effort | 권한 |
-|------|-----------|--------|------|
-| Orchestrator | `gpt-5.6-sol` | `high` | 사용자 승인 relay, Phase 상태·배리어·파일 소유권, 명령 실행·commit 조정, 최종 판정·보고 |
-| Executor | `gpt-5.6-terra` | `high` 또는 `max` | 작업 트리 편집, 테스트/빌드 수정, API 문서, 승인된 push/PR, 승인된 Phase 12 remediation |
-| Read-only subagent | `gpt-5.6-luna` | `xhigh` | 탐색, 엣지 케이스, 리뷰, 품질 스캔, scope/read-back, Analyze/Verify 읽기 전용 작업 |
-| Plan advisor | `gpt-5.6-sol` | `max` | Phase 4.3 fresh-context Plan 검증 전용 |
+<!-- topology:defaults-begin -->
+| 슬롯 | 역할 라벨 | 기본 model | 기본 effort |
+|------|-----------|-----------|-------------|
+| `orchestrator` | Sol High | `gpt-5.6-sol` | `high` |
+| `executor` | Terra High·Max | `gpt-5.6-terra` | `tiered` |
+| `readonly` | Luna xHigh | `gpt-5.6-luna` | `xhigh` |
+| `advisor` | Sol Max | `gpt-5.6-sol` | `max` |
+<!-- topology:defaults-end -->
 
-모든 고정 spawn은 `fork_turns:none`을 사용한다. 고정 모델명을 다른 모델로 조용히 대체하지 않고,
-모든 역할 프롬프트에는 이 문서의 배정 모델과 effort를 명시한다.
+| 슬롯 | 권한 |
+|------|------|
+| `orchestrator` | 사용자 승인 relay, Phase 상태·배리어·파일 소유권, 명령 실행·commit 조정, 최종 판정·보고 |
+| `executor` | 작업 트리 편집, 테스트/빌드 수정, API 문서, 승인된 push/PR, 승인된 Phase 12 remediation |
+| `readonly` | 탐색, 엣지 케이스, 리뷰, 품질 스캔, scope/read-back, Analyze/Verify 읽기 전용 작업 |
+| `advisor` | Phase 4.3 fresh-context Plan 검증 전용 |
+
+역할 라벨(Sol High / Terra High·Max / Luna xHigh / Sol Max)은 기본 배정에서 유래한 고정 역할명이다. 슬롯의 model·effort를 profile이나 플래그로 바꿔도 라벨과 역할 이름, 권한 경계는 바뀌지 않는다.
+
+모든 고정 spawn은 `fork_turns:none`을 사용한다. 각 슬롯의 확정 model/effort를 다른 값으로 조용히 대체하지 않고, 모든 역할 프롬프트에는 그 역할 슬롯의 확정 model·effort를 명시한다.
+
+### 슬롯 설정 (`topologyModels`)
+
+슬롯은 `orchestrator` · `executor` · `readonly` · `advisor`이며 위 표와 1:1로 대응한다.
+profile의 선택 block 키 `topologyModels`는 슬롯별 배정을 교체한다.
+
+```yaml
+topologyModels:
+  executor: { model: {model}, effort: high }   # executor의 model·effort 교체
+  advisor:  { model: {model}, effort: xhigh }  # advisor effort만 조정
+```
+
+각 레코드는 `{ model, effort? }`다. `model`은 OpenAI 모델 id이며 `^[A-Za-z0-9._-]+$`를 따라야 하고
+provider 필드는 없다. `effort`는 `minimal|low|medium|high|xhigh|max|tiered` 중 하나이고,
+`tiered`는 `executor`만 사용할 수 있다. 생략한 슬롯은 그 슬롯의 기본값을 쓰고, effort를 생략하면
+그 슬롯의 기본 effort를 쓴다. executor의 `tiered`는 난이도 1~8에서 `high`, 9~10에서 `max`다.
+
+compact 표기는 `{슬롯}={model}[@{effort}]`를 쉼표로 나열하고, `{슬롯}=default`로 해당 슬롯을
+기본값으로 되돌린다. 마지막 `@` 뒤를 effort로 해석한다. 빈 항목·중복 슬롯·알 수 없는 슬롯·model
+패턴 불일치·effort enum 밖·executor 외 슬롯의 `tiered` 중 하나라도 있으면 입력 전체가 무효다.
+
+start-workflow Pre-flight는 모든 모드에서 한 번만 슬롯 레코드 단위로
+`실행 플래그 --topology-models > profile topologyModels > 기본값` 순서로 resolve한다. profile의 무효
+슬롯은 그 슬롯만 기본값으로 대체하고 경고하며 profile은 바꾸지 않는다. 플래그가 무효면 대화형은
+재입력을 1회 받고, 비대화형은 플래그를 무시하고 경고한다. 확정 문자열 `{TOPOLOGY_MODELS}`는
+`orchestrator={model}@{effort},executor={model}@{effort},readonly={model}@{effort},advisor={model}@{effort}`
+형식과 4슬롯 고정 순서를 쓴다. executor의 `tiered`는 Phase 2 난이도 확정 시 `high|max`로 치환하고,
+그 전의 executor 미사용 구간에는 `tiered` 심볼을 유지한다. Analyze/Verify는 executor를 쓰지 않으므로
+`executor=N/A`로 기록한다. spawn 인자로는 확정값만 전달한다. `tiered`·`N/A`·`-`는 절대 전달하지
+않으며 미확정 슬롯의 spawn은 금지한다.
+
+provider 전환 미지원(Codex spawn 제약): `model`은 OpenAI 모델 id만 받으며 spawn 단위 provider 전환은 지원하지 않는다.
+
+설정된 슬롯의 model/effort가 거부되면 진단에 `model_unavailable({슬롯}:{사유})`를 남기고 해당 Phase의
+기존 `CODEX-UNAVAILABLE` / `SKIPPED:AGENT_DIED` / `BLOCKED:AGENT_DIED` 계약을 적용한다. 기본값으로
+되돌리거나 다른 model/effort로 재시도하지 않는다. 영구 변경은
+`$codex-be-harness:config topologyModels=…`, 실행 한정 변경은 `--topology-models`를 사용하며 실행 한정
+변경은 profile에 기록하지 않는다.
 
 ### Executor effort 선택
 
 난이도 1~8은 Terra High, 9~10은 Terra Max다. 난이도 산정의 리스크에는 보안, 데이터 이관,
 복잡한 API/계약 변경을 반영한다. 이 기준 외의 모호한 승격 규칙은 만들지 않는다.
+executor 슬롯의 effort가 `tiered`(기본)일 때만 이 규칙으로 확정한다. profile이나 플래그가 `high`·`max` 등 고정 effort를 지정하면 난이도와 무관하게 그 값이다.
 
 ## Bootstrap
 
 entry agent는 workflow 요청을 한 번만 다음 Sol High orchestrator에 relay한다.
 
 ```text
-spawn_agent(model="gpt-5.6-sol", reasoning_effort="high", fork_turns="none")
+spawn_agent(model={orchestrator.model}, reasoning_effort={orchestrator.effort}, fork_turns="none")  # orchestrator 슬롯 확정값 — 기본값 표 참조
 topology_bootstrapped=true
 topology_hop_limit=1
-payload={원본 사용자 요청, CWD, 프로젝트/스킬 지침, flags, resolved profile}
+payload={원본 사용자 요청, CWD, 프로젝트/스킬 지침, flags, resolved profile, resolved topology ({TOPOLOGY_MODELS})}
 ```
 
 `topology_bootstrapped=true` marker를 받은 Sol High는 다시 orchestrator를 spawn하지 않는다. hop limit은
@@ -41,6 +90,13 @@ follow-up한다. 이 continuation은 새 bootstrap을 만들지 않으며, Phase
 
 bootstrap이 Phase 5 전에 실패하면 상태 파일을 만들지 않는다. 사용자에게 실패 원인과 중단 사실을
 보고하고, 코드·git·원격 효과 없이 종료한다.
+
+bootstrap 전용으로 orchestrator 슬롯의 spawn이 실패하면(모델/effort 거부 포함) 재시도 0회, 상태 파일
+없음으로 다음 블록을 보고한 뒤 종료한다.
+
+```text
+bootstrap 실패 — 원인: model_unavailable(orchestrator:{사유}) / 상태 파일: 없음 / 효과: 없음 / 조치: profile `topologyModels` 또는 `--topology-models` 확인
+```
 
 ## Writer와 상태 경계
 
@@ -82,5 +138,6 @@ push/PR을 재개한다.
   source/test/API 문서 편집이나 push/PR을 대신 수행하지 않는다.
 - 실행 불가인 다른 Phase는 그 Phase의 기존 `CODEX-UNAVAILABLE`/`SKIPPED:*`/`BLOCKED:*` 계약을
   적용한다. `model_unavailable(...)`를 Phase 상태로 쓰지 않는다.
+- 설정된 슬롯의 model/effort가 거부되면(실증 형태: 에이전트 턴 실패 `400 invalid_request_error` — 지원되지 않는 모델) 진단에 `model_unavailable({슬롯}:{사유})`를 남기고 위 Phase별 계약을 그대로 적용한다. 기본값으로 되돌리거나 다른 model/effort로 재시도하지 않는다.
 
 기존 예산 보존 규칙(`SKIPPED:BUDGET_PRESERVED`)과 재시도 진단(`agent_retry(...)`)은 유지한다.

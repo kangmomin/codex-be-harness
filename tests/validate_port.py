@@ -193,7 +193,7 @@ for markdown in ROOT.rglob("*.md"):
 workflow = (skills_dir / "start-workflow" / "SKILL.md").read_text(encoding="utf-8")
 for phase in range(1, 13):
     require(re.search(rf"\bPhase {phase}\b", workflow) is not None, f"start-workflow: missing Phase {phase}")
-for flag in ["--hard", "--no-tdd", "--tier standard", "--reflect", "--analyze", "--verify"]:
+for flag in ["--hard", "--no-tdd", "--tier standard", "--topology-models", "--reflect", "--analyze", "--verify"]:
     require(flag in workflow, f"start-workflow: missing flag {flag}")
 for contract in [
     "BLOCKED:FULLSTACK_HANDOFF_REQUIRED",
@@ -214,6 +214,14 @@ for contract in [
     "BLOCKED:STATE_SCHEMA_MISMATCH",
     "{WORK_REPORT}",
     "## Profile Snapshot",
+    "{TOPOLOGY_MODELS}",
+    "SCHEMA: 3",
+    "토폴로지 모델",
+    "topologyModels",
+    "Build 상태 파일",
+    "Analyze/Verify 상태",
+    "Snapshot을 두지 않는다",
+    "모든 모드에 적용된다",
 ]:
     require(contract in workflow, f"start-workflow: missing contract {contract}")
 
@@ -231,11 +239,23 @@ for contract in [
     "## Profile Snapshot",
     "START_SHA",
     "workflow_archive.py",
+    "{TOPOLOGY_MODELS}",
+    "SCHEMA: 3",
 ]:
     require(contract in build_phases, f"build-phases: missing contract {contract}")
 
 templates_doc = (skills_dir / "start-workflow" / "references" / "templates.md").read_text(encoding="utf-8")
-for contract in ["workflow-report.md", "workflow_archive.py", "-workflow-report.md", "## 부록 A", "## Final Decisions", "검증 티어"]:
+for contract in [
+    "workflow-report.md",
+    "workflow_archive.py",
+    "-workflow-report.md",
+    "## 부록 A",
+    "## Final Decisions",
+    "검증 티어",
+    "토폴로지 모델",
+    "{orchestrator.model}",
+    "{executor.effort}",
+]:
     require(contract in templates_doc, f"templates: missing md archive contract {contract}")
 
 state_begin_marker = "<!-- state-template-begin -->"
@@ -254,11 +274,12 @@ if state_begin_count == 1 and state_end_count == 1:
         state_template = templates_doc[state_begin_position + len(state_begin_marker):state_end_position]
         for contract in [
             "## Flags",
-            "- SCHEMA: 2",
+            "- SCHEMA: 3",
             "- MODE: be",
             "- RUN_ID:",
             "- START_SHA:",
             "- TIER:",
+            "- TOPOLOGY_MODELS:",
             "## Verification Tier",
             "- 계산 티어:",
             "- 최종 티어:",
@@ -277,6 +298,43 @@ if state_begin_count == 1 and state_end_count == 1:
             require(contract in state_template, f"templates state template: missing contract {contract}")
         require("## Test Baseline" not in state_template, "templates: initial state template must not contain Test Baseline")
 
+flags_headers = re.findall(r"^## Flags\s*$", state_template, re.MULTILINE)
+require(len(flags_headers) == 1, f"templates: expected one Flags header, got {len(flags_headers)}")
+flags_match = re.search(
+    r"^## Flags\s*$\n(.*?)(?=^## |\Z)",
+    state_template,
+    re.MULTILINE | re.DOTALL,
+)
+require(flags_match is not None, "templates: missing Flags section in state template")
+if flags_match:
+    invalid_flags_rows = [
+        line
+        for line in flags_match.group(1).splitlines()
+        if line and re.fullmatch(r"^- [A-Z_]+: .+$", line) is None
+    ]
+    require(not invalid_flags_rows, f"templates: invalid Flags rows: {invalid_flags_rows}")
+    flags_key_tokens = re.findall(r"^- ([A-Z_]+):", flags_match.group(1), re.MULTILINE)
+    flags_key_counts = Counter(flags_key_tokens)
+    expected_flags_keys = {
+        "SCHEMA",
+        "MODE",
+        "HARD_MODE",
+        "TDD",
+        "REFLECT",
+        "TIER",
+        "TOPOLOGY_MODELS",
+        "RUN_ID",
+        "START_SHA",
+    }
+    require(
+        set(flags_key_counts) == expected_flags_keys,
+        "templates: Flags key mismatch: "
+        f"missing={sorted(expected_flags_keys - set(flags_key_counts))}, "
+        f"extra={sorted(set(flags_key_counts) - expected_flags_keys)}",
+    )
+    invalid_flags_counts = sorted(key for key, count in flags_key_counts.items() if count != 1)
+    require(not invalid_flags_counts, f"templates: Flags duplicate keys: {invalid_flags_counts}")
+
 baseline_headers = re.findall(r"^## Test Baseline\s*$", templates_doc, re.MULTILINE)
 require(len(baseline_headers) == 1, f"templates: expected one append Test Baseline header, got {len(baseline_headers)}")
 
@@ -294,7 +352,7 @@ for label, document in [("templates", templates_doc), ("tdd", tdd_doc)]:
         require(status in document, f"{label}: missing baseline status {status}")
     require("수집 실패 — regression 판정 불가" in document, f"{label}: missing collect-failed baseline marker")
 
-for contract in ["--emit-baseline", "script_fallback(test_failures:", "BLOCKED:STATE_SCHEMA_MISMATCH"]:
+for contract in ["--emit-baseline", "script_fallback(test_failures:", "BLOCKED:STATE_SCHEMA_MISMATCH", "{executor.model}"]:
     require(contract in tdd_doc, f"tdd: missing baseline contract {contract}")
 
 tier_doc = (skills_dir / "start-workflow" / "references" / "verification-tier.md").read_text(encoding="utf-8")
@@ -303,6 +361,9 @@ require("`## Flags`의 `TDD`가 `true`" not in tier_doc, "verification-tier: Pha
 
 request_doc = (skills_dir / "request" / "SKILL.md").read_text(encoding="utf-8")
 require("기본값" in request_doc and "`[Assumption]`으로 표기" in request_doc, "request: missing default-answer batching rule")
+
+init_doc = (skills_dir / "init" / "SKILL.md").read_text(encoding="utf-8")
+require("topologyModels" in init_doc, "init: missing topologyModels profile template")
 
 unit_test_doc = (skills_dir / "unit-test" / "SKILL.md").read_text(encoding="utf-8")
 require("## Profile Snapshot" in unit_test_doc, "unit-test: missing snapshot-first profile rule")
@@ -338,10 +399,86 @@ for contract in [
     require(contract in e2e_loop_doc, f"e2e-test-loop: missing contract {contract}")
 require('--level-note "smoke 미적용' not in e2e_loop_doc, "e2e-test-loop: renderer adds the smoke prefix itself")
 
+config_doc = (skills_dir / "config" / "SKILL.md").read_text(encoding="utf-8")
+doctor_doc = (skills_dir / "doctor" / "SKILL.md").read_text(encoding="utf-8")
 topology_path = skills_dir / "start-workflow" / "references" / "agent-topology.md"
+TOPOLOGY_BEGIN = "<!-- topology:defaults-begin -->"
+TOPOLOGY_END = "<!-- topology:defaults-end -->"
+TOPOLOGY_DEFAULTS = [
+    ("orchestrator", "Sol High", "gpt-5.6-sol", "high"),
+    ("executor", "Terra High·Max", "gpt-5.6-terra", "tiered"),
+    ("readonly", "Luna xHigh", "gpt-5.6-luna", "xhigh"),
+    ("advisor", "Sol Max", "gpt-5.6-sol", "max"),
+]
+topology = ""
 require(topology_path.is_file(), "start-workflow: missing agent topology")
 if topology_path.is_file():
     topology = topology_path.read_text(encoding="utf-8")
+    topology_begin_count = topology.count(TOPOLOGY_BEGIN)
+    topology_end_count = topology.count(TOPOLOGY_END)
+    require(topology_begin_count == 1, f"start-workflow topology: expected one defaults-begin marker, got {topology_begin_count}")
+    require(topology_end_count == 1, f"start-workflow topology: expected one defaults-end marker, got {topology_end_count}")
+    if topology_begin_count == 1 and topology_end_count == 1:
+        topology_begin_position = topology.find(TOPOLOGY_BEGIN)
+        topology_end_position = topology.find(TOPOLOGY_END)
+        require(
+            topology_begin_position < topology_end_position,
+            "start-workflow topology: defaults-begin marker must precede defaults-end marker",
+        )
+        if topology_begin_position < topology_end_position:
+            topology_defaults_body = topology[
+                topology_begin_position + len(TOPOLOGY_BEGIN):topology_end_position
+            ]
+            topology_table_lines = [line for line in topology_defaults_body.splitlines() if line.startswith("|")]
+            topology_data_lines = topology_table_lines[2:]
+            topology_row_pattern = re.compile(
+                r"^\| `([a-z]+)` \| ([^|`]+?) \| `([^`]+)` \| `([^`]+)` \|$"
+            )
+            invalid_topology_rows = [
+                line for line in topology_data_lines if topology_row_pattern.fullmatch(line) is None
+            ]
+            require(
+                not invalid_topology_rows,
+                f"start-workflow topology: invalid default rows: {invalid_topology_rows}",
+            )
+            require(
+                len(topology_data_lines) == 4,
+                f"start-workflow topology: expected four default rows, got {len(topology_data_lines)}",
+            )
+            topology_default_rows = [
+                (slot, label.strip(), model, effort)
+                for slot, label, model, effort in re.findall(
+                    r"^\| `([a-z]+)` \| ([^|`]+?) \| `([^`]+)` \| `([^`]+)` \|$",
+                    topology_defaults_body,
+                    re.MULTILINE,
+                )
+            ]
+            require(
+                topology_default_rows == TOPOLOGY_DEFAULTS,
+                f"start-workflow topology: default rows mismatch: {topology_default_rows}",
+            )
+            topology_allowed_tokens = {
+                "orchestrator", "executor", "readonly", "advisor",
+                "gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna",
+                "minimal", "low", "medium", "high", "xhigh", "max", "tiered",
+                "fork_turns:none",
+            }
+            topology_default_tokens = set(re.findall(r"`([^`]+)`", topology_defaults_body))
+            require(
+                topology_default_tokens <= topology_allowed_tokens,
+                "start-workflow topology: unexpected backtick tokens in defaults marker: "
+                f"{sorted(topology_default_tokens - topology_allowed_tokens)}",
+            )
+            for slot, _, _, effort in topology_default_rows:
+                require(
+                    effort != "tiered" or slot == "executor",
+                    f"start-workflow topology: tiered effort is invalid for {slot}",
+                )
+            for match in re.finditer(r"gpt-5\.[0-9]+-", topology):
+                require(
+                    topology_begin_position + len(TOPOLOGY_BEGIN) <= match.start() < topology_end_position,
+                    f"start-workflow topology: model literal outside defaults marker at {match.start()}",
+                )
     for contract in [
         "gpt-5.6-sol",
         "gpt-5.6-terra",
@@ -357,6 +494,11 @@ if topology_path.is_file():
         "같은 orchestrator task",
         "새 bootstrap을 만들지 않으며",
         "fork_turns:none",
+        "{TOPOLOGY_MODELS}",
+        "model_unavailable({슬롯}:{사유})",
+        "--topology-models",
+        "provider 전환 미지원",
+        "bootstrap 실패 — 원인: model_unavailable(orchestrator:",
         "model_unavailable(...)",
         "CODEX-UNAVAILABLE",
         "SKIPPED:AGENT_DIED",
@@ -390,6 +532,29 @@ if topology_path.is_file():
     )
     for value in re.findall(r"fork_turns\s*[:=]\s*[`\"']?([A-Za-z_-]+)", topology):
         require(value == "none", f"start-workflow topology: fixed spawn must use fork_turns:none, got {value}")
+
+for path in skills_dir.rglob("*.md"):
+    if path != topology_path:
+        require(
+            re.search(r"gpt-5\.[0-9]+-", path.read_text(encoding="utf-8")) is None,
+            f"{path.relative_to(ROOT)}: model literal is only allowed in agent-topology defaults marker",
+        )
+
+SLOT_PHRASE = "`orchestrator` · `executor` · `readonly` · `advisor`"
+TIERED_PHRASE = "`tiered`는 `executor`만"
+for document_name, document in [
+    ("start-workflow topology", topology),
+    ("config", config_doc),
+    ("doctor", doctor_doc),
+]:
+    require(SLOT_PHRASE in document, f"{document_name}: missing canonical slot phrase")
+    require(TIERED_PHRASE in document, f"{document_name}: missing canonical tiered phrase")
+for contract in ["INVALID_SLOT", "topologyModels", "필수 1회"]:
+    require(contract in doctor_doc, f"doctor: missing topology contract {contract}")
+
+avm_doc = (skills_dir / "start-workflow" / "references" / "analyze-verify-modes.md").read_text(encoding="utf-8")
+for contract in ["{TOPOLOGY_MODELS}", "executor=N/A", "Build 스키마"]:
+    require(contract in avm_doc, f"analyze-verify-modes: missing contract {contract}")
 
 for relative in [
     "skills/start-workflow/references/build-phases.md",
@@ -444,6 +609,7 @@ for contract in [
     "Sol High만 `{STATE_FILE}` 기록과 commit 조정을 한다",
     "## Profile Snapshot",
     "파일을 다시 읽지 않는다",
+    "{TOPOLOGY_MODELS}",
 ]:
     require(contract in agent_prompts, f"agent-prompts: missing topology contract {contract}")
 require("profile 경로: {PROFILE_PATH}" not in agent_prompts, "agent-prompts: envelope must pass the profile snapshot, not only the live path")
@@ -498,8 +664,7 @@ if len(profile_delimiters) >= 2:
     require(not duplicate_profile_keys, f"PROFILE.md duplicate frontmatter keys: {duplicate_profile_keys}")
     profile_keys = set(profile_key_tokens)
 
-config_doc = (skills_dir / "config" / "SKILL.md").read_text(encoding="utf-8")
-for contract in ["BLOCKED:NO_PROFILE", "{PROFILE_PATH}", "한 번의", "config:keys-begin"]:
+for contract in ["BLOCKED:NO_PROFILE", "{PROFILE_PATH}", "한 번의", "config:keys-begin", "topologyModels", "닫혀 있다"]:
     require(contract in config_doc, f"config: missing contract {contract}")
 
 begin_marker = "<!-- config:keys-begin"
@@ -578,7 +743,12 @@ source_inventory = [
 for source in source_inventory:
     require(source in compatibility, f"COMPATIBILITY.md missing mapping for {source}")
 
-require((ROOT / "tests" / "scenario-contracts.md").is_file(), "missing scenario contracts")
+scenario_path = ROOT / "tests" / "scenario-contracts.md"
+require(scenario_path.is_file(), "missing scenario contracts")
+if scenario_path.is_file():
+    scenario_doc = scenario_path.read_text(encoding="utf-8")
+    require("`## Notes` 헤더" not in scenario_doc, "scenario-contracts: legacy Notes header remains")
+    require("Implementation Notes" in scenario_doc, "scenario-contracts: missing Implementation Notes header contract")
 
 if errors:
     print("PORT VALIDATION FAILED")

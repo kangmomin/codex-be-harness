@@ -1,5 +1,6 @@
 > `--analyze`와 `--verify`의 전용 절차다. Build Phase와 섞지 않는다.
 > 상태 파일은 상위 스킬의 실행별 `{RUN_DIR}` 안에 생성한다.
+> Analyze/Verify 상태 파일은 위 최소 헤더만 쓰며 Build 스키마(`## Flags`·`## Profile Snapshot` 등) 검사 대상이 아니다. Luna 읽기 전용 spawn은 `{TOPOLOGY_MODELS}`의 `readonly` 슬롯 확정값을 쓴다.
 
 # Analyze / Verify
 
@@ -25,7 +26,7 @@
 
 ### Phase A2: 상태
 
-`{STATE_FILE}`에 `Mode: analyze`, `Scope`, `Focus`, `Context`, 현재/남은 Phase를 기록하고
+`{STATE_FILE}`에 `Mode: analyze`, `Scope`, `Focus`, `Context`, `TOPOLOGY_MODELS: {TOPOLOGY_MODELS}`(executor 미사용 — `executor=N/A`), 현재/남은 Phase를 기록하고
 `코드 분석을 시작합니다.`라고 알린다.
 
 ### Phase A3: 분석
@@ -74,7 +75,7 @@
 
 ### Phase V2: 상태와 정적 분석
 
-`{STATE_FILE}`에 `Mode: verify`, `Scope`, `Focus`, 현재/남은 Phase를 기록한다. 비어 있지 않은 명령을
+`{STATE_FILE}`에 `Mode: verify`, `Scope`, `Focus`, `TOPOLOGY_MODELS: {TOPOLOGY_MODELS}`(executor 미사용 — `executor=N/A`), 현재/남은 Phase를 기록한다. 비어 있지 않은 명령을
 다음 순서로 실행하고 결과를 append한다.
 
 1. `{lintCommand}`

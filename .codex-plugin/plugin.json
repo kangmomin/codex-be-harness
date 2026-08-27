@@ -1,7 +1,7 @@
 {
   "name": "codex-be-harness",
-  "version": "0.4.0",
-  "description": "Codex-native backend workflow harness preserving the be-harness Spec, Plan, TDD, tiered verification, quality, md report, and PR lifecycle.",
+  "version": "0.5.0",
+  "description": "Codex-native backend workflow harness preserving the be-harness Spec, Plan, TDD, tiered verification, quality, md report, and PR lifecycle. Topology role slots are configurable per profile.",
   "author": {
     "name": "kangmomin"
   },
@@ -9,7 +9,7 @@
   "interface": {
     "displayName": "Codex Be Harness",
     "shortDescription": "BE Spec부터 TDD, 품질 검증, PR까지 실행",
-    "longDescription": "기존 be-harness의 Build, Analyze, Verify 워크플로우를 Codex-native skill과 bounded subagent orchestration으로 제공합니다. 검증 티어(light/standard)와 md 아카이브 리포트를 포함합니다.",
+    "longDescription": "기존 be-harness의 Build, Analyze, Verify 워크플로우를 Codex-native skill과 bounded subagent orchestration으로 제공합니다. 검증 티어(light/standard)와 md 아카이브 리포트를 포함합니다. profile `topologyModels` 슬롯 설정으로 역할별 model/effort를 교체할 수 있습니다.",
     "developerName": "kangmomin",
     "category": "Developer Tools",
     "capabilities": ["Interactive", "Read", "Write"],

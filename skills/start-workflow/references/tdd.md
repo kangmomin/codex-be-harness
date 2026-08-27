@@ -80,15 +80,15 @@ python3 {SKILL_DIR}/assets/test_failures.py --runner auto --exit-code $EXIT --su
 ```
 Terra executor (`fork_turns:none`):
   role: Red test writer
-  model: gpt-5.6-terra
-  effort: high (난이도 9~10은 max)
+  model: {executor.model}
+  effort: {executor.effort} (tiered 기본: 난이도 1~8 high, 9~10 max)
   prompt: |
     오케스트레이터가 전달한 unit-test `--red` 절차를 수행하세요.
     프로젝트 루트는 검증된 절대 경로 {CWD}입니다.
     상태 파일 `{STATE_FILE}`은 읽기 전용입니다. Phase 6.1 상태를 갱신하지 말고 구조화 결과를 반환하세요.
     현재 Phase: Phase 6.1 (Red)
     남은 Phase: Phase 6.2, 7, 8, 9, 10, 11, 12
-    배정 model/effort: gpt-5.6-terra/{high|max}
+    배정 model/effort: {executor.model}/{executor.effort}
 
     ## 근거
     상태 파일의 `## Spec` / `## 정상 흐름` / `## Edge Cases` 표의 ID만을 테스트 근거로 사용하세요.
