@@ -18,7 +18,7 @@ PINNED_SCRIPT_SHA256 = {
     "skills/start-workflow/assets/risk_facts.py": "1ea5ff3a3ffe253054b6cc68f21429c0889baa2bc9b67a3be86cae6a8301094a",
     "skills/start-workflow/assets/test_failures.py": "8362c4ad45d8d674605c32a59806f47b6b7c70d242b6c8e93d8f92842ef64a5d",
     "skills/start-workflow/assets/workflow_archive.py": "cca44dabb0c703c570d89b4808875da3cc9fb8a1134f0e533cebf7dfa130a302",
-    "skills/e2e-test-loop/assets/render_e2e_report.py": "9d6d26a57a292d13501c1bad1370c0afcb39ba97830ee8e380cdb5d1a3e2904c",
+    "skills/e2e-test-loop/assets/render_e2e_report.py": "348d9d7f4bac981243319082fd5ea6a6ac90fc5577adf50511f1e7e4df8b7e1d",
 }
 
 

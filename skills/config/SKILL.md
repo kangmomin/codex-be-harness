@@ -72,6 +72,7 @@ profile의 설정 값을 **조회**하고 `{키}={값}` 배치로 **수정**한�
 - 입력(compact): `topologyModels={슬롯}={model}[@{effort}],…`로 지정하고 `{슬롯}=default`는 그 슬롯 자식 줄을 삭제해 기본값으로 복귀시킨다. 입력에서 생략한 기존 슬롯은 보존하며 `topologyModels=`는 전 슬롯 default다. 빈 항목·중복 슬롯·알 수 없는 슬롯·model 패턴 불일치·effort enum 밖·executor 외 tiered 중 하나라도 있으면 값 불일치로 전체를 무효 처리하고 Step 3.1의 `BLOCKED:INVALID_VALUE` 경로를 따른다.
 - 저장 형태: 블록 매핑 `topologyModels:`과 연속 자식 `  {슬롯}: { model: "{model}", effort: "{effort}" }`를 쓴다. 자식은 1줄 flow 매핑이고 effort 생략 시 `  {슬롯}: { model: "{model}" }`다. 전 슬롯 default는 자식을 삭제하고 키 줄을 `{}`로 기록한다.
 - 조회 셀: 자식 순서대로 compact 한 셀에 표시하고 effort 생략 슬롯은 `@` 없이 표시한다. 키 부재·`{}`는 `default`(출처 `기본값`)다. 자식이 비지원 형태이거나 알 수 없는 슬롯이면 `⚠ 비지원 레이아웃(수정 불가)`로 표시한다.
+- 기존 무효 슬롯: 대상 블록의 기존 자식 중 레코드 규칙을 어긴 슬롯(알 수 없는 슬롯 이름·model 패턴·effort 값·`tiered` 범위)이 있으면, 이번 입력이 그 슬롯을 전부 덮어쓰거나 `{슬롯}=default`(또는 `topologyModels=`)로 삭제하는 경우에만 진행한다. 하나라도 남으면 `BLOCKED:INVALID_PROFILE`(사유: 무효 슬롯 `{슬롯}: {이유}`) — 파일 불변, 선택지 "1. 그 슬롯을 `{슬롯}=default`로 삭제하거나 올바른 값으로 덮어써 재호출 2. 직접 편집 후 재호출". 조회는 차단하지 않는다(무효 슬롯은 `⚠ 타입 불일치`로 표시).
 
 ## Step 1: 로드·구조 판정
 
@@ -135,6 +136,7 @@ profile의 설정 값을 **조회**하고 `{키}={값}` 배치로 **수정**한�
 **Step 3.2 대상 키의 구조 오류** — 입력이 유효할 때만 판정한다. 재입력 없음, 예산 미소모.
 - 비지원 레이아웃(활성 줄·플레이스홀더 잔여부) → `BLOCKED:UNSUPPORTED_LAYOUT`
 - **주석 소실 변경** — 꼬리 주석이 달린 자식 줄을 배열 축소 또는 block 슬롯 삭제(`{슬롯}=default`·`topologyModels=`)로 삭제해야 하는 경우 → `BLOCKED:UNSUPPORTED_LAYOUT`
+- **block 기존 무효 슬롯 잔존** — `topologyModels` 블록의 무효 슬롯을 이번 입력이 덮어쓰지도 삭제하지도 않는 경우 → `BLOCKED:INVALID_PROFILE`(레이아웃 오류와 구분; 선택지는 "topologyModels 슬롯" 절의 규칙을 따른다)
 
 하나라도 있으면 배치 전체 차단(파일 불변) + 해당 줄 인용 + 선택지 "1. 직접 편집 후 재호출 2. `$codex-be-harness:init` 실행(사용자)".
 
@@ -194,7 +196,7 @@ profile의 설정 값을 **조회**하고 `{키}={값}` 배치로 **수정**한�
 |------|------|
 | `DONE` | 조회 완료 / 수정 반영 / 취소·변경 없음 |
 | `BLOCKED:NO_PROFILE` | `PROFILE_MISSING` → `init` 안내 |
-| `BLOCKED:INVALID_PROFILE` | 구분선 없음·루트 키 중복(전역) |
+| `BLOCKED:INVALID_PROFILE` | 구분선 없음·루트 키 중복(전역) / block 기존 무효 슬롯 잔존(대상 키) |
 | `BLOCKED:UNSUPPORTED_LAYOUT` | 대상 키의 저장 형태 비지원 / 주석 소실 변경 |
 | `BLOCKED:INVALID_VALUE` | 입력 오류 — 비대화형 즉시 / 대화형 재입력도 무효 또는 `{Q_MAX}` 소진 |
 | `FAIL` | 치환 실패(스냅샷 변경·대상 구간 비유일) / 플러그인 루트 `PROFILE.md` 읽기 실패 |

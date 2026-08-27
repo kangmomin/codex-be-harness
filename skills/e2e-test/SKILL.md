@@ -146,7 +146,7 @@ Spec에 엣지 케이스 표가 없거나 ID가 없으면(구버전 Spec) `EC-*`
 |-----------|------|
 | 0 (`ACQUIRED` / `ALREADY_HELD`) | Step 4로 진행 |
 | 2 (`TIMEOUT`) | 총 deadline 전이면 다음 slice, 총 540초 소진이면 `SKIPPED:LOCK_TIMEOUT` |
-| 그 외(`1` — 락 루트 생성 불가·권한 오류 등 획득 자체 불가) | `BLOCKED:LOCK_UNAVAILABLE` — 서버를 기동하지 않고 즉시 종료(락 미획득이라 Step 6.5 해제 대상 아님). SKIP이 아니라 차단이며 호출자가 Gate 보류로 처리한다 |
+| 그 외(`1` — 락 루트/락 디렉토리 생성 불가·권한 오류 등 획득 자체 불가; 스크립트는 `mkdir`의 비-EEXIST 실패를 대기 없이 즉시 `ERROR` exit 1로 끝낸다) | `BLOCKED:LOCK_UNAVAILABLE` — 서버를 기동하지 않고 즉시 종료(락 미획득이라 Step 6.5 해제 대상 아님). SKIP이 아니라 차단이며 호출자가 Gate 보류로 처리한다 |
 
 대기 중이면 사용자에게 한 줄로 알린다: "다른 에이전트가 `{serverUrl}` E2E 실행 중 — 순번을 기다립니다."
 

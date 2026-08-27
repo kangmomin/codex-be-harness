@@ -5,7 +5,7 @@
 - upstream: `kangmomin/harness-plugins`
 - commit: `e87949b127159759950a2247a5067d30e41292a1`
 - source plugin: `be-harness@1.1.0`
-- target plugin: `codex-be-harness@0.5.0`
+- target plugin: `codex-be-harness@0.5.1`
 
 호환성은 문장 일치가 아니라 관찰 가능한 workflow 동작을 기준으로 한다. Phase 순서, 승인·차단 게이트, 상태 코드, 루프 상한, 보고서 머리글을 invariant로 본다.
 
@@ -17,6 +17,7 @@
 | 1.3.0 | start-workflow Codex 사용 모드 codexMode(none/mix/max)·Claude 패널 폴백 | N/A — 포팅은 고정 토폴로지(대체 금지) | — |
 | 1.4.0 | Codex 위임 모델 슬롯화(codexModels)·provider/슬롯 범위 폴백 | 이식 — 0.5.0: `topologyModels` 슬롯 설정 + `--topology-models`(레코드 `{model, effort?}`; provider 전환은 Codex spawn 제약으로 미지원 — 에이전트 config 레이어의 `model_provider`가 무시됨을 실증(T3/T4)) | 0.5.0 |
 | 1.5.0 | config 스킬 — profile 값 조회·수정 | 이식 — 0.3.0 | 0.3.0 |
+| 1.5.1 | e2e-lock.sh 비-EEXIST 실패 즉시 종료·렌더러 `--level full-command` 제거 | 이식 — 0.5.1 | 0.5.1 |
 
 ## Source inventory mapping
 
@@ -63,7 +64,7 @@
 | `start-workflow/assets/workflow_archive.py` | same relative target | 바이트 동일 사본(2d7a01c, SHA-256 고정) | Workflow Report md 아카이브 배타 생성 유지 |
 | `simplify-loop/references/workflow-script.md` | same relative target | 실행 JS가 아닌 상태 머신 명세 | 기존 상태 필드와 종료 판정 유지 |
 | `e2e-test/assets/e2e-lock.sh` | same relative target | work-log fallback 제거 | acquire/heartbeat/release/timeout 유지 |
-| `e2e-test-loop/assets/render_e2e_report.py` | same relative target | 바이트 동일 사본(2d7a01c, SHA-256 고정) | md 렌더링·verdict·GAP·직답 규칙 유지 |
+| `e2e-test-loop/assets/render_e2e_report.py` | same relative target | 바이트 동일 사본(41142d7, SHA-256 고정) | md 렌더링·verdict·GAP·직답 규칙 유지 |
 
 ### Inlined common dependencies
 

@@ -41,7 +41,8 @@
 | config 배치 수정 | 전건 검증 후 한 번의 치환 — 전건 `DONE` 또는 전건 미반영(부분 반영 없음) |
 | config 상속 profile 수정 | linked worktree에서 메인 워크트리 profile을 수정하고 절대 경로 + `[Assumption] 메인 워크트리 profile 상속` 보고 |
 | config 비지원 레이아웃 | 대상 키가 비지원 저장 형태면 `BLOCKED:UNSUPPORTED_LAYOUT`, 파일 바이트 불변 |
-| 락 acquire exit 1 | e2e-test는 `BLOCKED:LOCK_UNAVAILABLE`·서버 미기동 → e2e-test-loop는 즉시 종료·렌더링 생략·`E2E 리포트: 없음 (BLOCKED:LOCK_UNAVAILABLE)` → quality-loop 8.6 행 기록·루프 계속 → Phase 10 Gate 보류·3택(락 재시도 / E2E 없이 진행 / 중단) |
+| config block 기존 무효 슬롯 | `topologyModels` 블록에 무효 슬롯이 남는 수정은 `BLOCKED:INVALID_PROFILE`·파일 불변; 입력이 그 슬롯을 덮어쓰거나 `{슬롯}=default`로 삭제하면 진행 |
+| 락 acquire exit 1 (락 디렉토리 mkdir 비-EEXIST 실패 포함 — 대기 없음) | e2e-test는 `BLOCKED:LOCK_UNAVAILABLE`·서버 미기동 → e2e-test-loop는 즉시 종료·렌더링 생략·`E2E 리포트: 없음 (BLOCKED:LOCK_UNAVAILABLE)` → quality-loop 8.6 행 기록·루프 계속 → Phase 10 Gate 보류·3택(락 재시도 / E2E 없이 진행 / 중단) |
 | `## Test Baseline` 완전성 | 헤더 1개 + (`수집 실패 — regression 판정 불가` 줄 1개(있으면 행 유무 무관 완료·우선; SKIP 줄과 공존은 불완전) 또는 SKIP 줄 1개 또는 스위트별 6셀 baseline 행 1개), 불완전하면 Implementation Notes 템플릿 헤더 확인 후 재수집·교체 |
 | Phase 10 Gate 락 재시도 | 승격 ⑥ 미적용, `수정: N` ∧ DONE/WARN만 즉시 복귀, `수정: Y`이면 Phase 7 → 새 standard Phase 8 루프 → Phase 9 재판정 → Phase 10 |
 | light 판정과 축소 | A ≤ 3 ∧ B ≤ 3 ∧ 금지 조건 0 ∧ TDD 활성 ∧ ≠ parallel-slices ∧ `--tier standard` 없음 → 4.2 Luna 1역할·`{PLAN_MAX}` 2·`{QL_MAX}` 2·8.2 `SKIPPED:TIER_LIGHT`·8.6 `--smoke`·8.8 `SKIPPED:TIER_LIGHT` |

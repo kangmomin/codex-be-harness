@@ -16,9 +16,17 @@ Fullstack으로 판정되면 BE로 조용히 진행하지 않고 `BLOCKED:FULLST
 High/Max는 source/test/API 문서 등 업무 변경 파일의 유일한 writer 및 승인된 push/PR 실행자이며, Luna xHigh는 읽기 전용 검토를 맡는다.
 Phase 4.3은 매번 새 Sol Max advisor context로 Plan만 검증한다. 모든 고정 spawn은 `fork_turns:none`이다.
 
+## 0.5.1 변경
+
+현재 버전: `codex-be-harness@0.5.1`.
+
+- `e2e-lock.sh`: 락 디렉토리 `mkdir`의 비-EEXIST 실패(권한·파일시스템)를 대기 없이 즉시 `ERROR` exit 1로 끝낸다 → e2e-test `BLOCKED:LOCK_UNAVAILABLE`(upstream be-harness 1.5.1 미러)
+- `render_e2e_report.py`: upstream 1.5.1 사본으로 갱신 — dead option `--level full-command` 제거(SHA-256 고정값 갱신)
+- `config`: `topologyModels` 블록에 기존 무효 슬롯이 남는 수정은 `BLOCKED:INVALID_PROFILE`(덮어쓰기·`{슬롯}=default` 삭제만 진행)
+
 ## 0.5.0 변경
 
-현재 버전: `codex-be-harness@0.5.0`. 관찰 가능한 동작 차이는 [COMPATIBILITY.md](./COMPATIBILITY.md)의 "0.5.0 deviations"에 있다.
+관찰 가능한 동작 차이는 [COMPATIBILITY.md](./COMPATIBILITY.md)의 "0.5.0 deviations"에 있다.
 
 - 토폴로지 역할 슬롯 설정: profile `topologyModels`(block)로 `orchestrator` · `executor` · `readonly` · `advisor` 슬롯의 model/effort를 교체한다(`$codex-be-harness:config topologyModels=executor=gpt-5.6-sol@high,…`). 역할 라벨(Sol High / Terra High·Max / Luna xHigh / Sol Max)과 권한 경계는 불변.
 - `--topology-models {슬롯}={model}[@{effort}],…`: 실행 한정 교체(profile 미기록). resolve 순서는 플래그 > profile > 기본값, 무효 슬롯은 기본값 + 경고.
