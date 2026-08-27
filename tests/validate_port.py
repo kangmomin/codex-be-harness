@@ -108,6 +108,23 @@ for path in runtime_files:
         f"{path.relative_to(ROOT)}: fixed provider model alias",
     )
 
+html_report_residue = re.compile(
+    r"e2e-report\.html|impl-notes\.html|리포트 HTML|HTML 렌더링|HTML 리포트|api-test-cases-prompt",
+    re.IGNORECASE,
+)
+html_report_runtime_files = list(skills_dir.rglob("*.md")) + [
+    ROOT / "PROFILE.md",
+    ROOT / "OVERRIDES.md",
+    ROOT / "README.md",
+    ROOT / ".codex-plugin" / "plugin.json",
+]
+for path in html_report_runtime_files:
+    if path.is_file():
+        require(
+            html_report_residue.search(path.read_text(encoding="utf-8")) is None,
+            f"{path.relative_to(ROOT)}: legacy HTML report residue",
+        )
+
 known_resources = [
     "skills/start-workflow/references/agent-prompts.md",
     "skills/start-workflow/references/agent-topology.md",
@@ -124,7 +141,6 @@ known_resources = [
     "skills/request/references/edge-case-analyzer.md",
     "skills/simplify-loop/references/workflow-script.md",
     "skills/e2e-test/assets/e2e-lock.sh",
-    "skills/e2e-test-loop/assets/api-test-cases-prompt.md",
     "skills/start-workflow/assets/risk_facts.py",
     "skills/start-workflow/assets/test_failures.py",
     "skills/start-workflow/assets/workflow_archive.py",
@@ -214,11 +230,13 @@ for contract in [
     "## Flags",
     "## Profile Snapshot",
     "START_SHA",
+    "workflow_archive.py",
 ]:
     require(contract in build_phases, f"build-phases: missing contract {contract}")
 
 templates_doc = (skills_dir / "start-workflow" / "references" / "templates.md").read_text(encoding="utf-8")
-require("workflow-report.md" in templates_doc, "templates: missing workflow-report.md persistence")
+for contract in ["workflow-report.md", "workflow_archive.py", "-workflow-report.md", "## 부록 A", "## Final Decisions", "검증 티어"]:
+    require(contract in templates_doc, f"templates: missing md archive contract {contract}")
 
 state_begin_marker = "<!-- state-template-begin -->"
 state_end_marker = "<!-- state-template-end -->"
@@ -283,9 +301,28 @@ request_doc = (skills_dir / "request" / "SKILL.md").read_text(encoding="utf-8")
 require("기본값" in request_doc and "`[Assumption]`으로 표기" in request_doc, "request: missing default-answer batching rule")
 
 e2e_doc = (skills_dir / "e2e-test" / "SKILL.md").read_text(encoding="utf-8")
-for contract in ["mode: workflow", "{mainBranch}...HEAD", "SKIPPED:NO_AUTH"]:
+for contract in [
+    "mode: workflow",
+    "{mainBranch}...HEAD",
+    "SKIPPED:NO_AUTH",
+    "--smoke",
+    "SMOKE_OMITTED",
+    "BLOCKED:LOCK_UNAVAILABLE",
+    "- 실행 수준:",
+]:
     require(contract in e2e_doc, f"e2e-test: missing contract {contract}")
 require("main...HEAD" not in e2e_doc.replace("{mainBranch}...HEAD", ""), "e2e-test: hardcoded main base ref")
+
+e2e_loop_doc = (skills_dir / "e2e-test-loop" / "SKILL.md").read_text(encoding="utf-8")
+for contract in [
+    "-e2e-report.md",
+    "render_e2e_report.py",
+    "--smoke",
+    "BLOCKED:LOCK_UNAVAILABLE",
+    "E2E 리포트:",
+    "set -C",
+]:
+    require(contract in e2e_loop_doc, f"e2e-test-loop: missing contract {contract}")
 
 topology_path = skills_dir / "start-workflow" / "references" / "agent-topology.md"
 require(topology_path.is_file(), "start-workflow: missing agent topology")
@@ -369,6 +406,9 @@ for contract in [
     "중첩 agent spawn이나 직접 commit 없이",
     "E2E와 실패 수정까지 같은 배정 안에서 수행하고 구조화 결과만 반환",
     "Sol High만 Implementation Notes에 append",
+    "E2E 리포트:",
+    "BLOCKED:LOCK_UNAVAILABLE",
+    "e2e-report:",
 ]:
     require(contract in quality_loop, f"quality-loop: missing topology contract {contract}")
 require(

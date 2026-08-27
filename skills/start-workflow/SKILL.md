@@ -115,8 +115,8 @@ Build는 Phase 4.4 승인 후 Phase 5 진입 시, Analyze/Verify는 모드 범�
   bootstrap 금지). 자율 구간 Phase 6~11에서는 질문하지 않고 `[Assumption]` 또는 `SKIPPED:{사유}`로 기록한다.
 - Phase 진입 체크: Phase 5는 `{STATE_FILE}`·`{IMPL_NOTES}` 생성과 baseline 수집(또는 명시적 `SKIPPED:*`
   기록) 없이 Phase 6으로 가지 않는다(`## Test Baseline` 완전성은 [tdd.md](references/tdd.md) Phase 5 정의). Phase 8은 [quality-loop.md](references/quality-loop.md)를 읽은 뒤
-  시작하며 8.4와 8.8은 생략하지 않는다. Phase 12는 Implementation Notes HTML과 Workflow Report md를 둘 다
-  `{REPORT_DIR}`에 남긴다.
+  시작하며 8.4와 8.8은 생략하지 않는다. Phase 12는 슬림 Workflow Report를 `{WORK_REPORT}`에 쓴 뒤 결정 마감 후
+  md 아카이브(`*-workflow-report.md`)를 `{REPORT_DIR}`에 1회 남긴다.
 - Phase 1의 중복 작업 스캔에서 강 신호가 나오면 `BLOCKED:DUPLICATE_IN_PROGRESS`로 종료한다. 사용자가
   계속을 지시하면 Phase 1부터 재개한다.
 
@@ -155,7 +155,7 @@ Executor를 배정한다. Phase 2의 리스크 산정에는 보안, 데이터 �
 9. Phase 9: API 변경일 때 파일 기반 API 문서 동기화
 10. Phase 10: Assumption Gate 후 PR 또는 hard push
 11. Phase 11: `--reflect`일 때만 성찰
-12. Phase 12: HTML 노트, Workflow Report(md), 이연 결정, 정리
+12. Phase 12: 슬림 Workflow Report, 이연 결정(Final Decisions), md 아카이브, 정리
 
 세부 순서·판정·상한은 [build-phases.md](references/build-phases.md)가 canonical이다.
 
@@ -185,4 +185,4 @@ Phase 상태는 `DONE`, `IN_PROGRESS`, `PENDING`, `SKIPPED:{사유}`, `BLOCKED:{
 - Phase 8: [quality-loop.md](references/quality-loop.md)
 - 위임 프롬프트: [agent-prompts.md](references/agent-prompts.md)
 - 고정 토폴로지: [agent-topology.md](references/agent-topology.md)
-- 상태·보고·HTML: [templates.md](references/templates.md)
+- 상태·보고·아카이브: [templates.md](references/templates.md)

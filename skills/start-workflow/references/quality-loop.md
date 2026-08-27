@@ -116,7 +116,11 @@ E2E와 실패 수정까지 같은 배정 안에서 수행하고 구조화 결과
   서버와 lock을 정리한다.
 - 기존 서버를 재사용했다면 종료하지 않는다.
 
-결과는 `이슈: N건, 수정: Y/N, 스킵 사유: ...`다. 수정 Y면 `modified = true`다.
+결과는 e2e-test-loop 종료 출력 줄을 **그대로** 옮긴 `이슈: N건, 수정: Y/N, 종료 상태: {DONE|BLOCKED:*|SKIPPED:*}, 실행 수준: {smoke|full|full(smoke 미적용: 사유)}, E2E 리포트: {경로|없음 (SKIPPED:사유|BLOCKED:LOCK_UNAVAILABLE)}`다. 수정 Y면 `modified = true`다.
+
+- `SKIPPED:*` → `modified` 불변, `Phase Results` 8.6 행에 `E2E 리포트: 없음 (SKIPPED:{사유})`.
+- Sol High가 실행 수준·종료 상태를 `Phase Results` 8.6 행에, 리포트 경로를 `## Artifacts` `e2e-report:`에 기록한다 — 렌더러 stdout `경로:`/`상태:` 2줄을 그대로(`-2`/`-3` 접미 경로·`DEGRADED({사유})`·`(원시 기록, 렌더링 실패: …)` 포함; exit code가 아니라 출력 줄이 기준).
+- **하위 `BLOCKED:LOCK_UNAVAILABLE`** → `Phase Results` 8.6 행 `BLOCKED:LOCK_UNAVAILABLE`, `## Artifacts` `e2e-report: 없음 (BLOCKED:LOCK_UNAVAILABLE)`, light면 승격 ⑥(E2E 미완)과 동일 취급, 루프는 다른 단계로 계속(테스트 판정 불변), Workflow Report §4 `- **E2E**:`에 그대로 표기, Phase 10 Gate 보류 3택은 [build-phases.md](build-phases.md) Phase 10.
 
 **light 승격 ⑥**: 8.6 결과 수신 직후 — 종료 상태가 `BLOCKED:MAX_ITERATIONS`·`BLOCKED:NO_PROGRESS`이거나 실행 수준이 `full(smoke 미적용: …)`이면 standard 전환 + 현재 iteration 종료 후 standard iteration 1회 추가(그 뒤 종료 조건 평가; [verification-tier.md](verification-tier.md) §4). 진단 `tier_escalated(⑥)`.
 
@@ -160,7 +164,7 @@ Sol High가 조정하는 수정 커밋은 `Fix: 품질 루프 수정 (반복 N)`
 ## 입력 소스
 
 1. base 대비 변경된 `testDirs` 테스트 파일
-2. 없으면 8.6 E2E report
+2. 없으면 8.6 E2E 리포트(`## Artifacts` `e2e-report:` 경로의 md)
 3. 없으면 변경된 handler/route의 공개 인터페이스
 
 모두 없으면 `SKIPPED:NO_READBACK_SOURCE`다. 소스 종류를 보고한다. 3번은 구현 복원이므로 A(검증

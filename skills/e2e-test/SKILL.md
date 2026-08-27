@@ -43,6 +43,7 @@ description: "기능 추가/수정 후 연관 HTTP API를 실제 요청으로 E2
 | `--skip-server` | `-ss` | 서버 기동/종료를 건너뛰고 이미 떠있는 서버를 사용 (**실행 락은 그대로 획득한다** — Step 3.5 참조) |
 | `--tag <id>` | | 특정 시나리오 ID(`EC-03`, `BASE-01` 등)만 실행 |
 | `--no-lock` | | 실행 락을 건너뛴다. 단독 실행/디버깅 전용 — 다른 에이전트와 동시에 돌면 포트·DB 시드가 충돌한다 |
+| `--smoke` | | Spec 유래 시나리오만 실행 — `BASE-01` + `EC-*` 전수. `BASE-02~05`는 `SMOKE_OMITTED`로 기록(판정 영향 없음). 실행 가능 케이스 0건 또는 EC 표 없음이면 Step 2에서 즉시 무시하고 full로 실행한다 |
 | `mode: workflow` | | 내부 호출자(`start-workflow` 자율 구간, `e2e-test-loop`)가 명시한다. 인증 토큰을 확보하지 못하면 사용자에게 묻지 않고 `SKIPPED:NO_AUTH`. 없으면 `standalone` |
 
 ### `--doctor`
@@ -83,6 +84,8 @@ description: "기능 추가/수정 후 연관 HTTP API를 실제 요청으로 E2
 
 해당 API에 적용되지 않는 항목(예: 인증이 없는 공개 엔드포인트의 `BASE-04`)은 제외하고 사유를 리포트에 적는다.
 
+**`--smoke`**: `BASE-02~05`는 Spec 비유래 범용 시나리오이므로 실행하지 않고 커버리지에 `SMOKE_OMITTED`로 적는다. `BASE-01`(Happy Path = Spec 정상 흐름)은 필수.
+
 ### Spec 엣지 케이스 (`EC-*`)
 
 Spec의 엣지 케이스 표(`$codex-be-harness:request` Phase 4 산출물 — start-workflow에서 호출된 경우 상태 파일의 `## Edge Cases`, 단독 실행이면 사용자가 제공한 Spec)의 **각 행을 빠짐없이** 시나리오로 만든다.
@@ -92,6 +95,8 @@ Spec의 엣지 케이스 표(`$codex-be-harness:request` Phase 4 산출물 — s
 **"검증이 번거롭다", "코드를 보면 맞는 것 같다"는 예외 사유가 아니다.**
 
 Spec에 엣지 케이스 표가 없거나 ID가 없으면(구버전 Spec) `EC-*` 매핑을 건너뛰고 기본 시나리오만 실행한다. 이 경우 리포트 커버리지 섹션에 `대조 기준 없음`으로 표기한다.
+
+**`--smoke` 무효화 (Step 2에서 즉시 판정)**: 실행 가능 케이스가 0건(`BASE-01` UNCOVERED ∧ EC 0건)이거나 Spec에 EC 표가 없으면(`대조 기준 없음`) `--smoke`를 무시하고 full로 실행하고, Step 7에 `- 실행 수준: full(smoke 미적용: {사유})`를 적는다. 검증 근거가 부족한 상태에서 범위를 줄이지 않는다.
 
 호출 인자에 ID(`EC-03`, `BASE-01` 등)가 있으면 해당 시나리오만 실행한다.
 
@@ -141,6 +146,7 @@ profile 에 `e2eLockDir` 이 지정돼 있으면 `HARNESS_E2E_LOCK_DIR={e2eLockD
 |-----------|------|
 | 0 (`ACQUIRED` / `ALREADY_HELD`) | Step 4로 진행 |
 | 2 (`TIMEOUT`) | 총 deadline 전이면 다음 slice, 총 540초 소진이면 `SKIPPED:LOCK_TIMEOUT` |
+| 그 외(`1` — 락 루트 생성 불가·권한 오류 등 획득 자체 불가) | `BLOCKED:LOCK_UNAVAILABLE` — 서버를 기동하지 않고 즉시 종료(락 미획득이라 Step 6.5 해제 대상 아님). SKIP이 아니라 차단이며 호출자가 Gate 보류로 처리한다 |
 
 대기 중이면 사용자에게 한 줄로 알린다: "다른 에이전트가 `{serverUrl}` E2E 실행 중 — 순번을 기다립니다."
 
@@ -220,6 +226,7 @@ TMPDIR="{RUN_DIR}" bash "{LOCK_SCRIPT}" release "{serverUrl}"
 
 ### 환경
 - serverUrl: {serverUrl}
+- 실행 수준: smoke | full | full(smoke 미적용: {사유})
 - 실행 시나리오: N개
 - 경과 시간: {total_time}
 
@@ -238,6 +245,7 @@ TMPDIR="{RUN_DIR}" bash "{LOCK_SCRIPT}" release "{serverUrl}"
 | EC-03 | EC-03 | 실행됨 |
 
 - Spec 엣지 케이스 [N]건 중 [M]건 실행, [K]건 미커버
+- 생략 시나리오: `SMOKE_OMITTED` BASE-02, BASE-03, BASE-04, BASE-05 (--smoke) / 없음
 - 판정: [PASS / WARN / FAIL]
 
 ### 실패 상세
@@ -255,9 +263,11 @@ TMPDIR="{RUN_DIR}" bash "{LOCK_SCRIPT}" release "{serverUrl}"
 | `WARN` | 시나리오 실패 0건 **AND** 미커버 1건 이상 (사유가 명시된 것만) |
 | `FAIL` | 시나리오 실패 1건 이상 |
 
-미커버는 **구현 결함이 아니라 검증 공백**이므로 수정 루프의 트리거가 아니다. 사유와 함께 리포트에 남겨 호출자가 판단하게 한다.
+미커버는 **구현 결함이 아니라 검증 공백**이므로 수정 루프의 트리거가 아니다. 사유와 함께 리포트에 남겨 호출자가 판단하게 한다. `SMOKE_OMITTED`는 판정에 영향을 주지 않는다(커버리지 데이터).
 
-실패가 있으면 호출자(start-workflow 또는 e2e-test-loop)가 수정 루프를 돌 수 있도록 `"이슈: N건, 수정: Y/N, 미커버: K건"` 형식 요약을 마지막 줄에 포함한다 (기존 파서 호환을 위해 앞의 두 필드 순서와 표기는 고정).
+`- 실행 수준:` 줄은 **항상** 출력한다 — 호출자(e2e-test-loop·start-workflow)가 승격 판단과 리포트 렌더링 인자에 그대로 사용한다.
+
+실패가 있으면 호출자(start-workflow 또는 e2e-test-loop)가 수정 루프를 돌 수 있도록 `"이슈: N건, 수정: Y/N, 미커버: K건, 실행 수준: {smoke|full|full(smoke 미적용: 사유)}"` 형식 요약을 마지막 줄에 포함한다 (기존 파서 호환을 위해 앞의 두 필드 순서와 표기는 고정).
 
 ## SKIP 조건
 
@@ -274,7 +284,7 @@ TMPDIR="{RUN_DIR}" bash "{LOCK_SCRIPT}" release "{serverUrl}"
 SKIP은 오케스트레이터의 루프 재시작 트리거가 아니다.
 
 **SKIP 경로의 락 해제**: Step 3.5 이후에 발생하는 `SERVER_START_FAIL`은 종료 전에 반드시 Step 6.5를 수행한다.
-Step 3.5 이전의 SKIP(`NO_PROFILE`, `DISABLED`, `NO_SERVER_URL`, `NO_SERVER`, `NO_AUTH`, `NO_CHANGED_API`)과 `LOCK_TIMEOUT`은 락을 잡지 않았으므로 해제할 것이 없다.
+Step 3.5 이전의 SKIP(`NO_PROFILE`, `DISABLED`, `NO_SERVER_URL`, `NO_SERVER`, `NO_AUTH`, `NO_CHANGED_API`)과 `LOCK_TIMEOUT`은 락을 잡지 않았으므로 해제할 것이 없다. `LOCK_UNAVAILABLE`도 락을 잡지 않았으므로 해제할 것이 없다.
 
 락 해제 뒤 `{RUN_DIR}`을 제거한다. 서버 또는 락 cleanup이 실패하면 원래 테스트 판정을 덮어쓰지 말고 리포트에 cleanup 경고를 추가한다.
 

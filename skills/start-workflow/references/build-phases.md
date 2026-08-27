@@ -268,12 +268,12 @@ Phase 4.4에서 승인되지 않은 원격 효과가 새로 필요하면 여기�
 
 [templates.md](templates.md)의 순서를 바꾸지 않는다.
 
-1. Implementation Notes HTML과 Workflow Report 생성 — Workflow Report는
-   `{REPORT_DIR}/{YYYYMMDD}-{task-name-kebab}-workflow-report.md`로도 저장한다
+1. 슬림 Workflow Report를 `{WORK_REPORT}`에 1회 Write(채팅에는 경로·§1·유저 결정 항목만)
 2. TDD 미해결 항목 결정
 3. Read-back Diff 결정
 4. Phase 11이 DONE이면 보완점의 로컬 저장 여부 결정
-5. 상태 마감, 2~4의 결정이 diff/상태를 바꿨으면 같은 md 파일을 최종 상태로 재렌더링, 산출물 경로 보고
+   2~4의 결정은 받는 즉시 `## Final Decisions`에 기록한다(재개 시 재질문 금지).
+5. 상태 마감 **후** `{SKILL_DIR}/assets/workflow_archive.py`로 `{REPORT_DIR}`에 md 아카이브(`*-workflow-report.md`) 1회 배타 생성(부록 A 실행 요약 / B 상태 파일 전문 / C Implementation Notes), stdout `경로:`/`상태:`를 `## Artifacts`에 기록하고 경로 보고 — 재렌더링 없음
 
 전역 보고 양식이 따로 있어도 Workflow Report의 섹션 머리글(§1~§9)은 바꾸지 않는다.
 
