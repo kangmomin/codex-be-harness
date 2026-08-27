@@ -5,9 +5,18 @@
 - upstream: `kangmomin/harness-plugins`
 - commit: `e87949b127159759950a2247a5067d30e41292a1`
 - source plugin: `be-harness@1.1.0`
-- target plugin: `codex-be-harness@0.2.0`
+- target plugin: `codex-be-harness@0.3.0`
 
 호환성은 문장 일치가 아니라 관찰 가능한 workflow 동작을 기준으로 한다. Phase 순서, 승인·차단 게이트, 상태 코드, 루프 상한, 보고서 머리글을 invariant로 본다.
+
+### 부분 이식 현황 (upstream 1.2.0 이후)
+
+| upstream 버전 | 핵심 변경 | 포팅 상태 | 포팅 버전 |
+|---|---|---|---|
+| 1.2.0 | start-workflow 검증 티어·성찰 opt-in·md 리포트·결정적 단계 스크립트화 | 미이식 — 0.4.0 예정 | 0.4.0 (예정) |
+| 1.3.0 | start-workflow Codex 사용 모드 codexMode(none/mix/max)·Claude 패널 폴백 | N/A — 포팅은 고정 토폴로지(대체 금지) | — |
+| 1.4.0 | Codex 위임 모델 슬롯화(codexModels)·provider/슬롯 범위 폴백 | 슬롯 설정으로 0.5.0 예정(provider 전환은 Codex spawn 제약으로 미지원) | 0.5.0 (예정) |
+| 1.5.0 | config 스킬 — profile 값 조회·수정 | 이식 — 0.3.0 | 0.3.0 |
 
 ## Source inventory mapping
 
@@ -25,6 +34,7 @@
 | `be-harness/skills/e2e-test-loop/**` | `skills/e2e-test-loop/**` | Codex subagent 수정 loop | 최대 5회와 no-progress 차단 유지 |
 | `be-harness/skills/init/**` | `skills/init/**` | `.codex` profile/override 생성 | preset과 non-destructive update 유지 |
 | `be-harness/skills/doctor/**` | `skills/doctor/**` | Codex 경로·tool 진단 | 필수/선택 진단 분류 유지 |
+| `be-harness/skills/config/**` | `skills/config/**` | `{PROFILE_PATH}` 해석·구조화 입력 fallback·frontmatter 1회 치환 | 조회/배치 수정 모드·상태 코드·키 parity 유지 |
 
 ### Agents
 
@@ -86,6 +96,13 @@
 | e2e-test 호출 | standalone만 | `mode: workflow` 전달 시 인증 부재는 질문 없이 `SKIPPED:NO_AUTH` | 자율 구간 무질문 계약 |
 | 기준 브랜치 | `main` 하드코딩 (e2e-test, simplify-loop) | profile `mainBranch` 우선 | `dev` 기반 레포의 과대 diff 방지 |
 | Assumption Gate | diff·커밋 본문 | + `{IMPL_NOTES}` `## 편차` (Spec `[Assumption]` 이월분) | push 전 Spec 가정 해소 |
+
+## 0.3.0 deviations (observed-behavior changes vs upstream)
+
+| 영역 | upstream 동작 | 0.3.0 동작 | 근거 |
+|---|---|---|---|
+| config 쓰기 대상 | `.claude/be-harness.local.md` 고정 | `{PROFILE_PATH}` — linked worktree에서는 상속된 메인 워크트리 profile에 반영, 보고에 절대 경로 + `[Assumption]` | 워크트리 세션에서 값을 고칠 경로 유지(0.2.0 상속 의도) |
+| config 수정 고지 | codexMode/codexModels 변경 시에만 "상태 파일 값 유지" 고지 | 모든 키 수정에 "진행 중·재개되는 워크플로우는 상태 파일 스냅샷 값을 유지하며 새 값은 다음 실행부터 적용" 고지 | 실행 중 값 고정 원칙의 일반화 |
 
 ## Explicit gaps in 0.1.0
 

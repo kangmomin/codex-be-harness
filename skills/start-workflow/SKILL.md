@@ -49,7 +49,7 @@ Analyze 또는 Verify라면 [analyze-verify-modes.md](references/analyze-verify-
 `SKIPPED:PROFILE_EMPTY`로 기록한다.
 
 Build에 누락이 있으면 영향 Phase를 구체적으로 나열하고, 해당 Phase를 `SKIPPED:{사유}`로 기록한 채
-진행할지 profile을 보완한 뒤 재시작할지 결정받는다. 누락을 Phase 내부 실패로 뒤늦게 판정하지 않는다.
+진행할지 profile을 보완한 뒤(또는 `$codex-be-harness:config {키}={값}`으로 누락 값만 추가한 뒤) 재시작할지 결정받는다. 누락을 Phase 내부 실패로 뒤늦게 판정하지 않는다.
 
 ## 실행별 상태
 
