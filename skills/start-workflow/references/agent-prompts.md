@@ -12,7 +12,8 @@
 실행 디렉터리: {RUN_DIR}
 상태 파일: {STATE_FILE} (Phase 8.8에는 전달 금지, 읽기 전용)
 구현 노트: {IMPL_NOTES} (모든 역할 읽기 전용)
-profile 경로: {PROFILE_PATH}
+profile: {PROFILE_PATH} (식별·보고용 — 값은 아래 스냅샷만 쓰고 파일을 다시 읽지 않는다)
+profile 스냅샷: {Pre-flight 확정값 — Phase 5부터는 {STATE_FILE}의 ## Profile Snapshot 전문과 동일, resolved_report_dir·resolved_e2e_lock_dir 포함}
 현재 Phase: {PHASE}
 남은 Phase: {REMAINING}
 배정 model/effort: {agent-topology.md의 고정값}
@@ -123,7 +124,7 @@ Terra executor가 {apiDocsPath}의 포맷을 내용으로 판정한다. 이번 S
 
 ## Phase 8.6 E2E
 
-Sol High가 `../../e2e-test-loop/SKILL.md`의 계약과 절대 asset 경로, `{PROFILE_PATH}`를 같은 Terra executor에 전달한다.
+Sol High가 `../../e2e-test-loop/SKILL.md`의 계약과 절대 asset 경로, `{PROFILE_PATH}`(식별용)와 `## Profile Snapshot` 전문(resolved 경로 포함)을 같은 Terra executor에 전달한다. Terra는 e2e-test-loop 호출에 그 스냅샷을 `mode: workflow` 입력으로 그대로 넘기고, 어느 단계에서도 profile 파일을 다시 읽지 않는다.
 호출에는 `mode: workflow`를 명시해 인증 토큰 확보 실패가 사용자 질문 대신 `SKIPPED:NO_AUTH`로 끝나게 한다.
 Terra는 중첩 agent spawn이나 직접 commit 없이 E2E와 실패 수정을 수행하고, PID/세션 핸들·정리 결과·
 수정 파일·검증 결과를 구조화해 반환한다. Sol High만 `{STATE_FILE}` 기록과 commit 조정을 한다.

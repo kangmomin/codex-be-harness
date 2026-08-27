@@ -14,7 +14,7 @@ Spec이 요구하는 동작을 **필요한 만큼만** 검증하는 단위 테�
 
 **플레이스홀더 정의**:
 
-- `{testCommand}`, `{testDirs}`, `{sourceDirs}`, `{language}` = profile(플러그인 루트 `PROFILE.md`의 "profile 해석" 규칙으로 확정한 `{PROFILE_PATH}`)에서 로드
+- `{testCommand}`, `{testDirs}`, `{sourceDirs}`, `{language}` = profile(플러그인 루트 `PROFILE.md`의 "profile 해석" 규칙으로 확정한 `{PROFILE_PATH}`)에서 로드(워크플로우 호출이면 전달받은 `## Profile Snapshot` 값 — 파일 재독 없음)
 - `{CWD}` = 프로젝트 루트
 
 ## Flags

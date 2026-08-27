@@ -16,9 +16,19 @@ Fullstack으로 판정되면 BE로 조용히 진행하지 않고 `BLOCKED:FULLST
 High/Max는 source/test/API 문서 등 업무 변경 파일의 유일한 writer 및 승인된 push/PR 실행자이며, Luna xHigh는 읽기 전용 검토를 맡는다.
 Phase 4.3은 매번 새 Sol Max advisor context로 Plan만 검증한다. 모든 고정 spawn은 `fork_turns:none`이다.
 
+## 0.4.0 변경
+
+현재 버전: `codex-be-harness@0.4.0`. 관찰 가능한 동작 차이는 [COMPATIBILITY.md](./COMPATIBILITY.md)의 "0.4.0 deviations"에 있다.
+
+- 검증 티어(`light`/`standard`)와 `--tier standard`: 코드 복잡도·영향 리스크에 따라 저위험 작업의 검증 범위를 축소하고 승격 조건 충족 시 `standard`로 전환한다.
+- 결정적 단계 스크립트 4개: `risk_facts.py`, `test_failures.py`, `workflow_archive.py`, `render_e2e_report.py`는 upstream `2d7a01c`와 바이트 동일하며 SHA-256을 고정 검증한다.
+- 상태 파일 스키마 2: Flags·Profile Snapshot·Verification Tier·Final Decisions·Artifacts를 고정하고 스키마 불일치 재개를 fail-closed 처리한다.
+- Phase 12는 슬림 Workflow Report 1회 작성과 md 아카이브 1회 생성으로 단일화하고 HTML 노트를 폐지한다.
+- E2E는 md 자기 점검 리포트와 `--smoke`를 지원하며 `BLOCKED:LOCK_UNAVAILABLE`이면 Phase 10 Gate를 보류한다.
+
 ## 0.3.0 변경
 
-현재 버전: `codex-be-harness@0.3.0`. 관찰 가능한 동작 차이는 [COMPATIBILITY.md](./COMPATIBILITY.md)의 "0.3.0 deviations"에 있다.
+관찰 가능한 동작 차이는 [COMPATIBILITY.md](./COMPATIBILITY.md)의 "0.3.0 deviations"에 있다.
 
 - `config` 스킬: profile 값 조회와 `{키}={값}` 배치 수정(init 재실행 없이, 파일 생성 없음). linked worktree에서는 상속된 메인 워크트리 profile에 반영하고 `[Assumption]`으로 보고한다.
 - 키 parity 가드: `tests/validate_port.py`가 `PROFILE.md` frontmatter 키 집합과 config 키 마커를 양방향 대조한다.
@@ -36,12 +46,12 @@ Phase 4.3은 매번 새 Sol Max advisor context로 Plan만 검증한다. 모든 
 
 | skill | 설명 |
 |---|---|
-| `start-workflow` | Build/Analyze/Verify 전체 workflow |
+| `start-workflow` | Build/Analyze/Verify 전체 workflow — 검증 티어(light/standard, `--tier standard`), md 아카이브 |
 | `request` | 단계적 질문과 코드 분석으로 Technical Spec 생성 |
 | `unit-test` | Spec 추적 ID 기반 단위 테스트 및 Red 단계 |
 | `simplify-loop` | 네 관점 검토와 단일 writer 기반 bounded 단순화 |
 | `convention-check` | profile과 프로젝트 문서 기반 컨벤션 검사 |
-| `e2e-test` / `e2e-test-loop` | E2E 실행 및 최대 5회 수정 루프 |
+| `e2e-test` / `e2e-test-loop` | E2E 실행(`--smoke`) 및 최대 5회(smoke 3회) 수정 루프, md 자기 점검 리포트 |
 | `commit*` / `resolve-assumption` | 논리 커밋, push/PR, Assumption Gate |
 | `init` / `doctor` | `.codex/be-harness.local.md` 생성 및 진단 |
 | `config` | profile 값 조회·키 단위 수정 (init 재실행 없이) |
@@ -50,6 +60,7 @@ Codex CLI 또는 IDE에서 `$`로 설치된 skill을 선택한다. 예:
 
 ```text
 $codex-be-harness:start-workflow 주문 취소 API를 추가해줘
+$codex-be-harness:start-workflow --tier standard 주문 취소 API를 추가해줘
 $codex-be-harness:start-workflow --verify internal/order
 $codex-be-harness:init
 $codex-be-harness:config reportDir=.codex/reports
