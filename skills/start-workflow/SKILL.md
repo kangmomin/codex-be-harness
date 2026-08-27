@@ -26,8 +26,8 @@ canonical이다. 이 스킬에만 적용하는 고정 토폴로지 예외다.
 | `--topology-models {슬롯}={model}[@{effort}],…` | 모든 모드: 이번 실행에 한해 토폴로지 슬롯의 model/effort를 교체한다(`{슬롯}=default` 허용). profile에는 기록하지 않는다 — 영구 변경은 `$codex-be-harness:config topologyModels=…`. 규칙: [agent-topology.md](references/agent-topology.md) "슬롯 설정" |
 | `--reflect` | Build의 Phase 11 실행; 기본은 `SKIPPED:REFLECT_NOT_REQUESTED` |
 
-`--analyze`와 `--verify`는 상호 배타적이다. 둘 다 있으면 하나를 선택받는다. 나머지 네 플래그는
-Build 전용이며 다른 모드에서는 무시한다. 모드 플래그 뒤 경로는 범위이고, 없으면 profile의
+`--analyze`와 `--verify`는 상호 배타적이다. 둘 다 있으면 하나를 선택받는다. `--hard`·`--no-tdd`·`--tier standard`·`--reflect`는
+Build 전용이며 다른 모드에서는 무시한다. `--topology-models`는 모든 모드에 적용된다. 모드 플래그 뒤 경로는 범위이고, 없으면 profile의
 `sourceDirs`를 기본 후보로 사용한다.
 
 Analyze 또는 Verify라면 [analyze-verify-modes.md](references/analyze-verify-modes.md)를 읽고 그 절차만
@@ -85,7 +85,7 @@ Build는 Phase 4.4 승인 후 Phase 5 진입 시, Analyze/Verify는 모드 범�
 ### 재개 규칙
 
 - `## Flags`(SCHEMA·MODE·HARD_MODE·TDD·REFLECT·TIER·TOPOLOGY_MODELS·RUN_ID·START_SHA)는 컨텍스트 요약·세션 재개로 CLI 인자를 잃은 뒤 이어갈 때 **유일한 기준** — CLI 인자와 충돌하면 기록값 우선 + 고지. `RUN_ID`는 Phase 5에서 1회 생성하며 재생성하지 않는다.
-- 재개 시 Phase dispatch 전에 스키마를 검사한다: `## Flags` 정확히 1개 + 필수 키 9개 각 1회 + `SCHEMA: 3` / `## Profile Snapshot` 정확히 1개 + `profile_path`(비어 있지 않음)·`profile_sha256`(16진수 64자)·`resolved_report_dir`·`resolved_e2e_lock_dir`(절대 경로) + profile 키 23개(`topologyModels` 포함) 각 정확히 1회(`키: 값` 1줄, 배열은 인라인, 빈 값 허용) / `## Verification Tier` 정확히 1개 + `- 계산 티어:`·`- 최종 티어:` 각 1회 / `## Test Baseline` 헤더 0개 또는 1개. 하나라도 어긋나면 `BLOCKED:STATE_SCHEMA_MISMATCH`(누락·중복 항목 나열)로 종료하고 새 실행을 안내한다 — 구버전·쓰기 중단 상태 파일은 마이그레이션하지 않는다. **유일한 예외**: `SCHEMA: 2` 파일(0.4.0)은 `TOPOLOGY_MODELS`·`topologyModels`를 제외한 검사를 통과하면 Phase dispatch 전에 1회 보완한다 — `## Flags`에 `- TOPOLOGY_MODELS:`(기본값; executor effort는 상태 파일에 기록된 난이도 `[N]/10`으로 `high|max` 확정, 난이도 기록이 없으면 Phase 2 이전이므로 `BLOCKED:STATE_SCHEMA_MISMATCH`), `## Profile Snapshot`에 `- topologyModels: default`를 추가하고 `SCHEMA: 3`으로 올린다. 같은 디렉터리의 임시 파일 `mktemp "{RUN_DIR}/.workflow-state.XXXXXX"`에 전체를 쓰고 스키마 3 검사를 통과시킨 뒤 `mv -f`로 교체한다(실패 시 임시 파일만 삭제, 원본 불변, `BLOCKED:STATE_SCHEMA_MISMATCH`). 보완 사실을 고지하고 이후 Flags는 다시 불변이다.
+- 재개 시 Phase dispatch 전에 **Build 상태 파일**(`MODE: be`)의 스키마를 검사한다(Analyze/Verify 상태 파일은 [analyze-verify-modes.md](references/analyze-verify-modes.md)의 최소 헤더만 확인한다): `## Flags` 정확히 1개 + 필수 키 9개 각 1회 + `SCHEMA: 3` / `## Profile Snapshot` 정확히 1개 + `profile_path`(비어 있지 않음)·`profile_sha256`(16진수 64자)·`resolved_report_dir`·`resolved_e2e_lock_dir`(절대 경로) + profile 키 23개(`topologyModels` 포함) 각 정확히 1회(`키: 값` 1줄, 배열은 인라인, 빈 값 허용) / `## Verification Tier` 정확히 1개 + `- 계산 티어:`·`- 최종 티어:` 각 1회 / `## Test Baseline` 헤더 0개 또는 1개. 하나라도 어긋나면 `BLOCKED:STATE_SCHEMA_MISMATCH`(누락·중복 항목 나열)로 종료하고 새 실행을 안내한다 — 구버전·쓰기 중단 상태 파일은 마이그레이션하지 않는다. **유일한 예외**: `SCHEMA: 2` 파일(0.4.0)은 `TOPOLOGY_MODELS`·`topologyModels`를 제외한 검사를 통과하면 Phase dispatch 전에 1회 보완한다 — `## Flags`에 `- TOPOLOGY_MODELS:`(기본값; executor effort는 상태 파일에 기록된 난이도 `[N]/10`으로 `high|max` 확정, 난이도 기록이 없으면 Phase 2 이전이므로 `BLOCKED:STATE_SCHEMA_MISMATCH`), `## Profile Snapshot`에 `- topologyModels: default`를 추가하고 `SCHEMA: 3`으로 올린다. 같은 디렉터리의 임시 파일 `mktemp "{RUN_DIR}/.workflow-state.XXXXXX"`에 전체를 쓰고 스키마 3 검사를 통과시킨 뒤 `mv -f`로 교체한다(실패 시 임시 파일만 삭제, 원본 불변, `BLOCKED:STATE_SCHEMA_MISMATCH`). 보완 사실을 고지하고 이후 Flags는 다시 불변이다(유일한 예외는 `TIER` — [verification-tier.md](references/verification-tier.md)의 단방향 승격 `light → standard` 갱신).
 - 검사를 통과한 뒤 `## Test Baseline` 완전성([tdd.md](references/tdd.md) Phase 5 canonical)이 미완이면 스키마 차단이 아니라 Phase 5 미완 재개로 처리한다.
 - 형제 스킬·서브에이전트·재개된 오케스트레이터는 `## Profile Snapshot` 값(resolved 경로 포함)만 쓰고 profile을 다시 읽지 않는다(live 아님). `profile_sha256`은 출처 기록용이며 재개 시 비교하지 않는다. 본문(Project Notes)은 스냅샷 대상이 아니며 읽기 전용 참조만 허용한다(frontmatter 값 재독 금지).
 - 상태 파일 생성 이전 중단은 재개 대상이 아니라 Pre-flight부터 재시작한다(profile 재확정).
@@ -127,8 +127,8 @@ Build는 Phase 4.4 승인 후 Phase 5 진입 시, Analyze/Verify는 모드 범�
 ## 서브에이전트와 형제 스킬
 
 고정 모델·effort·`fork_turns:none`·재시도/대체 금지 규칙은
-[agent-topology.md](references/agent-topology.md)를 따른다. 난이도 1~8은 Terra High, 9~10은 Terra Max로
-Executor를 배정한다. Phase 2의 리스크 산정에는 보안, 데이터 이관, 복잡한 API/계약 변경을 반드시
+[agent-topology.md](references/agent-topology.md)를 따른다. executor effort가 `tiered`(기본)이면 난이도 1~8 `high`(Terra High), 9~10 `max`(Terra Max)로 확정하고,
+profile/플래그의 고정 effort는 그대로 쓴다. Phase 2의 리스크 산정에는 보안, 데이터 이관, 복잡한 API/계약 변경을 반드시
 반영한다. 각 프롬프트에는 `{CWD}`, `{STATE_FILE}`, `{IMPL_NOTES}`, 현재/남은 Phase, 파일 소유권,
 읽기/쓰기 허용 범위를 넣는다. 공통 프롬프트와 사망 처리는 [agent-prompts.md](references/agent-prompts.md)를,
 역할별 판정 계약은 [references/agents/](references/agents/) 문서를 사용한다.

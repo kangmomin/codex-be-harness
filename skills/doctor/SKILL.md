@@ -39,7 +39,7 @@ profile을 읽고, be-harness 스킬이 정상 동작할 수 있는지 진단한
 | 16 | `.codex/be-harness/common.md` | `test -f` | 선택 |
 | 17 | `.codex/be-harness/skills/*.md` 개수 | `rg --files` | 정보 |
 | 18 | `.codex/be-harness/agents/*.md` 개수 | `rg --files` | 정보 |
-| 19 | `topologyModels` 슬롯 | 정적 검증 — 슬롯 이름은 `orchestrator` · `executor` · `readonly` · `advisor`, model `^[A-Za-z0-9._-]+$`, effort minimal|low|medium|high|xhigh|max|tiered, `tiered`는 `executor`만, 자식은 1줄 flow 매핑; 키 없음·`{}`는 N/A | 선택 |
+| 19 | `topologyModels` 슬롯 | 정적 검증 — 슬롯 이름은 `orchestrator` · `executor` · `readonly` · `advisor`, model `^[A-Za-z0-9._-]+$`, effort minimal|low|medium|high|xhigh|max|tiered, `tiered`는 `executor`만, 자식은 1줄 flow 매핑; 키 없음·`{}`는 N/A, 레코드 멤버는 `model`(필수 1회) + `effort`(선택 1회)뿐 — 그 외/중복 멤버·중복 슬롯 자식은 `INVALID_SLOT` | 선택 |
 
 ## 보고 형식
 

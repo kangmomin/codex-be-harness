@@ -60,7 +60,7 @@ Spec 확인 전에 같은 기능이 이미 진행 중인지 확인한다. 먼저
 
 **executor effort 확정**: `{TOPOLOGY_MODELS}`의 executor effort가 `tiered`이면 종합 난이도 1~8 → `high`, 9~10 → `max`로 치환해 `{TOPOLOGY_MODELS}`를 확정한다(고정 effort면 그대로). 이후 모든 executor spawn은 이 값을 쓴다.
 
-출력: `난이도: 코드 [A]/10 + 리스크 [B]/10 — [근거]` / `검증 티어: light|standard — A [a]/B [b], 금지 조건 [해당 없음|{항목}], [사유]` / `executor effort: {high|max} ({tiered 확정 | 고정})`
+출력: `난이도: 코드 [A]/10 + 리스크 [B]/10 — [근거]` / `검증 티어: light|standard — A [a]/B [b], 금지 조건 [해당 없음|{항목}], [사유]` / `executor effort: {executor.effort} ({tiered 확정: 난이도 → high|max | 고정})`
 
 ## Phase 3: 실행 전략
 

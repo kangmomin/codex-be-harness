@@ -50,7 +50,7 @@
 | 렌더러·아카이버 exit ≠ 0 | 폴백 + `script_fallback`, stdout `경로:`/`상태:`를 그대로 기록 |
 | 렌더러·폴백 모두 실패 | `{RUN_DIR}` 보존·리포트 없음 보고·루프 판정 불변 |
 | `## Flags`와 CLI 인자 충돌 | `## Flags`가 우선하며 기록값 사용 + 충돌 고지 |
-| 상태 파일 스키마 불일치 | `## Flags` 부재·필수 키 누락·`## Profile Snapshot`/`## Verification Tier` 누락 시 `BLOCKED:STATE_SCHEMA_MISMATCH` |
+| 상태 파일 스키마 불일치(Build) | `## Flags` 부재·필수 키 누락·`## Profile Snapshot`/`## Verification Tier` 누락 시 `BLOCKED:STATE_SCHEMA_MISMATCH`; Analyze/Verify 상태 파일은 최소 헤더(`TOPOLOGY_MODELS` executor=N/A 포함)만 확인 |
 | 재개·형제 스킬 profile 해석 | `## Profile Snapshot`만 사용하며 config로 profile이 바뀌어도 실행 중 값 불변 |
 | 상태 파일 생성 이전 중단 | Pre-flight 재시작 |
 | 토폴로지 슬롯 설정 적용 | profile `topologyModels`/`--topology-models`의 유효 슬롯은 해당 역할 spawn의 model/effort로 쓰이고 `## Flags` `TOPOLOGY_MODELS`·Phase Assignments에 확정값으로 기록, 라벨은 불변 |

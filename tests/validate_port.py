@@ -218,6 +218,8 @@ for contract in [
     "SCHEMA: 3",
     "토폴로지 모델",
     "topologyModels",
+    "Build 상태 파일",
+    "모든 모드에 적용된다",
 ]:
     require(contract in workflow, f"start-workflow: missing contract {contract}")
 
@@ -294,6 +296,8 @@ if state_begin_count == 1 and state_end_count == 1:
             require(contract in state_template, f"templates state template: missing contract {contract}")
         require("## Test Baseline" not in state_template, "templates: initial state template must not contain Test Baseline")
 
+flags_headers = re.findall(r"^## Flags\s*$", state_template, re.MULTILINE)
+require(len(flags_headers) == 1, f"templates: expected one Flags header, got {len(flags_headers)}")
 flags_match = re.search(
     r"^## Flags\s*$\n(.*?)(?=^## |\Z)",
     state_template,
@@ -301,6 +305,12 @@ flags_match = re.search(
 )
 require(flags_match is not None, "templates: missing Flags section in state template")
 if flags_match:
+    invalid_flags_rows = [
+        line
+        for line in flags_match.group(1).splitlines()
+        if line and re.fullmatch(r"^- [A-Z_]+: .+$", line) is None
+    ]
+    require(not invalid_flags_rows, f"templates: invalid Flags rows: {invalid_flags_rows}")
     flags_key_tokens = re.findall(r"^- ([A-Z_]+):", flags_match.group(1), re.MULTILINE)
     flags_key_counts = Counter(flags_key_tokens)
     expected_flags_keys = {
@@ -417,6 +427,22 @@ if topology_path.is_file():
             topology_defaults_body = topology[
                 topology_begin_position + len(TOPOLOGY_BEGIN):topology_end_position
             ]
+            topology_table_lines = [line for line in topology_defaults_body.splitlines() if line.startswith("|")]
+            topology_data_lines = topology_table_lines[2:]
+            topology_row_pattern = re.compile(
+                r"^\| `([a-z]+)` \| ([^|`]+?) \| `([^`]+)` \| `([^`]+)` \|$"
+            )
+            invalid_topology_rows = [
+                line for line in topology_data_lines if topology_row_pattern.fullmatch(line) is None
+            ]
+            require(
+                not invalid_topology_rows,
+                f"start-workflow topology: invalid default rows: {invalid_topology_rows}",
+            )
+            require(
+                len(topology_data_lines) == 4,
+                f"start-workflow topology: expected four default rows, got {len(topology_data_lines)}",
+            )
             topology_default_rows = [
                 (slot, label.strip(), model, effort)
                 for slot, label, model, effort in re.findall(
@@ -521,8 +547,12 @@ for document_name, document in [
 ]:
     require(SLOT_PHRASE in document, f"{document_name}: missing canonical slot phrase")
     require(TIERED_PHRASE in document, f"{document_name}: missing canonical tiered phrase")
-for contract in ["INVALID_SLOT", "topologyModels"]:
+for contract in ["INVALID_SLOT", "topologyModels", "필수 1회"]:
     require(contract in doctor_doc, f"doctor: missing topology contract {contract}")
+
+avm_doc = (skills_dir / "start-workflow" / "references" / "analyze-verify-modes.md").read_text(encoding="utf-8")
+for contract in ["{TOPOLOGY_MODELS}", "executor=N/A", "Build 스키마"]:
+    require(contract in avm_doc, f"analyze-verify-modes: missing contract {contract}")
 
 for relative in [
     "skills/start-workflow/references/build-phases.md",
@@ -632,7 +662,7 @@ if len(profile_delimiters) >= 2:
     require(not duplicate_profile_keys, f"PROFILE.md duplicate frontmatter keys: {duplicate_profile_keys}")
     profile_keys = set(profile_key_tokens)
 
-for contract in ["BLOCKED:NO_PROFILE", "{PROFILE_PATH}", "한 번의", "config:keys-begin", "topologyModels"]:
+for contract in ["BLOCKED:NO_PROFILE", "{PROFILE_PATH}", "한 번의", "config:keys-begin", "topologyModels", "닫혀 있다"]:
     require(contract in config_doc, f"config: missing contract {contract}")
 
 begin_marker = "<!-- config:keys-begin"

@@ -131,7 +131,7 @@
 | 폴백 | 3계층 latch·Claude 패널 폴백 | 없음 — `model_unavailable({슬롯}:{사유})` + 기존 `CODEX-UNAVAILABLE`/`SKIPPED:AGENT_DIED`/`BLOCKED:AGENT_DIED`, bootstrap 실패는 상태 파일 없음 | 대체 금지 계약 |
 | 무효 슬롯 | — | profile 무효 슬롯은 기본값 + 경고(doctor `INVALID_SLOT`), 플래그 무효는 재입력 1회/무시 + 경고 | profile 불변 |
 | 역할 라벨 | 모델명 기반 표기 | Sol High / Terra High·Max / Luna xHigh / Sol Max 라벨 고정, model·effort만 교체 | 문서·계약 문자열 안정 |
-| 상태 스키마 3 | — | `## Flags` `TOPOLOGY_MODELS`(Phase 5 기록 시 executor 확정값, Analyze/Verify는 `N/A`), Snapshot `topologyModels`; `SCHEMA: 2` 재개 시 기본값 보완 + 원자 교체(난이도 기록 없으면 차단) | 결정성 |
+| 상태 스키마 3 | — | `## Flags` `TOPOLOGY_MODELS`(Phase 5 기록 시 executor 확정값; 스키마 검사는 Build 상태 파일 한정, Analyze/Verify 최소 헤더는 `TOPOLOGY_MODELS`(executor=N/A) 1줄만 기록), Snapshot `topologyModels`; `SCHEMA: 2` 재개 시 기본값 보완 + 원자 교체(난이도 기록 없으면 차단) | 결정성 |
 
 ## Explicit gaps in 0.1.0
 
