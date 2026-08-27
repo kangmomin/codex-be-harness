@@ -219,6 +219,8 @@ for contract in [
     "토폴로지 모델",
     "topologyModels",
     "Build 상태 파일",
+    "Analyze/Verify 상태",
+    "Snapshot을 두지 않는다",
     "모든 모드에 적용된다",
 ]:
     require(contract in workflow, f"start-workflow: missing contract {contract}")
