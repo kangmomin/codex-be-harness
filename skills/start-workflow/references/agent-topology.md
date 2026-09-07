@@ -77,11 +77,11 @@ entry agent는 workflow 요청을 한 번만 다음 Sol High orchestrator에 rel
 spawn_agent(model={orchestrator.model}, reasoning_effort={orchestrator.effort}, fork_turns="none")  # orchestrator 슬롯 확정값 — 기본값 표 참조
 topology_bootstrapped=true
 topology_hop_limit=1
-payload={원본 사용자 요청, CWD, 프로젝트/스킬 지침, flags, resolved profile, resolved topology ({TOPOLOGY_MODELS})}
+payload={원본 사용자 요청, CWD, 프로젝트/스킬 지침, flags, resolved profile, resolved topology ({TOPOLOGY_MODELS}), 검증한 RUN_ID/RUN_DIR/STATE_FILE/IMPL_NOTES/WORK_REPORT/RESULTS_FILE/OWNED_FILES, entry 정책}
 ```
 
 `topology_bootstrapped=true` marker를 받은 Sol High는 다시 orchestrator를 spawn하지 않는다. hop limit은
-1을 넘기지 않는다. entry agent는 사용자 질문과 Phase 4.4 승인 요청/응답을 원문 그대로 relay한다.
+1을 넘기지 않는다. bootstrap 전에 entry가 만든 검증된 RUN 경로를 그대로 승계하며 create를 다시 실행하지 않는다. 새 요청/명시적 재개는 run-lifecycle.md를 먼저 따르고 같은 task의 사용자 응답 continuation은 현재 실행 경로를 유지한다. entry agent는 사용자 질문과 Phase 4.4 승인 요청/응답을 원문 그대로 relay한다.
 advisor의 verdict나 다른 subagent 결과는 사용자 승인을 대체할 수 없다.
 
 Sol High가 사용자 입력을 더 받아야 하면 `USER_INPUT_REQUIRED: {질문}` 구조로 entry agent에 반환한다.
@@ -141,3 +141,10 @@ push/PR을 재개한다.
 - 설정된 슬롯의 model/effort가 거부되면(실증 형태: 에이전트 턴 실패 `400 invalid_request_error` — 지원되지 않는 모델) 진단에 `model_unavailable({슬롯}:{사유})`를 남기고 위 Phase별 계약을 그대로 적용한다. 기본값으로 되돌리거나 다른 model/effort로 재시도하지 않는다.
 
 기존 예산 보존 규칙(`SKIPPED:BUDGET_PRESERVED`)과 재시도 진단(`agent_retry(...)`)은 유지한다.
+
+## 실행 소유권과 결과 배리어
+
+모든 writer dispatch/재시도 전에 [writer-safety.md](writer-safety.md)를 적용한다. timeout·오류·interrupt 접수는 종료가 아니다. 실제 종료 증거 없는 재시도는 `BLOCKED:WRITER_UNKNOWN`이다.
+Sol High만 RUN 경로·OWNED_FILES·RESULTS_FILE·receipt·상태/노트를 갱신한다. Terra/Luna/Advisor는 자기 결과 객체를 반환한다. nested spawn/직접 commit 제한은 유지한다.
+범위는 [scope-contract.md](scope-contract.md)의 START_SHA~작업 트리 JSON에서 수집하며 envelope에 실제 명시 파일 목록을 넣는다. Read-back에는 Spec/Plan/상태 경로 없이 소스 목록만 보낸다.
+writer 종료 후 실제 scope와 결과를 확인하고 다음 Phase를 진행한다. 호스트에서 checkout별 실제 cwd를 강제하지 못하면 parallel-slices도 순차 writer로 실행한다.

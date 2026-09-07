@@ -83,7 +83,7 @@ profile을 읽고, be-harness 스킬이 정상 동작할 수 있는지 진단한
 
 ## 실행 절차
 
-1. `.codex/be-harness.local.md`를 읽는다. 없으면 `MISSING`으로 표기하고 `$codex-be-harness:init` 실행을 권장한 뒤 종료한다.
+1. `PROFILE.md` 규칙으로 상속까지 확인한 `{PROFILE_PATH}`를 읽는다. 없으면 `MISSING`으로 표기하고 `$codex-be-harness:init` 실행을 권장한 뒤 종료한다.
 2. YAML frontmatter를 파싱한다. 잘못된 포맷이면 `INVALID`로 표기.
 3. 각 명령에 대해 첫 번째 토큰(`go`, `npm`, `make` 등)이 PATH에 있는지 `command -v` 로 확인.
 4. `sourceDirs`, `testDirs` 의 각 경로를 `test -d`로 확인.
@@ -97,3 +97,12 @@ profile을 읽고, be-harness 스킬이 정상 동작할 수 있는지 진단한
 - 서버 시작 명령(`runServerCommand`)은 실제로 실행하지 않고 실행 파일 존재 여부만 확인.
 - `preset: custom` 인 경우 프리셋 기본값을 적용하지 않고 모든 값이 명시되었는지 확인한다.
 - 모델 존재 여부·effort 수용 여부는 점검하지 않는다(정적 점검 불가) — 실행 시 `model_unavailable(...)` 진단으로 드러난다.
+
+## 실행 가능한 오프라인 진단
+
+```bash
+python3 -I -B "{PLUGIN_ROOT}/skills/config/assets/doctor.py" --domain be --host codex --cwd "{CWD}"
+```
+
+helper로 실효 profile·활성 Go/Node·명령 executable·topologyModels를 먼저 진단한다. 나머지 Git/경로/override 항목은 위 표대로 읽기 전용 보완한다. 복합 shell 명령은 UNVERIFIED로 표시하고 실행 성공으로 간주하지 않는다.
+진단 중 install/npx 다운로드·외부 CLI reviewer·provider probe를 실행하지 않는다. 설치가 필요하면 누락과 설치 명령만 보고한다. 도구/패키지 존재는 실제 검증 성공이 아니다. 모델 슬롯의 존재·effort 수용 여부는 실제 dispatch에서만 확인한다.

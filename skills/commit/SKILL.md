@@ -3,7 +3,7 @@ name: commit
 description: "현재까지의 작업을 논리적 단위별로 나눠 컨벤션에 맞는 메시지로 순차 커밋한다. '커밋해줘', '작업 단위로 커밋', 변경사항을 정리해 커밋해야 할 때 사용."
 ---
 
-> **Project Overrides**: 실행 전 `.codex/be-harness/common.md`와 `.codex/be-harness/skills/commit.md`를 Read.
+> **Project Overrides**: 실행 전 `.codex/be-harness/common.md`와 `.codex/be-harness/skills/commit.md`를 읽기.
 > 존재하면 추가 규칙/예외로 흡수하고 충돌 시 오버라이드가 우선한다. 상세 규약: 플러그인 루트 `OVERRIDES.md`.
 
 # Commit — 논리 단위 커밋
@@ -12,6 +12,8 @@ description: "현재까지의 작업을 논리적 단위별로 나눠 컨벤션�
 **커밋 메시지 컨벤션의 canonical은 본 스킬이다** (commit-push, commit-pr, commit-hard-push가 이 절차를 위임받는다).
 
 ## Step 1: 변경사항 파악
+
+`git rev-parse --show-toplevel`로 GIT_ROOT를 확정한다. 아래 모든 Git 명령은 `git -C "{GIT_ROOT}"`로 실행하고 소유 경로는 그 root 기준으로 전달한다. nested cwd에서 root-relative 경로에 cwd prefix를 다시 붙이지 않는다.
 
 - `git status`로 staged/unstaged 변경사항 확인
 - `git diff`와 `git diff --cached`로 파일별 변경 내용 파악
@@ -25,8 +27,9 @@ description: "현재까지의 작업을 논리적 단위별로 나눠 컨벤션�
 
 가장 핵심적인 변경부터, 각 단위별로:
 
-1. `git add {관련 파일들}`
-2. 아래 컨벤션에 맞춰 `git commit -m "Prefix: 한국어 설명"`
+1. 해당 그룹의 명시 경로만 스테이징한다. 변경 전 index와 작업 트리의 차이를 확인하고 사용자 부분 스테이징을 임의로 전체 파일로 덮지 않는다. 파일 전체를 그룹에 포함해도 되는 경우 `git -C "{GIT_ROOT}" add -- {관련 파일 인자들}`을 사용한다.
+2. 메시지는 실행별 파일로 작성하고 `git -C "{GIT_ROOT}" --literal-pathspecs commit --only -F "{MESSAGE_FILE}" -- {관련 파일 인자들}`로 대상 파일을 제한한다. 기존 index에 무관한 파일이 있어도 이 커밋에 섞지 않는다. 부분 hunk만 커밋해야 하면 별도 임시 index를 사용하며 기존 index/working bytes를 보존한다.
+3. 실제 새 커밋의 경로/트리와 계획한 그룹이 같은지 확인한다. hook이 범위를 바꾸었으면 원격 작업 전 보고·정리한다. 동일 파일을 여러 그룹으로 나누는 경우 --only가 작업 트리 전체 파일을 취한다는 점을 적용한다.
 
 ### 커밋 메시지 컨벤션
 
@@ -54,4 +57,10 @@ description: "현재까지의 작업을 논리적 단위별로 나눠 컨벤션�
 ## 주의사항
 
 - `.env`, credentials 등 민감한 파일은 커밋하지 않는다. staged에 포함되어 있으면 제외하고 사용자에게 알린다.
-- 사용자가 요청하지 않은 자동 생성 도구의 서명이나 공동 작성자 표기를 남기지 않는다.
+- 커밋 시 Codex의 서명을 남기지 않는다.
+
+## Codex 실행 계약
+
+`{PLUGIN_ROOT}`는 현재 설치된 이 플러그인의 절대 루트다. 형제 스킬은 해당 `SKILL.md`를 읽고 절차를 수행한다.
+profile은 `../../PROFILE.md`의 `{PROFILE_PATH}` 해석을 따르고 workflow에서는 전달받은 `## Profile Snapshot`을 사용한다.
+사용자가 요청한 commit/push/PR 범위와 기존 승인을 재사용한다. 원격 작업은 그 효과가 승인된 경우에만 수행한다.

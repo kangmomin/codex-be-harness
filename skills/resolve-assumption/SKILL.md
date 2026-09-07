@@ -3,14 +3,12 @@ name: resolve-assumption
 description: "코드·커밋 메시지에 남은 `[Assumption]` 추론 태그를 항목별로 하나씩 확인받아 해소한다. 'assumption 해소해줘', '추론 태그 정리해줘', '가정한 것들 확인해줘', push 전에 미리 태그를 정리하고 싶을 때 사용. 승인된 항목은 태그만 삭제하며 '확정' 같은 대체 워딩을 남기지 않는다."
 ---
 
-> **Project Overrides**: 실행 전 `.codex/be-harness/common.md`와 `.codex/be-harness/skills/resolve-assumption.md`를 Read.
+> **Project Overrides**: 실행 전 `.codex/be-harness/common.md`와 `.codex/be-harness/skills/resolve-assumption.md`를 읽기.
 > 존재하면 추가 규칙/예외로 흡수하고 충돌 시 오버라이드가 우선한다. 상세 규약: 플러그인 루트 `OVERRIDES.md`.
 
 # Resolve Assumption
 
 `[Assumption]` 태그를 **항목별로 하나씩** 사용자 확인을 받아 해소한다.
-
-> **Internal composition**: canonical 비교가 필요하면 [commit-push](../commit-push/SKILL.md)를 읽는다. 재커밋이 필요하면 [commit](../commit/SKILL.md)을 읽고 현재 실행 안에서 절차를 수행한다.
 
 `$codex-be-harness:commit-push` Step 3(Assumption Gate)이 push 직전의 **하드 게이트**라면, 본 스킬은 개발 도중 아무 때나 돌릴 수 있는 **해소 도구**다. 게이트가 아니므로 보류를 허용하고 push/PR을 트리거하지 않는다.
 
@@ -30,27 +28,24 @@ description: "코드·커밋 메시지에 남은 `[Assumption]` 추론 태그를
 | `--commits` | 미push 커밋 메시지만 |
 | 경로/glob | 해당 경로에 한정 (커밋 메시지 스캔은 생략) |
 
-`{base}`는 알려진 값이 있으면 재사용한다 — 기존 open PR의 `baseRefName`, 직전 `$codex-be-harness:commit-pr`에서 결정한 base. 없으면 `@{upstream}`, 그것도 없으면 기본 브랜치(`origin/HEAD`)와의 merge-base.
+`{base}`는 commit-push Step 3.1과 동일하게 결정한다. 기존 PR/commit-pr의 확정 base를 재사용하고 feature upstream을 코드 base로 추정하지 않는다.
 
 ## Step 2: 스캔
 
+작업 트리 스캔은 아래 helper를 사용한다. 경로/glob 인자는 `--path`로 전달하고, 같은 필터가 tracked·index·untracked에 모두 적용된다. 경로 미지정이면 --path를 생략한다.
+
 ```bash
-# ① 작업 트리 — 추적 파일의 미커밋 추가 라인
-git diff HEAD -- {경로} | grep -n '^+.*\[Assumption\]'
-# ② 작업 트리 — untracked 파일
-git ls-files --others --exclude-standard -z | xargs -0 -r grep -HnI '\[Assumption\]'
-# ③ 브랜치 diff — 이 브랜치가 추가한 라인
-git diff {base}...HEAD -- {경로} | grep -n '^+.*\[Assumption\]'
-# ④ 커밋 메시지 — 미push 커밋 본문 (upstream 없으면 {base}..HEAD)
-git log @{upstream}..HEAD --format='%h %s%n%b' | grep -B1 '\[Assumption\]'
+python3 -I -B "{PLUGIN_ROOT}/skills/commit/assets/git_checks.py" worktree --cwd "{CWD}" --path "{ROOT_RELATIVE_PATH_OR_GLOB}"
 ```
+
+브랜치·미push 메시지는 commit-push Step 3.1의 helper를 사용한다. --branch면 code_tags만, --commits면 message_tags만 사용한다. 경로 지정 모드는 메시지를 생략하고 code_tags도 동일 경로/glob 필터로 제한한 뒤 표시한다. 원본 파일·라인·현재 텍스트가 일치하는 항목만 수정한다. `source:index`와 작업 트리가 다르면 둘을 동일 내용으로 간주하지 않는다.
+
+helper/명령 오류는 0건이 아니며 재검증 전 종료한다. symlink 대상은 자동으로 읽거나 수정하지 않는다. root-relative 파일 목록과 NUL 구분을 유지한다.
 
 - diff 출력의 `+` 라인만 대상이다 — **브랜치가 만들지 않은 레거시 태그는 건드리지 않는다**(surgical 원칙).
 - ①과 ③은 겹칠 수 있다. 같은 `파일:라인`은 **1건으로 합쳐** 중복 제시하지 않는다.
 - 이미 push된 커밋 메시지의 태그는 재작성 불가(force-push 금지)이므로 **WARN으로 보고만** 하고 처리 대상에서 제외한다.
-- **변경 자체가 없으면**(`git status --porcelain`이 비어 있고, `git diff {mainBranch}...HEAD`가 비어 있고, 미push 커밋이 0건)
-  "아직 구현 변경이 없습니다 — 구현 후 실행하세요"로 안내하고 종료한다(`DONE`). 변경은 있으나 태그가 **0건이면**
-  "해소할 `[Assumption]`이 없습니다"만 보고하고 종료한다(`DONE`).
+- **0건이면** "해소할 `[Assumption]`이 없습니다"만 보고하고 종료한다(`DONE`).
 
 발견 시 전체 목록을 먼저 한 번 보여준다 — 몇 건을 몇 단계에 걸쳐 처리하는지 사용자가 알아야 한다.
 
@@ -124,8 +119,8 @@ restoreStock(ctx, order.Items)
 
 | 대상 | 처리 |
 |------|------|
-| 마지막 커밋 | `git commit --amend`로 본문에서 태그 라인 제거 |
-| 그 이전 커밋 | `git reset --soft {범위 시작}` 후 `$codex-be-harness:commit` 절차로 재커밋 |
+| 마지막 커밋 | `git commit --amend --only --allow-empty -F "{MESSAGE_FILE}"`; 전후 HEAD tree와 무관한 index 보존 확인 |
+| 그 이전 커밋 | 소유 범위의 미push 커밋만 임시 worktree에서 메시지 재작성·tree 검증; 원본 dirty index에 reset --soft 하지 않음 |
 | 이미 push된 커밋 | 건드리지 않는다 (WARN 보고만) |
 
 ### 변경 커밋
@@ -172,3 +167,9 @@ restoreStock(ctx, order.Items)
 - 브랜치 diff 밖의 레거시 태그 정리 (surgical 원칙)
 - 이미 push된 커밋의 메시지 재작성 (force-push 금지)
 - 보류 항목을 이유로 한 차단 — 게이트가 아니다
+
+## Codex 실행 계약
+
+`{PLUGIN_ROOT}`는 현재 설치된 이 플러그인의 절대 루트다. 형제 스킬은 해당 `SKILL.md`를 읽고 절차를 수행한다.
+profile은 `../../PROFILE.md`의 `{PROFILE_PATH}` 해석을 따르고 workflow에서는 전달받은 `## Profile Snapshot`을 사용한다.
+사용자가 요청한 commit/push/PR 범위와 기존 승인을 재사용한다. 원격 작업은 그 효과가 승인된 경우에만 수행한다.

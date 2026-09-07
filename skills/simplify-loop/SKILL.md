@@ -27,18 +27,13 @@ description: "변경 코드의 동작을 보존하는 단순화 후보를 네 �
 
 ## Phase 1: 범위 판별
 
-git 저장소 안에서 다음 순서로 `{DIFF_CMD}`를 확정한다.
-
-1. `git status --porcelain`이 비어 있지 않으면 `git diff HEAD`를 사용한다.
-2. clean이면 profile의 `mainBranch`(`origin/{mainBranch}` → `{mainBranch}`), 없으면 `origin/main`, `main` 순으로 기준 브랜치를 탐색하고 `git diff $(git merge-base {기준브랜치} HEAD)`를 사용한다. 커밋 범위 `base..HEAD`는 쓰지 않는다. 루프가 적용한 작업 트리 변경이 다음 스캔에 포함되어야 하기 때문이다.
-3. 기준 ref를 해석하지 못하면 대화형 실행에서는 비교 ref를 한 번 요청한다. ref를 받지 못하거나 비대화형 실행이면 `SKIPPED:BASE_REF_UNRESOLVED`로 종료한다.
-4. diff가 비어 있으면 `SKIPPED:NO_CHANGES`로 종료한다. dry-run에서는 `후보: 0건`도 함께 출력한다.
-
-`{DIFF_CMD}`는 변경 범위 식별 전용이다. 후보의 `current`는 반드시 작업 트리의 실제 파일에서 읽는다.
+`../start-workflow/references/scope-contract.md`를 읽고 workflow_scope.py를 실행한다. workflow는 START_SHA/OWNED_FILES, standalone은 명시적으로 확정한 PR base/mainBranch/origin/HEAD를 --base-ref로 전달한다.
+helper 성공 결과의 paths/patch/index_patch/deleted/symlinks/read를 `{SCOPE}`로 유지한다. 모든 writer 종료 배리어에서 매 수정 후 재수집한다. 오류는 BLOCKED:REVIEW_SCOPE이며 빈 결과 PASS로 처리하지 않는다. 성공한 paths가 비어 있을 때만 SKIPPED:NO_CHANGES다.
+후보 current는 SCOPE.read의 실제 파일에서 읽고 삭제·symlink는 해당 diff/링크 자체만 검토한다.
 
 ## Phase 2: 실행 규약 로드
 
-[상태 머신 규약](references/workflow-script.md)을 반드시 끝까지 읽고 `{DIFF_CMD}`, `{MAX_ITER}`, `{CANDIDATE_CAP}`, `{RETRY_LIMIT}`, 저장소 절대 경로를 입력으로 사용한다.
+[상태 머신 규약](references/workflow-script.md)을 반드시 끝까지 읽고 `{SCOPE}`, `{MAX_ITER}`, `{CANDIDATE_CAP}`, `{RETRY_LIMIT}`, 저장소 절대 경로를 입력으로 사용한다.
 
 - 일반 실행: 규약의 상태를 실행 컨텍스트에서 유지하며 최대 `{MAX_ITER}`회 반복한다.
 - dry-run: 빈 `seen`으로 Scan 한 번만 실행하고 후보를 중요도 순 최대 `{CANDIDATE_CAP}`건 보고한 뒤 종료한다. 리뷰 서브에이전트와 writer를 만들지 않는다.
@@ -100,3 +95,8 @@ Simplify Loop 완료
 ## References
 
 - 일반 실행과 dry-run 모두 [references/workflow-script.md](references/workflow-script.md)를 읽는다. 이 파일이 후보 계약, 네 관점 프롬프트, 상태 필드와 전이의 canonical 정의다.
+
+## 실행 범위 계약
+
+workflow 호출은 START_SHA와 OWNED_FILES로 workflow_scope.py가 수집한 명시 경로 목록을 사용한다. main/base를 재추론하거나 dirty 상태에 따라 기준 SHA를 바꾸지 않는다. standalone은 기존 PR base·명시 base·profile mainBranch·origin/HEAD에서 확정한 base-ref를 사용한다. HEAD로 폴백하지 않는다. 삭제는 diff, symlink는 링크 자체만 검토한다. Git/helper 실패는 빈 범위 PASS가 아니라 BLOCKED:REVIEW_SCOPE다.
+writer는 writer-safety.md의 실제 종료 확인 후에만 재시도한다. 공유 상태·결과 JSON은 오케스트레이터가 기록하고 역할은 구조화 결과만 반환한다.

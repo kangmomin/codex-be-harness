@@ -70,7 +70,7 @@ Spec은 사용자 요청의 인수, 대화 컨텍스트, 또는 호출자가 전
 | 1 | 추적 ID가 있는 Spec | `AC-nn` + `EC-nn` (+ 디버깅이면 `RC-nn`) | 정상 |
 | 2 | 표·ID는 없으나 본문에 **관측 가능한 조항**이 있음 | 그 조항에만 ID를 임시 부여 | `추적 기준: 본문 조항 기반` |
 | 3 | 관측 가능한 조항이 0개 | 없음 | `SKIPPED:NO_TEST_BASIS` — 종료 |
-| — | Spec 자체가 제공되지 않음 (단독 호출) | `git diff` 기반 변경 함수의 **공개 계약** | `추적 기준 없음` |
+| — | Spec 자체가 제공되지 않음 (단독 호출) | 공통 scope 기반 변경 함수의 **공개 계약** | `추적 기준 없음` |
 
 > 2단계에서 **동작을 추가하지 않는다.** Spec에 없는 기대값을 테스트가 정의하면 그것은 Spec 변경이다. 조항이 모호하면 지어내지 말고 그 ID를 `deferred_e2e` 또는 미해결로 남긴다.
 
@@ -193,10 +193,10 @@ Spec은 사용자 요청의 인수, 대화 컨텍스트, 또는 호출자가 전
 
 | Spec ID | 테스트 | 파일 | 분류 | 비고 |
 |---------|--------|------|------|------|
-| AC-01 | TestCreateUser_정상 | user_test.go:12 | red_assertion | 미구현 |
-| EC-01 | TestCreateUser_중복이메일 | user_test.go:42 | already_satisfied | 기존 구현이 이미 409 반환 |
+| AC-01 | example.com/app/user::TestCreateUser_정상 | user_test.go:12 | red_assertion | 미구현 |
+| EC-01 | example.com/app/user::TestCreateUser_중복이메일 | user_test.go:42 | already_satisfied | 기존 구현이 이미 409 반환 |
 | EC-02 | — | — | deferred_e2e | 외부 결제사 타임아웃 — 주입 지점 없음 |
-| RC-01 | TestOrder_음수수량 | order_test.go:88 | cannot_compile | 3회 시도 후 되돌림 |
+| RC-01 | example.com/app/order::TestOrder_음수수량 | order_test.go:88 | cannot_compile | 3회 시도 후 되돌림 |
 
 ### 종합
 - **작성**: N개 (신규 M개 / 수정 K개)
@@ -227,3 +227,13 @@ Spec은 사용자 요청의 인수, 대화 컨텍스트, 또는 호출자가 전
 3. **모킹 최소화.** 외부 경계(DB·HTTP·시계)만 대체하고 내부 로직은 실제로 실행한다.
 4. **기존 패턴 준수.** 프로젝트에 테스트가 있으면 그 구조를 따른다.
 5. **하나의 테스트는 하나의 ID를 검증한다.** 여러 ID를 한 테스트에 묶으면 실패 원인이 흐려진다.
+
+## 검증 결과와 현재 변경 범위
+
+workflow에서는 아래 RESULTS_FILE/START_SHA 계약을 적용한다. standalone은 [scope-contract.md](../start-workflow/references/scope-contract.md)의 확정 base-ref 범위를 사용하고 테스트 결과를 호출자에게 반환한다. standalone에 없는 Sol High/상태 경로를 새로 추측하지 않는다.
+
+검증 전후 `workflow_results.py tree --cwd "{CWD}"`가 같을 때만 tested_tree로 기록한다. Sol High만 RESULTS_FILE에 새 iteration의 unit/build/lint/typecheck/e2e/readback 결과 객체를 기록한다. unit에는 regression_count를 포함한다. 하위 역할은 결과만 반환한다.
+JSON의 최종 판정·회귀 수가 Gate/리포트의 정본이며 Markdown 요약은 표시용이다. 수정 뒤 과거 PASS를 재사용하지 않는다. TDD SKIP도 실제 검증 실패를 PASS로 바꾸는 조건이 아니다.
+품질·리뷰·E2E·Read-back 범위는 START_SHA부터 현재 작업 트리까지 workflow_scope.py가 수집한 명시 목록이다. committed/staged/unstaged/소유 untracked·삭제·symlink를 보존한다. Read-back 자식은 이 목록으로만 복원하고 Spec/Plan/상태 경로를 받지 않는다.
+
+테스트 보고 ID는 Go `{package}::TestX/sub`(go list로 확인), JS `{runner}::{file}::{describe › it}`다. 같은 함수/leaf 이름을 서로 다른 패키지·파일에서 합치지 않는다. 자세한 baseline/재실행 규칙은 start-workflow/references/tdd.md를 따른다.

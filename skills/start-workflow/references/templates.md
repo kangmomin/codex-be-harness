@@ -8,12 +8,7 @@
 
 Write tool로 `{STATE_FILE}`을 생성한다:
 
-`RUN_ID`·`START_SHA`는 생성 직전에 1회 계산한다(이후 재생성·갱신 금지). `START_SHA`는 `## Flags`와 `## Verification Tier`·`## Test Baseline`의 기준 커밋으로 같은 값을 쓴다:
-
-```bash
-SHA7=$(git rev-parse --short=7 HEAD 2>/dev/null || echo nogit); HEX8=$(od -An -N4 -tx1 /dev/urandom | tr -d ' \n')
-RUN_ID="$(date +%Y%m%d-%H%M%S)-${SHA7}-${HEX8}"; START_SHA=$(git rev-parse HEAD 2>/dev/null || echo 없음)
-```
+`RUN_ID`는 Pre-flight `workflow_run.py create` 출력 그대로다. `START_SHA`만 구현 직전 `git rev-parse HEAD`로 1회 수집한다. Git 오류를 nogit/없음으로 대체하지 않는다. Run에는 helper가 반환한 실제 값을 넣는다.
 
 `## Profile Snapshot`의 `profile_sha256`은 `sha256sum {PROFILE_PATH}` 64자, `resolved_*` 2줄은 Pre-flight가 해석한 절대 경로다(재개·형제 스킬은 이 값만 쓴다). `- topologyModels:`는 profile 값의 compact 표기(`default` 가능)이며 확정값은 `## Flags`의 `TOPOLOGY_MODELS`다.
 
@@ -22,9 +17,11 @@ RUN_ID="$(date +%Y%m%d-%H%M%S)-${SHA7}-${HEX8}"; START_SHA=$(git rev-parse HEAD 
 # Workflow State
 
 ## Flags
-- SCHEMA: 3
+- SCHEMA: 4
 - MODE: be
 - HARD_MODE: {true|false}
+- PUBLISH_POLICY: {pr|push|local}
+- ROUTE_TARGET: be
 - TDD: {true|false}
 - REFLECT: {true|false}
 - TIER: {light|standard}
@@ -33,8 +30,10 @@ RUN_ID="$(date +%Y%m%d-%H%M%S)-${SHA7}-${HEX8}"; START_SHA=$(git rev-parse HEAD 
 - START_SHA: {START_SHA}
 
 ## Run
-- run_dir: {RUN_DIR}
-- project_root: {CWD}
+- CWD: {CWD}
+- MODE: be
+- RUN_ID: {RUN_ID}
+- RUN_DIR: {RUN_DIR}
 - approved_at: {Phase 4.4 사용자 승인 시각}
 - approved_effects: {branch / edits / commits / push / PR}
 
@@ -198,7 +197,7 @@ TDD SKIP이면 표 대신 `SKIPPED:{USER_OPT_OUT|NO_TEST_COMMAND|NO_TEST_INFRA|T
 
 ## Phase 5: Implementation Notes 라이브 파일 초기화
 
-상태 파일과 별개로 `{IMPL_NOTES}`를 Write tool로 생성한다. 기존 파일이 있으면 덮어쓴다.
+상태 파일과 별개로 `{IMPL_NOTES}`를 Write tool로 생성한다. 신규 실행에만 배타 생성하고 재개 시 기존 파일을 보존한다.
 
 ```markdown
 # Implementation Notes — {작업 요약}
@@ -241,27 +240,20 @@ TDD SKIP이면 표 대신 `SKIPPED:{USER_OPT_OUT|NO_TEST_COMMAND|NO_TEST_INFRA|T
    외부 feedback 제출은 첫 릴리스에서 수행하지 않는다.
    Phase 11이 `SKIPPED:*`면 이 단계를 건너뛰고 보고서 §6에 **실제 상태 코드**로 스킵 사유를 기입한다 (§6 템플릿의 사유별 분기 문구를 따른다).
    2~4의 각 결정은 받는 즉시 상태 파일 `## Final Decisions`에 한 줄 append한다(항목 / 결정 / 시각). 컨텍스트 요약·재개 후에는 기록된 항목을 다시 묻지 않는다.
-5. **정리 + md 아카이브**: 상태 파일의 모든 Phase를 `DONE`/`SKIPPED:{사유}`로 갱신하고 `Remaining Phases`를 `없음`으로 기록한 **뒤** 아래 "md 아카이브"를 실행한다(마감 전에 실행하면 부록에 결정이 빠진다; 재렌더링은 없다 — 아카이브는 1회 배타 생성). 기본은 상태 파일과 라이브 노트를 **보관**. 사용자가 정리를 요청한 경우에만 `{RUN_DIR}`가 이번 실행의 검증된 임시 디렉터리인지 확인한 뒤 그 내부의 `{STATE_FILE}`·`{IMPL_NOTES}`·`{WORK_REPORT}`를 삭제한다. 실행 중 시작한 서버 PID/세션도 모든 종료 경로에서 정리한다. 아카이브 산출물(`*-workflow-report.md`, `*-e2e-report.md`)은 자동 삭제하지 않는다.
+5. **재검증·반영·마감**: [finalization.md](finalization.md)를 수행한다. 승인 수정의 관련 검증과 미완료 commit/push/PR까지 마친 뒤 상태·JSON·보고서를 갱신한다. 필수 BLOCKED/FAIL을 DONE으로 바꾸지 않는다. 미완료면 live 자료를 보관하고 영구 아카이브를 보류한다. 완료된 경우만 아래 md 아카이브를 실행한다. 서버/세션은 모든 종료 경로에서 소유 확인 후 정리한다.
 
-Phase 12에서 사용자 승인 remediation으로 diff가 바뀌면 Sol High는 Phase 10 Assumption Gate와 Phase 4.4의
-승인된 외부 효과 범위를 다시 확인한다. 필요한 작업 트리 수정과 승인된 push/PR은 Terra executor가 수행하고
-Sol High는 승인·상태·commit 조정만 한다.
+## md 아카이브
 
-## Phase 12: md 아카이브
-
-`{WORK_REPORT}`(슬림 보고서)에 실행 요약·상태 파일 전문·Implementation Notes를 부록으로 붙여 `{REPORT_DIR}`에 md 1개로 영구 저장한다. 오케스트레이터 토큰을 쓰지 않는 결정적 단계이므로 스크립트가 수행한다.
+[finalization.md](finalization.md)의 완료 조건과 [result-contract.md](result-contract.md)를 먼저 확인한다. 표의 판정·회귀·E2E 수치는 RESULTS_FILE에서 도출한다. 보고서 본문과 결과가 다르면 수정 후 검증한다.
 
 ```bash
-python3 {SKILL_DIR}/assets/workflow_archive.py report \
-  --src {WORK_REPORT} --state {STATE_FILE} --run-id {RUN_ID} --impl-notes {IMPL_NOTES} \
-  --report-dir {REPORT_DIR} --task {task-name-kebab} --start-sha {START_SHA} \
-  --require-headings "1. 작업 요약,2. 구현 내역,3. 요구사항 대응,4. 품질 루프 결과,5. 문서 동기화,6. 성찰,7. 보완점,8. Read-back Diff,9. 축소 실행 내역"
+python3 "{SKILL_DIR}/assets/workflow_archive.py" report --src "{WORK_REPORT}" --state "{STATE_FILE}" \
+  --results "{RESULTS_FILE}" --run-id "{RUN_ID}" --report-dir "{REPORT_DIR}" --task "{작업 요약}" \
+  --impl-notes "{IMPL_NOTES}" --start-sha "{START_SHA}"
 ```
 
-- `task-name-kebab`: Phase 5 브랜치명 또는 Spec 제목을 kebab-case로(스크립트가 다시 슬러그화한다). `START_SHA`가 `없음`이면 `--start-sha`를 생략한다.
-- 출력 파일: `{REPORT_DIR}/{YYYYMMDD}-{task}-{RUN_ID}-workflow-report.md` — frontmatter(`title / type: report / tags / status: active / created / updated` + 파싱 가능 시 `run_id / tier / escalated / regression_count / touched_paths`) + 보고서 본문 + `## 부록 A: 실행 요약`(시작/종료 SHA·Flags·티어·승격 이력·최종 테스트/E2E 판정·미결 질문 수·커밋 목록) + `## 부록 B: 상태 파일 전문`(헤딩 1단계 강등) + `## 부록 C: Implementation Notes`(원문 verbatim). 같은 `RUN_ID`의 파일이 이미 있으면(재시도) 재생성하지 않고 그 경로를 출력한다.
-- stdout 두 줄 `경로: …` / `상태: OK|OK(재사용 …)|DEGRADED({사유})`를 **그대로** `## Artifacts`의 `workflow-report: {경로} / 상태: {상태}`에 기록하고 채팅에 출력한다. `DEGRADED`(머리글 누락·impl-notes 섹션 누락 등)여도 파일은 생성된 것이며, 진단 `script_fallback`은 남기지 않는다 — Artifacts의 상태 문자열이 보고다.
-- **폴백**(exit ≠ 0 — python3 부재·인자 오류·쓰기 실패): `{WORK_REPORT}`·`{STATE_FILE}`·`{IMPL_NOTES}`를 `cat`으로 이어붙여 `{REPORT_DIR}/{YYYYMMDD}-{task}-{RUN_ID}-workflow-report.md`로 직접 저장(frontmatter는 `title/type/tags/status/created/updated`만) → `## Artifacts`에 `workflow-report: {경로} / 상태: FALLBACK(exit {code})` → 고지 "md 아카이브 스크립트 실패({사유}) — 원문 3개를 수동 결합해 저장했습니다." + `Phase Results` 12행 진단 `script_fallback(workflow_archive:exit {code})`.
+`*-workflow-report.md`를 실행별 배타 생성한다. `## 부록 A` 실행 요약, 부록 B 상태, 부록 C Implementation Notes를 보존한다. 같은 RUN_ID 재시도는 기존 아카이브와 archive_status를 재사용한다.
+실패하면 원문/JSON/노트와 오류를 보관하고 경로를 보고한다. 영구 파일을 cat/cp/replace로 덮는 폴백은 없다. 상태를 완료로 조작하지 않는다.
 
 ## Phase 12: Workflow Report 템플릿
 
@@ -292,7 +284,7 @@ python3 {SKILL_DIR}/assets/workflow_archive.py report \
 
 ### 4. 품질 루프 결과
 - **루프**: [N]회 (상한 `{QL_MAX}`) / 수정 [M]건 — 단계별 건수·상태는 부록 B `Phase Results`
-- **E2E**: 실행 수준 [smoke | full | full(smoke 미적용: {사유})] / 종료 [DONE | BLOCKED:* | SKIPPED:*] / 리포트 [경로 | 없음] — 항상 `Phase Results`의 최신 8.6 행 기준. 종료가 `BLOCKED:LOCK_UNAVAILABLE`이고 `## Final Decisions`의 `E2E 미실행 승인`이 유효할 때만 "E2E 없이 진행 승인" 병기
+- **E2E**: 실행 수준 [smoke | full | full(smoke 미적용: {사유})] / 종료 [DONE | BLOCKED:* | SKIPPED:*] / 리포트 [경로 | 없음] — 항상 RESULTS_FILE의 최신 E2E 결과 기준. 종료가 `BLOCKED:LOCK_UNAVAILABLE`이고 `## Final Decisions`의 `E2E 미실행 승인`이 유효할 때만 "E2E 없이 진행 승인" 병기
 
 **테스트 판정**: [PASS/WARN/FAIL] — regression [n]건 / new_red [n]건 / flaky [n]건 / pre_existing [n]건(범위 밖)
 

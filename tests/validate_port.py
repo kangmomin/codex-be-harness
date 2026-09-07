@@ -14,12 +14,13 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 errors: list[str] = []
+SYNC = json.loads((ROOT / "UPSTREAM-SYNC.json").read_text(encoding="utf-8"))
 PINNED_SCRIPT_SHA256 = {
-    "skills/start-workflow/assets/risk_facts.py": "1ea5ff3a3ffe253054b6cc68f21429c0889baa2bc9b67a3be86cae6a8301094a",
-    "skills/start-workflow/assets/test_failures.py": "8362c4ad45d8d674605c32a59806f47b6b7c70d242b6c8e93d8f92842ef64a5d",
-    "skills/start-workflow/assets/workflow_archive.py": "cca44dabb0c703c570d89b4808875da3cc9fb8a1134f0e533cebf7dfa130a302",
-    "skills/e2e-test-loop/assets/render_e2e_report.py": "348d9d7f4bac981243319082fd5ea6a6ac90fc5577adf50511f1e7e4df8b7e1d",
+    relative: record["target_sha256"]
+    for relative, record in SYNC["files"].items()
+    if "/assets/" in relative and relative.endswith((".py", ".sh", ".mjs", ".json"))
 }
+
 
 
 def require(condition: bool, message: str) -> None:
@@ -96,7 +97,7 @@ banned_literals = [
     "/be-harness:",
     "Claude Code",
 ]
-runtime_files = list(skills_dir.rglob("*.md")) + [ROOT / "PROFILE.md", ROOT / "OVERRIDES.md"]
+runtime_files = [p for p in skills_dir.rglob("*") if p.is_file() and p.suffix in (".md", ".py", ".sh", ".mjs") and "node_modules" not in p.parts] + [ROOT / "PROFILE.md", ROOT / "OVERRIDES.md"]
 for path in runtime_files:
     if not path.is_file():
         continue
@@ -112,7 +113,7 @@ html_report_residue = re.compile(
     r"e2e-report\.html|impl-notes\.html|리포트 HTML|HTML 렌더링|HTML 리포트|api-test-cases-prompt",
     re.IGNORECASE,
 )
-html_report_runtime_files = list(skills_dir.rglob("*.md")) + [
+html_report_runtime_files = [p for p in skills_dir.rglob("*") if p.is_file() and p.suffix in (".md", ".py", ".sh", ".mjs") and "node_modules" not in p.parts] + [
     ROOT / "PROFILE.md",
     ROOT / "OVERRIDES.md",
     ROOT / "README.md",
@@ -126,6 +127,7 @@ for path in html_report_runtime_files:
         )
 
 known_resources = [
+    *["skills/start-workflow/references/" + name + ".md" for name in ("entry-contract", "run-lifecycle", "result-contract", "scope-contract", "writer-safety", "finalization")],
     "skills/start-workflow/references/agent-prompts.md",
     "skills/start-workflow/references/agent-topology.md",
     "skills/start-workflow/references/analyze-verify-modes.md",
@@ -173,15 +175,9 @@ for relative, expected_hash in PINNED_SCRIPT_SHA256.items():
         f"{relative}: SHA-256 mismatch: expected {expected_hash}, actual {actual_hash}",
     )
 
-upstream_root = Path("/workspace/harness-plugins/be-harness")
-if upstream_root.exists():
-    for relative in PINNED_SCRIPT_SHA256:
-        path = ROOT / relative
-        upstream_path = upstream_root / relative
-        if path.is_file() and upstream_path.is_file() and path.read_bytes() != upstream_path.read_bytes():
-            print(f"note: {relative} differs from local upstream working tree (pinned hash still matches)")
-
 for markdown in ROOT.rglob("*.md"):
+    if "node_modules" in markdown.parts:
+        continue
     text = markdown.read_text(encoding="utf-8")
     for raw_target in re.findall(r"\[[^\]]+\]\(([^)]+)\)", text):
         target = raw_target.split("#", 1)[0]
@@ -193,7 +189,7 @@ for markdown in ROOT.rglob("*.md"):
 workflow = (skills_dir / "start-workflow" / "SKILL.md").read_text(encoding="utf-8")
 for phase in range(1, 13):
     require(re.search(rf"\bPhase {phase}\b", workflow) is not None, f"start-workflow: missing Phase {phase}")
-for flag in ["--hard", "--no-tdd", "--tier standard", "--topology-models", "--reflect", "--analyze", "--verify"]:
+for flag in ["--resume", "--hard", "--no-tdd", "--tier standard", "--topology-models", "--reflect", "--analyze", "--verify"]:
     require(flag in workflow, f"start-workflow: missing flag {flag}")
 for contract in [
     "BLOCKED:FULLSTACK_HANDOFF_REQUIRED",
@@ -215,7 +211,12 @@ for contract in [
     "{WORK_REPORT}",
     "## Profile Snapshot",
     "{TOPOLOGY_MODELS}",
-    "SCHEMA: 3",
+    "SCHEMA: 4",
+    "PUBLISH_POLICY",
+    "ROUTE_TARGET",
+    "RESULTS_FILE",
+    "OWNED_FILES",
+    "BLOCKED:RUN_MISMATCH",
     "토폴로지 모델",
     "topologyModels",
     "Build 상태 파일",
@@ -240,7 +241,7 @@ for contract in [
     "START_SHA",
     "workflow_archive.py",
     "{TOPOLOGY_MODELS}",
-    "SCHEMA: 3",
+    "SCHEMA: 4",
 ]:
     require(contract in build_phases, f"build-phases: missing contract {contract}")
 
@@ -274,12 +275,14 @@ if state_begin_count == 1 and state_end_count == 1:
         state_template = templates_doc[state_begin_position + len(state_begin_marker):state_end_position]
         for contract in [
             "## Flags",
-            "- SCHEMA: 3",
+            "- SCHEMA: 4",
             "- MODE: be",
             "- RUN_ID:",
             "- START_SHA:",
             "- TIER:",
             "- TOPOLOGY_MODELS:",
+        "- PUBLISH_POLICY:",
+        "- ROUTE_TARGET:",
             "## Verification Tier",
             "- 계산 티어:",
             "- 최종 티어:",
@@ -319,6 +322,8 @@ if flags_match:
         "SCHEMA",
         "MODE",
         "HARD_MODE",
+        "PUBLISH_POLICY",
+        "ROUTE_TARGET",
         "TDD",
         "REFLECT",
         "TIER",
@@ -371,7 +376,7 @@ require("## Profile Snapshot" in unit_test_doc, "unit-test: missing snapshot-fir
 e2e_doc = (skills_dir / "e2e-test" / "SKILL.md").read_text(encoding="utf-8")
 for contract in [
     "mode: workflow",
-    "{mainBranch}...HEAD",
+    "workflow_scope.py",
     "SKIPPED:NO_AUTH",
     "--smoke",
     "SMOKE_OMITTED",
@@ -382,7 +387,7 @@ for contract in [
     "Project Notes",
 ]:
     require(contract in e2e_doc, f"e2e-test: missing contract {contract}")
-require("main...HEAD" not in e2e_doc.replace("{mainBranch}...HEAD", ""), "e2e-test: hardcoded main base ref")
+require("main...HEAD" not in e2e_doc.replace("workflow_scope.py", ""), "e2e-test: hardcoded main base ref")
 
 e2e_loop_doc = (skills_dir / "e2e-test-loop" / "SKILL.md").read_text(encoding="utf-8")
 for contract in [
@@ -638,8 +643,8 @@ require(lock_script.is_file() and bool(lock_script.stat().st_mode & 0o111), "e2e
 if lock_script.is_file():
     lock_text = lock_script.read_text(encoding="utf-8")
     require(
-        'sleep_for="$remaining"' in lock_text,
-        "e2e-lock.sh must cap the final poll sleep to the remaining timeout",
+        'e2e_lock.py' in lock_text and (skills_dir / 'e2e-test/assets/e2e_lock.py').is_file(),
+        "e2e-lock.sh must load the v2 Python lease helper",
     )
 
 profile = (ROOT / "PROFILE.md").read_text(encoding="utf-8")

@@ -1,0 +1,471 @@
+{
+  "schema_version": 1,
+  "source_repository": "https://github.com/kangmomin/harness-plugins",
+  "source_head": "f9ce681427ccfbfd9194d3c3f204a445ae6f45dd",
+  "source_state": "working-tree-including-uncommitted-changes",
+  "source_plugins": {
+    "be-harness": "1.5.4",
+    "common": "0.14.2"
+  },
+  "target_plugin": "codex-be-harness@0.6.0",
+  "synced_on": "2026-09-07",
+  "scope": "BE native port and its existing six common skill dependencies; topology and Codex host adapters preserved",
+  "files": {
+    "OVERRIDES.md": {
+      "source": "be-harness/OVERRIDES.md",
+      "source_sha256": "05072e8b92699136e7bdffc84ecd3e47d02c5dbf52de51b518807a21370764da",
+      "adaptation": "codex-native",
+      "target_sha256": "92eb0391083c9716c546b8d685b30e171725a0345450c86bbdcffd8966b49bb1"
+    },
+    "PROFILE.md": {
+      "source": "be-harness/PROFILE.md",
+      "source_sha256": "c6b96cdc879b7cd7d5ca9e9991031f41b179b38b922ae164ec99ca5b72d4bfd3",
+      "adaptation": "codex-native",
+      "target_sha256": "5445e41f9a4dbcff9940f3610d756c108933b00aa0c77c029c20aae4860ba160"
+    },
+    "skills/commit-hard-push/SKILL.md": {
+      "source": "common/skills/commit-hard-push/SKILL.md",
+      "source_sha256": "de03136e0db1cd1dac9c7583c4eec52013e5ee49cf3d97d2377c80d2ff671f63",
+      "adaptation": "codex-native",
+      "target_sha256": "25514e69eb2ef7615aa9c6e11951e552b5b607abc421088feb7cd0e98f5138e1"
+    },
+    "skills/commit-pr/SKILL.md": {
+      "source": "common/skills/commit-pr/SKILL.md",
+      "source_sha256": "5cf1f29e5eaffc9d658fa4962ebd5d11d6cacdadc305be607fc81ffaf42c187a",
+      "adaptation": "codex-native",
+      "target_sha256": "cb55e724274229e8b9a55706ee0c1f998d6c85e75d6ba9806595123ccc096b9e"
+    },
+    "skills/commit-push/SKILL.md": {
+      "source": "common/skills/commit-push/SKILL.md",
+      "source_sha256": "ca845957c0d00f22b448f1382ffd304bfcc28865d65d9ef39f58c1dd05519a5f",
+      "adaptation": "codex-native",
+      "target_sha256": "fbcb2167c4bd64cde03eb2e98a45dfdbab4cb1ab21c4df49173c1015d5defb3d"
+    },
+    "skills/commit/SKILL.md": {
+      "source": "common/skills/commit/SKILL.md",
+      "source_sha256": "798ad5b2dae294320baa1e250387f01e53a6e0165ff78440922522fb62e09a50",
+      "adaptation": "codex-native",
+      "target_sha256": "25d56e21ab70cbbb914128115c5ef6b5897eacfbf653cbdcbc46f70416b6b924"
+    },
+    "skills/commit/assets/git_checks.py": {
+      "source": "common/skills/commit/assets/git_checks.py",
+      "source_sha256": "307ee4d36f0fd1062a2e5c2bf8b3258e5170f320ce74492a1b9fb3dc419d32bb",
+      "adaptation": "identical",
+      "target_sha256": "307ee4d36f0fd1062a2e5c2bf8b3258e5170f320ce74492a1b9fb3dc419d32bb"
+    },
+    "skills/config/SKILL.md": {
+      "source": "be-harness/skills/config/SKILL.md",
+      "source_sha256": "d021e22c2cde9c4643f212d15229c45950c511d424339b704f23a71c0399f6a9",
+      "adaptation": "codex-native",
+      "target_sha256": "d0feb1ce71ad50e7d8ada10aa678d52ef28ce26b3ac557ca2e09feab27a975b6"
+    },
+    "skills/config/assets/doctor.py": {
+      "source": "be-harness/skills/config/assets/doctor.py",
+      "source_sha256": "b4853f88ab10bb4789d11ca8b496e5cd1f4f91de11dd3360ddcf6dc8fff2b38e",
+      "adaptation": "codex-native",
+      "target_sha256": "3d54c1efa3fc347f05fc0e176978e5149e3df73b97da1739a05b6493a35b4cd4"
+    },
+    "skills/config/assets/profile.py": {
+      "source": "be-harness/skills/config/assets/profile.py",
+      "source_sha256": "7e208d5e4796ca3d8eab9209f8569dd31dde4685c4cb4f4dda592120e7c4eeae",
+      "adaptation": "codex-native",
+      "target_sha256": "0cc614b52d3381cc798d88f074c7b22a5d3216a55ac2ef0deae46e78806de7c1"
+    },
+    "skills/convention-check/SKILL.md": {
+      "source": "be-harness/skills/convention-check/SKILL.md",
+      "source_sha256": "9684acc2383ddd6ebffa9c1d37d5f4a8cfc8ad2ad46dc6b3aefa90681f9da55a",
+      "adaptation": "codex-native",
+      "target_sha256": "118a2e8b688f534e4b583051acc070802bde61208ce5ea85bbf3eeccb88a2a65"
+    },
+    "skills/default-conventions/SKILL.md": {
+      "source": "be-harness/skills/default-conventions/SKILL.md",
+      "source_sha256": "59b141dc64f298b402bd808256e658639dfa5e35ad56706cf3e9b6b5363a8485",
+      "adaptation": "codex-native",
+      "target_sha256": "64b8e8c3e29ffe0c2b1f03b3b5a018d7155e3a4171fb4068842882202e52cbfe"
+    },
+    "skills/doc-gen/SKILL.md": {
+      "source": "common/skills/doc-gen/SKILL.md",
+      "source_sha256": "dfea61c4690f1129a1ae7756d02d43167b4b9f2fcb2d73caba5a15cd41b7d222",
+      "adaptation": "codex-native",
+      "target_sha256": "81c6c7afa48056162078e4e016563a3a56a82ba6d38289171acad0046ce00ca9"
+    },
+    "skills/doc-gen/assets/.gitignore": {
+      "source": "common/skills/doc-gen/assets/.gitignore",
+      "source_sha256": "4d56952b0fb13bf8f9b6c13a6d4c34a075bac3af447636a1df4335d7576e2f97",
+      "adaptation": "identical",
+      "target_sha256": "4d56952b0fb13bf8f9b6c13a6d4c34a075bac3af447636a1df4335d7576e2f97"
+    },
+    "skills/doc-gen/assets/docgen.mjs": {
+      "source": "common/skills/doc-gen/assets/docgen.mjs",
+      "source_sha256": "2d3e6a1efdad1ba3f974755ef23f3c2a4ea2375713d190dc808ceb77a7401826",
+      "adaptation": "identical",
+      "target_sha256": "2d3e6a1efdad1ba3f974755ef23f3c2a4ea2375713d190dc808ceb77a7401826"
+    },
+    "skills/doc-gen/assets/package-lock.json": {
+      "source": "common/skills/doc-gen/assets/package-lock.json",
+      "source_sha256": "cf109e1cf3a1b7ae7321b74671e9b9809bd9fa524275d67d0034cd8a54c8a456",
+      "adaptation": "identical",
+      "target_sha256": "cf109e1cf3a1b7ae7321b74671e9b9809bd9fa524275d67d0034cd8a54c8a456"
+    },
+    "skills/doc-gen/assets/package.json": {
+      "source": "common/skills/doc-gen/assets/package.json",
+      "source_sha256": "52c8cb99b1b7974218a1c460b113c4839d8e7528e35a5780dd2527edcabbe068",
+      "adaptation": "identical",
+      "target_sha256": "52c8cb99b1b7974218a1c460b113c4839d8e7528e35a5780dd2527edcabbe068"
+    },
+    "skills/doctor/SKILL.md": {
+      "source": "be-harness/skills/doctor/SKILL.md",
+      "source_sha256": "95c2bfc10385b59060318f961c4a9ba6ee788ac6cb3155580712df3a076a539b",
+      "adaptation": "codex-native",
+      "target_sha256": "ef69070f0ecd200a8bb89683630a5f4de0e4cad35db9721cd0094e82618eed0b"
+    },
+    "skills/e2e-test-loop/SKILL.md": {
+      "source": "be-harness/skills/e2e-test-loop/SKILL.md",
+      "source_sha256": "94fe2df32b2d714f87e3817f8ba09a78d1583bb6b7227d86a12aaeeb422ea481",
+      "adaptation": "codex-native",
+      "target_sha256": "dee28247c0d9c60b73e144ae2795c44864e84bd892ea4478738e05a0791f40b6"
+    },
+    "skills/e2e-test-loop/assets/render_e2e_report.py": {
+      "source": "be-harness/skills/e2e-test-loop/assets/render_e2e_report.py",
+      "source_sha256": "1aca55e0d3f0f21b8c68c98b9f7d0539c4bc700192d5c05774b382df2ec919f7",
+      "adaptation": "identical",
+      "target_sha256": "1aca55e0d3f0f21b8c68c98b9f7d0539c4bc700192d5c05774b382df2ec919f7"
+    },
+    "skills/e2e-test/SKILL.md": {
+      "source": "be-harness/skills/e2e-test/SKILL.md",
+      "source_sha256": "0ba305102c1866e6063370a988c0108c25fe702a7fed9fb943443009c0565103",
+      "adaptation": "codex-native",
+      "target_sha256": "9414a8ed7d9cb3ee7184350bc111fc499c2750eecf0228cd7433cd2257301152"
+    },
+    "skills/e2e-test/assets/e2e-lock.sh": {
+      "source": "be-harness/skills/e2e-test/assets/e2e-lock.sh",
+      "source_sha256": "4bb6bfda43ddb4c364a53e5db2f92720c053f37fe7f39c717cce91c89e8d3035",
+      "adaptation": "identical",
+      "target_sha256": "4bb6bfda43ddb4c364a53e5db2f92720c053f37fe7f39c717cce91c89e8d3035"
+    },
+    "skills/e2e-test/assets/e2e_lock.py": {
+      "source": "be-harness/skills/e2e-test/assets/e2e_lock.py",
+      "source_sha256": "5301e6638a86e86bbac7cbd9199e0680259f5f706a7530af4e86b832336f4d4b",
+      "adaptation": "identical",
+      "target_sha256": "5301e6638a86e86bbac7cbd9199e0680259f5f706a7530af4e86b832336f4d4b"
+    },
+    "skills/e2e-test/references/run-context.md": {
+      "source": "be-harness/skills/e2e-test/references/run-context.md",
+      "source_sha256": "483ead7087b6f068c7a966df19499d4bdbf0267106eb57c089050fab22a96626",
+      "adaptation": "codex-native",
+      "target_sha256": "34037974f02fcfc307b40de255799119f7256444296d0836c230737916f44f8b"
+    },
+    "skills/init/SKILL.md": {
+      "source": "be-harness/skills/init/SKILL.md",
+      "source_sha256": "f0b0324d035234c14f1b2f16bb8c0bc67d2f4c848709477e5c2c0fbcaad43c7a",
+      "adaptation": "codex-native",
+      "target_sha256": "5b35e92d18ac977213f695364ba010e7c83e93312b7e0cdd9e16e2ef34007825"
+    },
+    "skills/request/SKILL.md": {
+      "source": "be-harness/skills/request/SKILL.md",
+      "source_sha256": "e87286dbebeb4b8043ec83b4d00b33ef6cf6f11aa474a2badd37ecef073a8f43",
+      "adaptation": "codex-native",
+      "target_sha256": "a1506e8abd90eb0881c2165b3acb850e282cc5dd5234d1d69b66ad9f6ef31418"
+    },
+    "skills/request/references/edge-case-analyzer.md": {
+      "source": "be-harness/agents/edge-case-analyzer.md",
+      "source_sha256": "8b68a16e1c12bfa6557460f9b2f4d72cfe5f5de80ed5d6c6c2b424137472a515",
+      "adaptation": "codex-native",
+      "target_sha256": "8ebfa28646c13add62a5c5dd3cbf7eeef887a60d9587232678d6febd81433c61"
+    },
+    "skills/resolve-assumption/SKILL.md": {
+      "source": "common/skills/resolve-assumption/SKILL.md",
+      "source_sha256": "fa87d46d0142ca63cffc6e00efab50ed24fd4ff1c4557cc651cb017743759e1d",
+      "adaptation": "codex-native",
+      "target_sha256": "26bbe65aff5901f8bb04d883d289dcaa570edd9613c73ecc9218a2c698424095"
+    },
+    "skills/simplify-loop/SKILL.md": {
+      "source": "be-harness/skills/simplify-loop/SKILL.md",
+      "source_sha256": "61f62744f7526b5bdd5b8a91f86d01a6197739357b642c3647f11128c7bcbc5b",
+      "adaptation": "codex-native",
+      "target_sha256": "24b2dc0172f992732689a9249ebe29eabe7ae08a9538ac17a00ee1bf76fcf17c"
+    },
+    "skills/simplify-loop/references/workflow-script.md": {
+      "source": "be-harness/skills/simplify-loop/references/workflow-script.md",
+      "source_sha256": "971d8390d0abcd8c160e59a9dc6eea67ee738cd124eca88f8b17803c233cfb48",
+      "adaptation": "codex-native",
+      "target_sha256": "987c045af0c3332890c53115db3d70890de1a91517990824d534ae0d31e56044"
+    },
+    "skills/start-workflow/SKILL.md": {
+      "source": "be-harness/skills/start-workflow/SKILL.md",
+      "source_sha256": "03d001c26f2db65d263aa609ebb71e0463e0b2eeeb409358107e8a386b235056",
+      "adaptation": "codex-native",
+      "target_sha256": "07079469917575ef907fbcba37de96c3472c341423edbdeecd54f066bf75b889"
+    },
+    "skills/start-workflow/assets/risk_facts.py": {
+      "source": "be-harness/skills/start-workflow/assets/risk_facts.py",
+      "source_sha256": "1ea5ff3a3ffe253054b6cc68f21429c0889baa2bc9b67a3be86cae6a8301094a",
+      "adaptation": "identical",
+      "target_sha256": "1ea5ff3a3ffe253054b6cc68f21429c0889baa2bc9b67a3be86cae6a8301094a"
+    },
+    "skills/start-workflow/assets/test_failures.py": {
+      "source": "be-harness/skills/start-workflow/assets/test_failures.py",
+      "source_sha256": "c4b05fbeac75e9b3681be33415ae8f7e874f81b0552048f2337cf21aa2531827",
+      "adaptation": "identical",
+      "target_sha256": "c4b05fbeac75e9b3681be33415ae8f7e874f81b0552048f2337cf21aa2531827"
+    },
+    "skills/start-workflow/assets/workflow_archive.py": {
+      "source": "be-harness/skills/start-workflow/assets/workflow_archive.py",
+      "source_sha256": "6a448ffa15164f96ca0bed635c5ae5a45f763e361d7f57c04ad6fab4d48158b6",
+      "adaptation": "identical",
+      "target_sha256": "6a448ffa15164f96ca0bed635c5ae5a45f763e361d7f57c04ad6fab4d48158b6"
+    },
+    "skills/start-workflow/assets/workflow_policy.py": {
+      "source": "be-harness/skills/start-workflow/assets/workflow_policy.py",
+      "source_sha256": "d32685a2727cbe9818e5a0e37c4278e0a73478787215947c5a0046efe3f48bea",
+      "adaptation": "codex-native",
+      "target_sha256": "f45355ace3c3f30650870562de4dde8d6fd73464bc970e83803c304db620a317"
+    },
+    "skills/start-workflow/assets/workflow_results.py": {
+      "source": "be-harness/skills/start-workflow/assets/workflow_results.py",
+      "source_sha256": "3e15f51d744146665d4089cd2fdecda7d19183f00b3642cf2990b1159ddc20b7",
+      "adaptation": "identical",
+      "target_sha256": "3e15f51d744146665d4089cd2fdecda7d19183f00b3642cf2990b1159ddc20b7"
+    },
+    "skills/start-workflow/assets/workflow_run.py": {
+      "source": "be-harness/skills/start-workflow/assets/workflow_run.py",
+      "source_sha256": "93fe695f39559e1c9d9ef0781bc851e586c6f539aca4de5c3f7745440e2a0d80",
+      "adaptation": "identical",
+      "target_sha256": "93fe695f39559e1c9d9ef0781bc851e586c6f539aca4de5c3f7745440e2a0d80"
+    },
+    "skills/start-workflow/assets/workflow_scope.py": {
+      "source": "be-harness/skills/start-workflow/assets/workflow_scope.py",
+      "source_sha256": "061fcd203e17c669825eee7aea4ceb9135cf47436601d5ffd14242e0182e3a08",
+      "adaptation": "identical",
+      "target_sha256": "061fcd203e17c669825eee7aea4ceb9135cf47436601d5ffd14242e0182e3a08"
+    },
+    "skills/start-workflow/assets/writer_guard.py": {
+      "source": "be-harness/skills/start-workflow/assets/writer_guard.py",
+      "source_sha256": "5013274386392910b705847cd4f6b16ad6be46c2898592876173bc609f34ae3c",
+      "adaptation": "identical",
+      "target_sha256": "5013274386392910b705847cd4f6b16ad6be46c2898592876173bc609f34ae3c"
+    },
+    "skills/start-workflow/references/agent-prompts.md": {
+      "source": "be-harness/skills/start-workflow/references/agent-prompts.md",
+      "source_sha256": "3e78369769ebacbb36eb16f163a5f766995a20358bff29ed2f6905e9fb8cf3dc",
+      "adaptation": "codex-native",
+      "target_sha256": "293b25dd6e0763c511b3c54226436cb251ed34070b027ed95ae21a98d748a871"
+    },
+    "skills/start-workflow/references/agents/code-analyzer.md": {
+      "source": "be-harness/agents/code-analyzer.md",
+      "source_sha256": "184a55358e572e09ba3d7083cd57f54932f4a54dfd438ea5ac7e2b5b5896d77f",
+      "adaptation": "codex-native",
+      "target_sha256": "eac4589346cca5b270a4ef0049380479f45f1a084886bf5112f2b6221b580563"
+    },
+    "skills/start-workflow/references/agents/code-verifier.md": {
+      "source": "be-harness/agents/code-verifier.md",
+      "source_sha256": "b44bf332804df0e90d8ed6b1fd2632e93a5836b3580c3c25e11a0b40b9cfb1b5",
+      "adaptation": "codex-native",
+      "target_sha256": "e028bce04ad299ff38496d5d4099744a0aef3f8d6687fe10f0234b6a4686cd14"
+    },
+    "skills/start-workflow/references/agents/edge-case-analyzer.md": {
+      "source": "be-harness/agents/edge-case-analyzer.md",
+      "source_sha256": "8b68a16e1c12bfa6557460f9b2f4d72cfe5f5de80ed5d6c6c2b424137472a515",
+      "adaptation": "codex-native",
+      "target_sha256": "1afb16f183b6e1fb4120a5c6d39c07e8786b887946a7cab4011a8d0ace8110c7"
+    },
+    "skills/start-workflow/references/agents/scope-reviewer.md": {
+      "source": "be-harness/agents/scope-reviewer.md",
+      "source_sha256": "386b3ec1e3ce9b67aaccc4c56cfb8953277786c4173976d0323d213a19efbb99",
+      "adaptation": "codex-native",
+      "target_sha256": "5893ff3ad499874b5f7d5f05793f5a4005fb2856dd004276e8f17119e1a9278a"
+    },
+    "skills/start-workflow/references/agents/workflow-implementer.md": {
+      "source": "be-harness/agents/workflow-implementer.md",
+      "source_sha256": "aae9edaa0877452b2c29685216a0c4a7a8b860b79f5fe440999a0e073f46b9f7",
+      "adaptation": "codex-native",
+      "target_sha256": "69464af99a5c78c9d423cb2a64cf6866e24125cc85bdfe2e5706386a792e2c6d"
+    },
+    "skills/start-workflow/references/agents/workflow-pr.md": {
+      "source": "be-harness/agents/workflow-pr.md",
+      "source_sha256": "2aa5b562d026f18a3b5bdd411e66eccb8a6e64ab77a56816e158b8494f7b2daf",
+      "adaptation": "codex-native",
+      "target_sha256": "145c726b48e285af7d042d98997f6a7fff30fc0eb5cc6150032124b7cd3570d2"
+    },
+    "skills/start-workflow/references/agents/workflow-reflection.md": {
+      "source": "be-harness/agents/workflow-reflection.md",
+      "source_sha256": "c262bd421d3f7a7443433cd597bbe5538e8c993092b7096eb563c70ed574a0c8",
+      "adaptation": "codex-native",
+      "target_sha256": "cbe3a07a2727240ebcf166418ef6543dd55ae6d5170fa325a48c83ab422b626d"
+    },
+    "skills/start-workflow/references/analyze-verify-modes.md": {
+      "source": "be-harness/skills/start-workflow/references/analyze-verify-modes.md",
+      "source_sha256": "b59c73b6eceffcbf6b3cf117431613db07d7a751e7dd3a6d0dad69f144086e62",
+      "adaptation": "codex-native",
+      "target_sha256": "19b3ba34fd772ec6c316b39f0589a5e2d4a25587ded6f3ed2a60aaac7ac537a3"
+    },
+    "skills/start-workflow/references/entry-contract.md": {
+      "source": "be-harness/skills/start-workflow/references/entry-contract.md",
+      "source_sha256": "e9b9bb5caddf4db346829dd64d279aa412b628d9c16d094b1fe8100fcee180c8",
+      "adaptation": "codex-native",
+      "target_sha256": "45a96097bdd045d6ef9fb29e15e746a43d62191f8dd95743232462fe84ba9d19"
+    },
+    "skills/start-workflow/references/finalization.md": {
+      "source": "be-harness/skills/start-workflow/references/finalization.md",
+      "source_sha256": "cab5afa53bcf02e39373f1f0b2de6c8cf46388103dc559be9312ede2505a7978",
+      "adaptation": "codex-native",
+      "target_sha256": "33a25c8a3a97fd84e8a26795acae35a30a26944f322706939e63eb762662cce4"
+    },
+    "skills/start-workflow/references/quality-loop.md": {
+      "source": "be-harness/skills/start-workflow/references/quality-loop.md",
+      "source_sha256": "84ab55d94c3c29020aad452f1a778947555ef0c5a63462305c01cb768a501265",
+      "adaptation": "codex-native",
+      "target_sha256": "57cb340f2c8b42876bb765e9d2dfe58d571a7f3ca71fb659cb61897cc6434814"
+    },
+    "skills/start-workflow/references/result-contract.md": {
+      "source": "be-harness/skills/start-workflow/references/result-contract.md",
+      "source_sha256": "8c6620abe8e1a8f6f3cbcf0ca067f87e5e55e8e2487971976941ec6789514c1a",
+      "adaptation": "codex-native",
+      "target_sha256": "ffb73bf7d6f316dc127f3882f3b2debabeae39083aeb8fcc0b3c8e1844206718"
+    },
+    "skills/start-workflow/references/run-lifecycle.md": {
+      "source": "be-harness/skills/start-workflow/references/run-lifecycle.md",
+      "source_sha256": "78f9eff5b34c3ad76f30d30e5c5b2ab6d0830fe58284216edf824a2038f676ef",
+      "adaptation": "codex-native",
+      "target_sha256": "6f8c84fd6e835e971ffc68b3342b5d97263afb23ff7d5c73b03caf46ef4afbad"
+    },
+    "skills/start-workflow/references/scope-contract.md": {
+      "source": "be-harness/skills/start-workflow/references/scope-contract.md",
+      "source_sha256": "6baac00a7b7c9cf0691bab3d2a991cc1b3c2e0fe94403a4a5e013fc6d8f2a2d8",
+      "adaptation": "codex-native",
+      "target_sha256": "d423f8c957e4991797c2872fc098a3be0248c5805c91950a732105e72293be22"
+    },
+    "skills/start-workflow/references/tdd.md": {
+      "source": "be-harness/skills/start-workflow/references/tdd.md",
+      "source_sha256": "b06b18f99fb4ce551ff338f6643a078686100ce91fcf9a8b3531b6acf9728863",
+      "adaptation": "codex-native",
+      "target_sha256": "2b0ee966b4c23850193abb35dd3f403e609a6588ec0e5c4d0163b35190f7b20e"
+    },
+    "skills/start-workflow/references/templates.md": {
+      "source": "be-harness/skills/start-workflow/references/templates.md",
+      "source_sha256": "7f6f2800f584958e6be7adfc6c9f13aff2196c65d17364cbaa3bf2c3eeb741a9",
+      "adaptation": "codex-native",
+      "target_sha256": "75868e885b59afb32f2570057f351793416e47654d1075eb93636af4f0c3288b"
+    },
+    "skills/start-workflow/references/verification-tier.md": {
+      "source": "be-harness/skills/start-workflow/references/verification-tier.md",
+      "source_sha256": "3afd3d554040aff14349ec533f21d41ab72564c5ccc24ab5945998cae6566980",
+      "adaptation": "codex-native",
+      "target_sha256": "541a10ce0de2d89f5b916596827e58a64777bc3a89f1902053715a3309458c58"
+    },
+    "skills/start-workflow/references/writer-safety.md": {
+      "source": "be-harness/skills/start-workflow/references/writer-safety.md",
+      "source_sha256": "06bf00f60c1653f4f685e765d7f8835a4411ab4c8ceffba11b5f4fbd44f9ebb9",
+      "adaptation": "codex-native",
+      "target_sha256": "eb6e8dbc40eb3c37cd2f716be6a8fbde7d2e5efa57c98014a9595fa2ebed238a"
+    },
+    "skills/unit-test/SKILL.md": {
+      "source": "be-harness/skills/unit-test/SKILL.md",
+      "source_sha256": "f2bae0d654a2dafa2ad41edef86dc8f43fed521cb394c02a556b3c5dbb848294",
+      "adaptation": "codex-native",
+      "target_sha256": "ab65eaf8fca34aa576be2fa3db234985784e7cabee46f57577998990bb0ba6c0"
+    },
+    "tests/docgen.test.mjs": {
+      "source": "tests/docgen.test.mjs",
+      "source_sha256": "a16594a27cf8b048565d1588872a8d4521276d46a143e3e3e43a190526b7a291",
+      "adaptation": "codex-native",
+      "target_sha256": "8f5b8b785fed53d141c1da0702c5330dc225b76da0035e3199d12e3a6d333d60"
+    },
+    "tests/fixtures/grpcurl/observed.json": {
+      "source": "tests/fixtures/grpcurl/observed.json",
+      "source_sha256": "66b7f1672348dcd7c0bdff33223428cf3ed15cc04a884c15280b5680a9efc7a2",
+      "adaptation": "identical",
+      "target_sha256": "66b7f1672348dcd7c0bdff33223428cf3ed15cc04a884c15280b5680a9efc7a2"
+    },
+    "tests/fixtures/runners/README.md": {
+      "source": "tests/fixtures/runners/README.md",
+      "source_sha256": "1953fc032fe55b53816e39baf9b13afa72298237d7d61af47b4fe7f0e4d39ff4",
+      "adaptation": "identical",
+      "target_sha256": "1953fc032fe55b53816e39baf9b13afa72298237d7d61af47b4fe7f0e4d39ff4"
+    },
+    "tests/fixtures/runners/jest/baseline.log": {
+      "source": "tests/fixtures/runners/jest/baseline.log",
+      "source_sha256": "9873f88190a03b36b805a83311a38b44aaca4a72966d3bd598ddabd9a16e6767",
+      "adaptation": "identical",
+      "target_sha256": "9873f88190a03b36b805a83311a38b44aaca4a72966d3bd598ddabd9a16e6767"
+    },
+    "tests/fixtures/runners/jest/current.log": {
+      "source": "tests/fixtures/runners/jest/current.log",
+      "source_sha256": "01339f5359e50e2e0b12c36f4924916c21da034a26aaf5bf0b96f66fe93515a1",
+      "adaptation": "identical",
+      "target_sha256": "01339f5359e50e2e0b12c36f4924916c21da034a26aaf5bf0b96f66fe93515a1"
+    },
+    "tests/fixtures/runners/vitest/baseline.log": {
+      "source": "tests/fixtures/runners/vitest/baseline.log",
+      "source_sha256": "69217dc1aca040aaa9d119474504c5e1c176bbb04360c9abd416519983f9cd23",
+      "adaptation": "identical",
+      "target_sha256": "69217dc1aca040aaa9d119474504c5e1c176bbb04360c9abd416519983f9cd23"
+    },
+    "tests/fixtures/runners/vitest/current.log": {
+      "source": "tests/fixtures/runners/vitest/current.log",
+      "source_sha256": "db1314cb86bbc3ba505f1bd27fdadfde2e2e1b80646d49b85f65472fd89e62d5",
+      "adaptation": "identical",
+      "target_sha256": "db1314cb86bbc3ba505f1bd27fdadfde2e2e1b80646d49b85f65472fd89e62d5"
+    },
+    "tests/fixtures/runners/vitest/rerun-b-only.log": {
+      "source": "tests/fixtures/runners/vitest/rerun-b-only.log",
+      "source_sha256": "ef41f1eca5e2b7bf9ecf96d1c43de2b0b5d61c80b750669d69a067a66ae48fdd",
+      "adaptation": "identical",
+      "target_sha256": "ef41f1eca5e2b7bf9ecf96d1c43de2b0b5d61c80b750669d69a067a66ae48fdd"
+    },
+    "tests/test_e2e_interruption.py": {
+      "source": "tests/test_e2e_interruption.py",
+      "source_sha256": "79c6e512da6ee51b405e573a42f75af79074b7b89f1b323e7545469e551902dc",
+      "adaptation": "codex-native",
+      "target_sha256": "4e544704c5d312ea6da73ffe03f5b9fce9201849482cefeb5666f752b4d16efe"
+    },
+    "tests/test_e2e_lock.py": {
+      "source": "tests/test_e2e_lock.py",
+      "source_sha256": "f568d9402f8d755892638ed9263118bc9d34d6a20f57a31f1e28c94d0b244f57",
+      "adaptation": "codex-native",
+      "target_sha256": "1ba91027d6de09c92af370e4fcc2be06609fbce59b560fd152b55f25ffd6c56c"
+    },
+    "tests/test_git_checks.py": {
+      "source": "tests/test_git_checks.py",
+      "source_sha256": "115a7f64897e868326e5be32bc298c94ee25dab5b2dc0f6c9e6272eb449551f6",
+      "adaptation": "codex-native",
+      "target_sha256": "af6888cd5b4e0ec3d8808db8064cdca369df315d0972c157226c67f34d21a7ea"
+    },
+    "tests/test_test_failures.py": {
+      "source": "tests/test_test_failures.py",
+      "source_sha256": "3ee0c18d5a9deef04322b1953435d816fdec737a317b8f800ee1538a7e64f944",
+      "adaptation": "codex-native",
+      "target_sha256": "81c4f885d7e7b0c6f8ba5dae3ee5ce0216c3eb44c01269c7f139f462adae5346"
+    },
+    "tests/test_workflow_archive.py": {
+      "source": "tests/test_workflow_archive.py",
+      "source_sha256": "2b00b1c81403a6807234c348877be4eac4601cb56185342594612b4764a5f9da",
+      "adaptation": "identical",
+      "target_sha256": "2b00b1c81403a6807234c348877be4eac4601cb56185342594612b4764a5f9da"
+    },
+    "tests/test_workflow_results.py": {
+      "source": "tests/test_workflow_results.py",
+      "source_sha256": "94ebf362ca284b0c6f73e9dd26b49bc2fedb57ecb071f86cc1367178f39677b8",
+      "adaptation": "codex-native",
+      "target_sha256": "922b19fbcd8069e8f74c87d5ea7064a83eac7db57e53e89cc245fdf00e66ca70"
+    },
+    "tests/test_workflow_run.py": {
+      "source": "tests/test_workflow_run.py",
+      "source_sha256": "1ab9fda94e90d242c9b39234abc8cb6637d6a767efee45d3f00c76b6ebbcce6d",
+      "adaptation": "codex-native",
+      "target_sha256": "33e67ab68cb83fcc6ff9fd343df261a1258a9f1433bd1e1317d76b31934076eb"
+    },
+    "tests/test_workflow_scope.py": {
+      "source": "tests/test_workflow_scope.py",
+      "source_sha256": "2b54d7f939bf9c33214c2cbd381669d2bec31ab29558f3d5d7ee10fe98d12021",
+      "adaptation": "codex-native",
+      "target_sha256": "89e9d3d02b496845b3b676a456b26e90631a861da44a4a4f82c17fc6187ca9cc"
+    },
+    "tests/test_writer_guard.py": {
+      "source": "tests/test_writer_guard.py",
+      "source_sha256": "8ea296ebfc702355e78a87875a24afc64827b5cb6fc1a189d9559279da69d5bd",
+      "adaptation": "codex-native",
+      "target_sha256": "b6ed36dd4e1ce5c4d104393fdf10c2df3fe71e918fa92a7d6373737b29b8a21c"
+    }
+  }
+}

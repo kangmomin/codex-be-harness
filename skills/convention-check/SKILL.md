@@ -93,7 +93,7 @@ description: "프로젝트 컨벤션 위배 사항을 검사하고 보고한다 
 
 Spec(Technical Spec 또는 유저 지시)에 명시되지 않은 동작 변경이 코드에 존재하는지 검사한다:
 
-1. `git diff`에서 새로 추가/변경된 비즈니스 로직을 추출한다.
+1. 공통 범위의 `patch`·`index_patch`에서 새로 추가/변경된 비즈니스 로직을 추출한다.
 2. 해당 변경이 Spec의 요구사항에 직접 대응하는지 확인한다.
 3. 대응하지 않는 변경(e.g. 추가 필터, 정렬 변경, 상태 체크 추가 등)에 `[Assumption]` 주석 또는 커밋 메시지 태그가 없으면 위반으로 보고한다.
 4. **예외**: 해당 변경이 PR 본문 또는 워크플로우 보고서의 "확정된 결정" 섹션에 기록되어 있으면 통과다 — Assumption Gate(`$codex-be-harness:commit-push` Step 3)에서 사용자 확인을 거쳐 태그가 제거된 정상 상태다.
@@ -102,7 +102,7 @@ Spec(Technical Spec 또는 유저 지시)에 명시되지 않은 동작 변경�
 
 변경된 파일에 새로운 외부 패키지 import가 추가된 경우, 프로젝트 내 기존 사용 패턴과 일치하는지 자동 검사한다:
 
-1. `git diff`에서 새로 추가된 import 라인을 추출한다.
+1. 공통 범위의 `patch`·`index_patch`에서 새로 추가된 import 라인을 추출한다.
 2. 표준 라이브러리(`fmt`, `net/http` 등)와 프로젝트 내부 패키지는 제외한다.
 3. 남은 외부 패키지에 대해 `rg`로 프로젝트 내 기존 사용 여부를 확인한다:
    - **기존에 사용 중**: 기존 import 방식(alias 등)과 일치하는지 확인
@@ -121,3 +121,10 @@ Spec(Technical Spec 또는 유저 지시)에 명시되지 않은 동작 변경�
 
 - 본 스킬은 **보고만 한다**. 수정은 호출자(start-workflow 통합 수정 단계) 또는 유저 판단에 위임한다.
 - 위반 0건이면 "위반: 0건 — 통과" 한 줄로 보고한다.
+
+## 실행 범위 계약
+
+[scope-contract.md](../start-workflow/references/scope-contract.md)를 먼저 읽고 해당 helper를 실행한다. 이 읽기 전용 스킬은 writer를 생성하지 않는다.
+
+workflow 호출은 START_SHA와 OWNED_FILES로 workflow_scope.py가 수집한 명시 경로 목록을 사용한다. main/base를 재추론하거나 dirty 상태에 따라 기준 SHA를 바꾸지 않는다. standalone은 기존 PR base·명시 base·profile mainBranch·origin/HEAD에서 확정한 base-ref를 사용한다. HEAD로 폴백하지 않는다. 삭제는 diff, symlink는 링크 자체만 검토한다. Git/helper 실패는 빈 범위 PASS가 아니라 BLOCKED:REVIEW_SCOPE다.
+writer는 writer-safety.md의 실제 종료 확인 후에만 재시도한다. 공유 상태·결과 JSON은 오케스트레이터가 기록하고 역할은 구조화 결과만 반환한다.

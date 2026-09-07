@@ -3,13 +3,13 @@
 ## 기준
 
 - upstream: `kangmomin/harness-plugins`
-- commit: `e87949b127159759950a2247a5067d30e41292a1`
-- source plugin: `be-harness@1.1.0`
-- target plugin: `codex-be-harness@0.5.1`
+- commit: `f9ce681427ccfbfd9194d3c3f204a445ae6f45dd` + 현재 미커밋 작업 트리 (파일별 실제 입력 해시는 UPSTREAM-SYNC.json)
+- source plugin: `be-harness@1.5.4`; inlined common `common@0.14.2`
+- target plugin: `codex-be-harness@0.6.0`
 
 호환성은 문장 일치가 아니라 관찰 가능한 workflow 동작을 기준으로 한다. Phase 순서, 승인·차단 게이트, 상태 코드, 루프 상한, 보고서 머리글을 invariant로 본다.
 
-### 부분 이식 현황 (upstream 1.2.0 이후)
+### 이식 이력 (아래 과거 릴리스 계약은 0.6.0 변경으로 대체될 수 있음)
 
 | upstream 버전 | 핵심 변경 | 포팅 상태 | 포팅 버전 |
 |---|---|---|---|
@@ -140,3 +140,26 @@
 - fullstack workflow 자체는 포함하지 않는다.
 - 원격 `submit-feedback`은 포함하지 않는다. 로컬 override를 저장하고 `SKIPPED:NO_FEEDBACK_UPSTREAM`을 반환한다.
 - public ChatGPT 배포보다 로컬 Codex의 shell·Git workflow를 우선한다.
+
+
+## 0.6.0 동기화와 Codex 차이
+
+현재 on-disk BE와 기존 공통 6개 스킬을 기준으로 한다. FE/fullstack/minmos와 common의 신규 merge/sync-base/how-to-use/submit-feedback는 기존 BE 제품 범위 밖이며 추가하지 않는다. installed cache와 marketplace는 수정하지 않는다.
+
+| 영역 | 동기화 | Codex 경계 |
+|---|---|---|
+| run/entry | workflow_run·policy와 명시적 resume, Run metadata, publish policy | BE Build/Analyze/Verify만; 외부 CLI/provider/overlay 경로 미지원 |
+| state | schema 4와 공통 Run(CWD/MODE/RUN_ID/RUN_DIR), PUBLISH_POLICY/ROUTE_TARGET | topologyModels·immutable Profile Snapshot 유지. schema 2→3 자동 보완은 폐지; 구 schema/없는 run.json은 차단 |
+| results/finalization | v1 JSON, 실제 tested_tree, append-only events, 승인 수정 후 재검증·원격 반영·배타 archive | Sol High가 공유 결과/상태 유일 owner. FAIL/BLOCKED를 DONE으로 바꾸지 않음 |
+| scope/writers | START_SHA+index/worktree/소유 untracked, 삭제/symlink, receipt/stop/scope | 실제 cwd 강제 없는 collaboration host는 순차 Terra. interrupt 접수는 종료 근거 아님. 고정 topology/model/effort 유지 |
+| E2E | v2 lease helper·bind 자원·토큰·heartbeat, JSON renderer, 중단 이력, 빌드 후 재검증 | Codex PTY/session·55초 이하 poll·540초 총 대기, profile snapshot 유지. 기본 HTTP 범위 유지 |
+| TDD | Go package/JS file 전체 ID·오류 전체 비교·재실행 실패 보존 | 같은 ID 규칙을 Test Map/baseline에 적용 |
+| config/doctor | bounded parser·원자 apply·오프라인 활성 의존성 검사 | .codex 상속 경로, topologyModels 4슬롯/provider 없음, preset 임의 감지 없음 |
+| common | git_checks·dirty index 보존·현재 HEAD Gate·base 분리·PR 재사용 | 동봉 skill 절차 사용; 기존 승인 범위 유지 |
+| doc-gen | 실제 Mermaid renderer·offline SVG·twin 검증·배타 생성 | workflow/E2E 보고는 계속 md; doc-gen의 html/twin만 Node/Chromium 사용 |
+
+순수 helper와 renderer/lock/git assets는 원본과 바이트 동일하다. policy/profile/doctor는 native adapter이며 원본/결과 해시를 각각 기록한다. profile parser는 typed JSON 배열의 쉼표도 지원한다. 모델/effort 허용값은 기존 native topology 표 그대로다.
+
+새 lifecycle/result/scope/writer/finalization reference와 config/commit/doc-gen assets는 각 skill 또는 Phase 진입점에서 로드한다. E2E renderer는 Markdown 대신 JSON을 입력으로 받으며 workflow_archive에는 --results를 전달한다. 구 Markdown-only archive 출력은 helper의 DEGRADED 호환 경로일 뿐 신규 workflow에서 사용하지 않는다.
+
+이전 이식 표의 2d7a01c/41142d7 SHA 고정은 릴리스 이력이다. 현재 기준은 [UPSTREAM-SYNC.json](UPSTREAM-SYNC.json)의 복사 당시 source_sha256/target_sha256이다. 검증은 플러그인 구조·native adapter·실제 로컬 Git/worktree/lock·오프라인 renderer까지이며 외부 모델 전체 workflow나 실제 서비스 API/push/PR를 실행했다는 뜻은 아니다.

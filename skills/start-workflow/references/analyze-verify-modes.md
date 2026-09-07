@@ -1,6 +1,6 @@
 > `--analyze`와 `--verify`의 전용 절차다. Build Phase와 섞지 않는다.
 > 상태 파일은 상위 스킬의 실행별 `{RUN_DIR}` 안에 생성한다.
-> Analyze/Verify 상태 파일은 위 최소 헤더만 쓰며 Build 스키마(`## Flags`·`## Profile Snapshot` 등) 검사 대상이 아니다. Luna 읽기 전용 spawn은 `{TOPOLOGY_MODELS}`의 `readonly` 슬롯 확정값을 쓴다.
+> Analyze/Verify 상태 파일은 아래 최소 헤더와 공통 Run 헤더를 쓰며 Build 스키마(`## Flags`·`## Profile Snapshot` 등) 검사 대상이 아니다. Luna 읽기 전용 spawn은 `{TOPOLOGY_MODELS}`의 `readonly` 슬롯 확정값을 쓴다.
 
 # Analyze / Verify
 
@@ -140,3 +140,25 @@ Luna xHigh 역할에 전달한다. Sol High가 결과를 `위반: N건`으로 �
 종합은 가장 나쁜 카테고리 판정을 따른다. 발견 사항 수정은 Critical+High 전체/선택/건너뛰기 중
 사용자의 승인을 받은 후에만 수행하고 커밋 여부도 확인한다. 상태를 마감하고 실행 중 시작한 세션이
 있다면 정리한다.
+
+## 공통 실행·결과 기록
+
+진입은 entry-contract.md와 run-lifecycle.md를 먼저 따른다. A2/V2 신규 상태는 mode/scope/focus/topology에 더해 다음 공통 헤더를 한 번만 포함한다. 재개 시 덮어쓰지 않는다.
+
+```markdown
+## Run
+- CWD: {CWD}
+- MODE: {analyze|verify}
+- RUN_ID: {RUN_ID}
+- RUN_DIR: {RUN_DIR}
+
+## Flags
+- PUBLISH_POLICY: none
+- ROUTE_TARGET: be
+- HARD_MODE: false
+
+## Remaining Phases
+- {실제 미완료 Phase}
+```
+
+Build 스키마·Profile Snapshot은 적용하지 않는다. 실행 명령은 Pre-flight 확정값을 사용하고 결과는 result-contract.md대로 JSON에 보존한다. A4/V5에서 실제 남은 작업을 확인한 뒤 Remaining Phases를 없음으로 마감한다. 분석/검증 중 구현·commit/push를 하지 않는다. 후속 수정 승인은 별도 Build 범위다.

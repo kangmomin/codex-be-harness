@@ -5,7 +5,7 @@
 
 ## 공통 envelope
 
-모든 서브에이전트 프롬프트에 아래 정보를 넣는다.
+Phase 8.8을 제외한 서브에이전트 프롬프트에 아래 정보를 넣는다. 격리 Read-back은 quality-loop.md의 소스 경로 전용 envelope만 사용하고 RUN/상태/노트/profile 경로를 전달하지 않는다.
 
 ```text
 프로젝트 루트: {CWD}
@@ -150,3 +150,10 @@ Luna xHigh 역할에 [agents/workflow-reflection.md](agents/workflow-reflection.
 - 구현: [agents/workflow-implementer.md](agents/workflow-implementer.md)
 - PR: [agents/workflow-pr.md](agents/workflow-pr.md)
 - 성찰: [agents/workflow-reflection.md](agents/workflow-reflection.md)
+
+## 실행 소유권과 결과 배리어
+
+모든 writer dispatch/재시도 전에 [writer-safety.md](writer-safety.md)를 적용한다. timeout·오류·interrupt 접수는 종료가 아니다. 실제 종료 증거 없는 재시도는 `BLOCKED:WRITER_UNKNOWN`이다.
+Sol High만 RUN 경로·OWNED_FILES·RESULTS_FILE·receipt·상태/노트를 갱신한다. Terra/Luna/Advisor는 자기 결과 객체를 반환한다. nested spawn/직접 commit 제한은 유지한다.
+범위는 [scope-contract.md](scope-contract.md)의 START_SHA~작업 트리 JSON에서 수집하며 envelope에 실제 명시 파일 목록을 넣는다. Read-back에는 Spec/Plan/상태 경로 없이 소스 목록만 보낸다.
+writer 종료 후 실제 scope와 결과를 확인하고 다음 Phase를 진행한다. 호스트에서 checkout별 실제 cwd를 강제하지 못하면 parallel-slices도 순차 writer로 실행한다.

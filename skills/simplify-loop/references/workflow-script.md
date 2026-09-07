@@ -8,7 +8,7 @@
 
 | 키 | 타입 | 의미 |
 |----|------|------|
-| `diffCommand` | string | 범위 식별 전용 diff 명령 |
+| `scope` | object | workflow_scope.py의 성공한 범위 객체 |
 | `maxIterations` | positive integer | 반복 상한, 기본 10 |
 | `candidateCap` | positive integer | iteration당 후보 상한, 기본 8 |
 | `retryLimit` | non-negative integer | 인프라 실패·재제안 허용 횟수, 기본 1 |
@@ -20,7 +20,7 @@
 { status, iterations, applied[], rejected[], holds[], failed[], iterLog[], note }
 ```
 
-`status`는 `DONE`, `BLOCKED:MAX_ITERATIONS`, `BLOCKED:NO_PROGRESS`, `BLOCKED:REVIEW_INCOMPLETE`, `FAIL` 중 하나다. Phase 1의 조기 종료 코드는 `SKIPPED:NO_CHANGES`, `SKIPPED:BASE_REF_UNRESOLVED`다.
+`status`는 `DONE`, `BLOCKED:MAX_ITERATIONS`, `BLOCKED:NO_PROGRESS`, `BLOCKED:REVIEW_INCOMPLETE`, `FAIL` 중 하나다. Phase 1의 조기 종료 코드는 `SKIPPED:NO_CHANGES`, `BLOCKED:REVIEW_SCOPE`다.
 
 ## 후보와 키
 
@@ -69,7 +69,7 @@ exitNote: null
 
 다음 기준으로 후보를 찾는다.
 
-- `diffCommand`로 변경 파일과 영역만 식별하고 `current`는 작업 트리 파일에서 다시 읽는다.
+- `scope.paths`·`scope.patch`·`scope.index_patch`로 변경 파일과 영역만 식별하고 `current`는 작업 트리 파일에서 다시 읽는다.
 - 중복 코드, 불필요한 추상화, 죽은 코드, 더 단순한 동등 표현만 제안한다.
 - 기존 동작을 완전히 보존해야 하며 기능 추가, 동작 변경, 스타일 취향, 무관한 범위 리팩터링은 제외한다.
 - 전체 발견 수를 `totalFound`에 기록하고 중요도 순 최대 `candidateCap`건을 반환한다.
@@ -192,3 +192,8 @@ flush 뒤 status 우선순위:
 4. 그 외 `BLOCKED:MAX_ITERATIONS`
 
 `holds`와 `failed`는 status가 `DONE`이어도 반환하고 경고에 노출한다.
+
+## 실행 범위 계약
+
+workflow 호출은 START_SHA와 OWNED_FILES로 workflow_scope.py가 수집한 명시 경로 목록을 사용한다. main/base를 재추론하거나 dirty 상태에 따라 기준 SHA를 바꾸지 않는다. standalone은 기존 PR base·명시 base·profile mainBranch·origin/HEAD에서 확정한 base-ref를 사용한다. HEAD로 폴백하지 않는다. 삭제는 diff, symlink는 링크 자체만 검토한다. Git/helper 실패는 빈 범위 PASS가 아니라 BLOCKED:REVIEW_SCOPE다.
+writer는 writer-safety.md의 실제 종료 확인 후에만 재시도한다. 공유 상태·결과 JSON은 오케스트레이터가 기록하고 역할은 구조화 결과만 반환한다.

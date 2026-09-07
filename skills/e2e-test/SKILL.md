@@ -16,10 +16,10 @@ description: "기능 추가/수정 후 연관 HTTP API를 실제 요청으로 E2
 
 - `{SKILL_DIR}`: 현재 `SKILL.md`가 있는 디렉토리의 절대 경로. 설치 위치나 현재 작업 디렉토리에서 추측하지 않는다.
 - `{LOCK_SCRIPT}`: `{SKILL_DIR}/assets/e2e-lock.sh`.
-- `{RUN_DIR}`: `mktemp -d`로 만든 이번 실행 전용 디렉토리. 응답 파일과 락 소유 토큰에 사용한다.
+- `{E2E_RUN_DIR}`·`{E2E_LOCK_TOKEN}`·`{E2E_BIND_ENDPOINT}`·`{E2E_RESOURCE_KEY}`: [run-context.md](references/run-context.md)로 확정한다. 상위 RUN_DIR은 덮거나 삭제하지 않는다.
 - `{SERVER_SESSION}` / `{SERVER_PID}`: 이번 실행이 서버를 시작했을 때만 보관하는 PTY session handle과 숫자 PID.
 
-정상·실패·SKIP·중단 어느 경로든 종료 전에 이번 실행이 만든 서버 세션, 획득한 락, `{RUN_DIR}`을 이 순서로 정리한다. 실행 중 예외가 생겨도 이 cleanup 규칙은 생략하지 않는다.
+정상·실패·SKIP·중단 어느 경로든 종료 전에 이번 실행이 만든 서버 세션, 획득한 락, 소유한 `{E2E_RUN_DIR}`을 이 순서로 정리한다. 실행 중 예외가 생겨도 이 cleanup 규칙은 생략하지 않는다.
 
 ## Language Rule
 
@@ -60,7 +60,7 @@ description: "기능 추가/수정 후 연관 HTTP API를 실제 요청으로 E2
 
 사용자의 요청 또는 현재 브랜치의 `git diff`에서 변경된 API를 추출한다:
 
-1. `git diff --name-only {mainBranch}...HEAD` 로 변경 파일 목록 (`{mainBranch}`는 profile 값, 없으면 `main`).
+1. workflow는 START_SHA/OWNED_FILES로 `../start-workflow/assets/workflow_scope.py`의 명시 경로 목록을 수집한다. standalone은 확정 mainBranch/PR base를 --base-ref로 전달한다. `../start-workflow/references/scope-contract.md`를 따른다. helper 실패는 BLOCKED:REVIEW_SCOPE다.
 2. profile의 `sourceDirs` 중 handler/route 계층에서 HTTP 엔드포인트(Method + Path) 변경을 찾는다.
 3. 각 엔드포인트에 대해 아래를 정리한다:
    - Method, Path
@@ -128,12 +128,14 @@ Spec에 엣지 케이스 표가 없거나 ID가 없으면(구버전 Spec) `EC-*`
 
 1. 최초 시각과 총 deadline(최초 시각 + 540초)을 기록한다.
 2. 남은 시간이 0보다 크면 `slice = min(55, 남은 초)`로 계산한다.
-3. 다음 명령을 실행한다. `TMPDIR={RUN_DIR}`은 획득·heartbeat·해제 호출에 동일하게 사용해야 이번 실행의 소유 토큰이 다른 실행과 섞이지 않는다.
+3. 다음 명령을 실행한다. 모든 acquire/beat/release/status에 동일한 resolved_e2e_lock_dir를 전달한다.
 
    ```bash
-   TMPDIR="{RUN_DIR}" bash "{LOCK_SCRIPT}" acquire "{serverUrl}" \
-     --timeout "{slice}" --label "e2e-test {브랜치명 또는 대상 요약}"
+   HARNESS_E2E_LOCK_DIR="{resolved_e2e_lock_dir}" bash "{LOCK_SCRIPT}" acquire "{E2E_BIND_ENDPOINT}" \
+     --token "{E2E_LOCK_TOKEN}" --timeout "{slice}" --label "e2e-test {대상 요약}"
    ```
+
+   acquire 출력의 `key=resource:{hash}`를 E2E_RESOURCE_KEY로 보관하고 이후 beat/release는 이 키를 쓴다.
 
 4. `ACQUIRED` 또는 `ALREADY_HELD`면 Step 4로 진행한다. slice timeout이면 누적 경과 시간을 갱신하고, 사용자에게 대기 중임을 알린 뒤 다음 slice를 실행한다.
 5. 누적 540초가 끝나면 `SKIPPED:LOCK_TIMEOUT`을 반환한다. 마지막 출력의 `holder_label`을 함께 보고한다.
@@ -146,14 +148,16 @@ Spec에 엣지 케이스 표가 없거나 ID가 없으면(구버전 Spec) `EC-*`
 |-----------|------|
 | 0 (`ACQUIRED` / `ALREADY_HELD`) | Step 4로 진행 |
 | 2 (`TIMEOUT`) | 총 deadline 전이면 다음 slice, 총 540초 소진이면 `SKIPPED:LOCK_TIMEOUT` |
-| 그 외(`1` — 락 루트/락 디렉토리 생성 불가·권한 오류 등 획득 자체 불가; 스크립트는 `mkdir`의 비-EEXIST 실패를 대기 없이 즉시 `ERROR` exit 1로 끝낸다) | `BLOCKED:LOCK_UNAVAILABLE` — 서버를 기동하지 않고 즉시 종료(락 미획득이라 Step 6.5 해제 대상 아님). SKIP이 아니라 차단이며 호출자가 Gate 보류로 처리한다 |
+| 그 외(`1` — 락 루트/락 디렉토리 생성 불가·권한 오류 등 획득 자체 불가; Python lease helper는 파일시스템 오류를 즉시 `ERROR` exit 1로 끝낸다) | `BLOCKED:LOCK_UNAVAILABLE` — 서버를 기동하지 않고 즉시 종료(락 미획득이라 Step 6.5 해제 대상 아님). SKIP이 아니라 차단이며 호출자가 Gate 보류로 처리한다 |
 
 대기 중이면 사용자에게 한 줄로 알린다: "다른 에이전트가 `{serverUrl}` E2E 실행 중 — 순번을 기다립니다."
 
-락 키는 `serverUrl` 의 host:port 라, 다른 서비스를 테스트하는 에이전트끼리는 서로 기다리지 않는다.
-보유자가 heartbeat 없이 15분을 넘기면(에이전트가 죽은 경우) 락은 자동 회수된다.
+락은 실제 network namespace·bind 주소 집합·port 겹침을 검사한다. 여러 포트는 정렬 획득하고 부분 실패 시 소유 lease를 해제한다. TTL 만료는 lease 회수 조건이며 프로세스 사망 증거가 아니다.
 
 ## Step 4: 서버 기동
+
+자기 락 획득 → 빌드 → 기동 순서다. 수정 부모/에이전트가 잠금 밖에서 실행 바이너리를 빌드하거나 재시작하지 않는다.
+`buildCommand`가 있으면 여기서 성공을 확인한다(기동 명령이 소스를 직접 빌드하면 중복 생략). 실패는 SKIPPED:SERVER_BUILD_FAIL로 lease를 해제한다. 수정 재검증인데 빌드/실행 버전 등 반영 증거가 없으면 BLOCKED:SERVER_CODE_UNVERIFIED다. --skip-server 외부 서버도 같은 증거가 필요하며 기존 서버를 임의 변경하지 않는다.
 
 `--skip-server`가 아니고 `runServerCommand`가 있으면 PTY 세션으로 기동한다. 단순 background shell로 분리하지 않는다.
 
@@ -168,13 +172,13 @@ Spec에 엣지 케이스 표가 없거나 ID가 없으면(구버전 Spec) `EC-*`
 ## Step 5: 요청 실행
 
 > 락을 잡았다면(`--no-lock` 아님) 시나리오를 몇 개 처리할 때마다 heartbeat를 보낸다 —
-> `TMPDIR="{RUN_DIR}" bash "{LOCK_SCRIPT}" beat "{serverUrl}"`.
-> heartbeat 가 15분 끊기면 다른 에이전트가 죽은 락으로 보고 회수한다.
+> `HARNESS_E2E_LOCK_DIR="{resolved_e2e_lock_dir}" bash "{LOCK_SCRIPT}" beat "{E2E_RESOURCE_KEY}" --token "{E2E_LOCK_TOKEN}"`.
+> heartbeat 실패 시 서버/시나리오 쓰기를 중단하고 소유 세션 정리 후 보고한다. TTL은 writer 종료 확인이 아니다.
 
 각 시나리오에 대해:
 
 ```bash
-curl -sS -o "{RUN_DIR}/response.json" \
+curl -sS -o "{E2E_RUN_DIR}/response.json" \
   -w "HTTP %{http_code}\nTime %{time_total}s\n" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN"  \  # 해당 시만
@@ -204,7 +208,7 @@ Step 4에서 만든 서버만 종료한다. `--skip-server`이거나 이번 실�
 1. `{SERVER_SESSION}`에 interrupt를 보내고 최대 5초 동안 짧게 poll한다.
 2. 아직 실행 중이면 검증한 `{SERVER_PID}`에 `TERM`을 보내고 최대 5초 기다린다. 자식 프로세스가 남으면 해당 PID의 자식에도 `TERM`을 보낸다.
 3. 그래도 살아 있으면 이번 실행에서 기록한 PID와 그 자식에만 `KILL`을 보내고 PTY가 종료될 때까지 poll한다.
-4. 이미 종료된 session은 exit 결과만 수집한다. 숫자로 검증되지 않은 PID, 재사용 가능성이 있는 임의 PID, 기존 서버에는 kill을 보내지 않는다.
+4. 이미 종료된 session은 exit 결과만 수집한다. 숫자로 검증되지 않은 PID, 재사용 가능성이 있는 임의 PID, 기존 서버에는 kill을 보내지 않는다. 시작 시 PID/boot_id/start_ticks를 기록하고 signal 직전에 동일 process인지 확인한다. 종료가 불명확하면 BLOCKED:WRITER_UNKNOWN과 handle을 보존한다.
 
 서버 정리는 락 해제보다 먼저 수행하며 모든 종료 경로의 cleanup에서 한 번만 실행한다.
 
@@ -214,7 +218,7 @@ Step 3.5에서 락을 잡았다면 반드시 해제한다. **정상 종료·SKIP
 TTL(15분) 자동 회수는 안전망이지 해제 수단이 아니며, 그동안 다른 에이전트가 대기한다.
 
 ```bash
-TMPDIR="{RUN_DIR}" bash "{LOCK_SCRIPT}" release "{serverUrl}"
+HARNESS_E2E_LOCK_DIR="{resolved_e2e_lock_dir}" bash "{LOCK_SCRIPT}" release "{E2E_RESOURCE_KEY}" --token "{E2E_LOCK_TOKEN}"
 ```
 
 `RELEASE_DENIED` 가 나오면 이미 TTL 회수 후 다른 에이전트가 락을 가져간 것이다 (해당 실행 결과는 오염 가능성이 있으므로 리포트에 경고로 남긴다).
@@ -286,10 +290,15 @@ SKIP은 오케스트레이터의 루프 재시작 트리거가 아니다.
 **SKIP 경로의 락 해제**: Step 3.5 이후에 발생하는 `SERVER_START_FAIL`은 종료 전에 반드시 Step 6.5를 수행한다.
 Step 3.5 이전의 SKIP(`NO_PROFILE`, `DISABLED`, `NO_SERVER_URL`, `NO_SERVER`, `NO_AUTH`, `NO_CHANGED_API`)과 `LOCK_TIMEOUT`은 락을 잡지 않았으므로 해제할 것이 없다. `LOCK_UNAVAILABLE`도 락을 잡지 않았으므로 해제할 것이 없다.
 
-락 해제 뒤 `{RUN_DIR}`을 제거한다. 서버 또는 락 cleanup이 실패하면 원래 테스트 판정을 덮어쓰지 말고 리포트에 cleanup 경고를 추가한다.
+하위 호출은 상위 loop의 E2E_RUN_DIR/JSON을 삭제하지 않는다. standalone도 결과 인계·서버 종료·락 해제를 확인한 뒤 자기 E2E_RUN_DIR만 정리한다. 서버 또는 락 cleanup이 실패하면 원래 테스트 판정을 덮어쓰지 말고 리포트에 cleanup 경고를 추가한다.
 
 ## 주의사항
 
 - DB 시드/정리는 **프로젝트의 기존 스크립트**를 그대로 호출한다. be-harness는 DB를 직접 조작하지 않는다.
 - gRPC 테스트는 `grpcurl` 등 전용 도구가 필요하므로 이 스킬에서 다루지 않는다 (프로젝트에서 별도 스크립트로 처리).
 - PubSub/큐 메시지 검증도 범위 밖이다.
+
+## 결과 JSON
+
+`../start-workflow/references/result-contract.md`를 읽고 targets/cases와 실제 호출 이벤트를 반환한다. HTTP client 오류·미호출은 server_contact:false이며 PASS로 만들지 않는다. 기본 지원은 HTTP이며 프로젝트의 별도 gRPC 결과를 받으면 미지원/미호출 RPC도 분모에서 보존한다.
+검증 전후 tree가 동일할 때만 tested_tree를 기록한다. 부모가 있는 경우 부모만 JSON을 누적하고 하위는 결과 객체·서버/lease 정리 증거를 반환한다. standalone은 같은 v1 JSON을 자기 실행에서 유지한다.

@@ -138,5 +138,9 @@ Profile 은 "값", projectConventions 는 "코드 규약의 참조 문서", Over
 ## 주의
 
 - 오버라이드 파일은 **프로젝트 저장소에 커밋**되어야 팀 전체에 일관 적용된다.
-- 프라이빗/개인 설정은 `.codex/be-harness/common.local.md` 처럼 `.local.md` 접미사를 쓰고 `.gitignore` 대상으로 둘 수 있다 (선택).
+- 로더는 common.md와 skills/{name}.md, 명시된 agents/{name}.md만 읽는다. common.local.md는 자동 로드하지 않는다. 개인 규칙은 지원 경로 중 팀 파일과 겹치지 않는 경로를 .git/info/exclude에 등록한다. 이미 추적되는 파일은 ignore로 비공개가 되지 않는다.
 - 오버라이드를 통해 **플러그인 기본 동작을 역행**(예: "빌드 검증 건너뛰기")하는 건 가능하지만, 이유는 반드시 파일에 기록한다.
+
+## 호스트 경계
+
+오버라이드는 프로젝트 동작 규칙이며 호스트의 실제 도구/쓰기 권한을 추가하지 않는다. 설치된 플러그인의 SKILL/assets 절대 경로를 현재 세션 metadata로 확정하고 다른 캐시 버전을 추측하지 않는다. writer 종료·결과·범위의 실행 계약과 Codex-native topologyModels를 함께 유지한다.

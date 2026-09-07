@@ -42,11 +42,15 @@ python3 {SKILL_DIR}/assets/test_failures.py --runner auto --exit-code $EXIT --su
 | 필드 | 의미 |
 |------|------|
 | `러너 완주` | 러너가 전체 스위트를 발견·실행 완료했는지. `N`이면 실패 목록을 신뢰할 수 없다. 판정 매트릭스: 종료 마커(go `ok/FAIL {pkg}` 요약 줄, jest `Tests:`, vitest `Test Files`) 있음 → `Y` (exit ≠ 0은 "실패 있음"으로만 해석) / 마커 없음 → `N` (중단·크래시·설정 오류) / 마커 있음 ∧ 실패 0 ∧ exit ≠ 0 → `Y` + `unparsed` 1건(실패 없는 비정상 종료) / 테스트 0건 → `Y` + `unparsed`(테스트 0건) |
-| `실패 목록` | 항목 = `` `{식별자}` :: `{정규화 시그니처}` ``, 항목 구분은 닫는 백틱과 여는 백틱 사이의 ` / `만. 식별자는 러너 네이티브 전체 ID(go `TestX/sub`, jest·vitest `describe › it` 전체 경로), 키 = suite + 식별자. 내부 백틱은 `'`로, `\|`는 escape |
-| `정규화 시그니처` | 실패 메시지 **첫 줄**에서 경로·라인 번호·타임스탬프·메모리 주소(`0x…`)·goroutine id를 제거하고 공백을 축약한 문자열. **비교 키는 정규화된 첫 줄 전체**(절단 없음), 표시만 120자 + 해시 8자 |
+| `실패 목록` | 항목 = `` `{식별자}` :: `{정규화 시그니처}` ``, 항목 구분은 닫는 백틱과 여는 백틱 사이의 ` / `만. 식별자는 러너 네이티브 전체 ID(go `{package}::TestX/sub`, jest·vitest `{runner}::{file}::{describe › it}` 전체 경로), 키 = suite + 식별자. 내부 백틱은 `'`로, `\|`는 escape |
+| `정규화 시그니처` | Go는 기존 첫 오류 정규화 규칙을 따른다. JS는 JSON `failureMessages` 또는 텍스트 오류 본문의 matcher·Expected/Received·diff 전체에서 stack/source frame만 제거한다. 실제 오류 값의 경로·숫자는 보존한다. 비교는 전체 문자열, 표시만 120자 + 해시 8자 |
 | `unparsed` | 지원 러너(go · jest · vitest) 밖이거나 파싱이 불확실한 항목. 대조 불가 데이터 — 잔존 시 테스트 판정 `PASS` 불가 |
 
 **시그니처가 이 설계의 핵심이다.** 식별자만 기록하면 "원래 깨져 있던 테스트가 이번 변경으로 **다른 이유로** 깨진 것"을 놓친다.
+
+JS는 가능하면 `--json` reporter 결과 파일을 baseline·현재·재실행에 동일하게 사용한다. `--runner`를 명시하고 동일 저장소 루트 cwd에서 파싱한다. 텍스트는 Jest `--verbose`, Vitest `--reporter=verbose`를 사용한다. 파일 없는 구 baseline은 다시 수집하며 Test Map도 정확한 전체 ID를 기록한다. leaf/suffix 매칭, 다른 파일의 동명 PASS 추정은 금지한다.
+
+Go는 패키지 요약 줄의 import path를 포함한 `{package}::TestX/sub`를 Baseline·TDD Test Map·Tombstone·재실행에 동일하게 사용한다. `go test -v` 로그를 수집하고 Test Map 작성 시 `go list`로 패키지를 확인한다. 패키지를 뺀 이름·leaf/suffix만으로 매칭하지 않는다. 패키지 없는 구 Go baseline이나 중복 ID는 `unparsed`로 처리하고 원본을 자동 변환하지 않는다.
 
 **Baseline은 불변이다.** 이후 어떤 Phase도 갱신하지 않는다. iteration별 실행 결과는 별도 스냅샷으로 비교만 한다.
 
@@ -111,12 +115,12 @@ Terra executor (`fork_turns:none`):
 병렬 Terra executor는 빌드·커밋·테스트 실행·상태 파일 쓰기가 모두 금지되어 있다. 따라서 **Sol High orchestrator가 검증과 기록을 단독 소유한다.**
 
 ```
-① 슬라이스별 에이전트 병렬 (같은 메시지에서 동시 호출)
+① writer-safety.md의 실제 checkout 격리를 지원할 때만 슬라이스별 병렬; 미지원 호스트는 순차 writer
    - 담당: 자기 슬라이스의 테스트 + 스텁 작성만
    - 금지: 커밋 / 빌드 / 테스트 실행 / 상태 파일 쓰기
    - 반환: { Spec ID, 테스트명, 파일, 대상 심볼 } 구조화 결과
 
-② [배리어] 오케스트레이터가 전체 병합 후 1회 글로벌 Red 검증
+② [배리어] 실제 writer 종료·scope PASS 후 단일 Terra가 소유 patch를 통합하고 Sol High가 1회 글로벌 Red 검증
    {buildCommand} && {testCommand}
 
 ③ 오케스트레이터가 TDD Test Map 기록 + Red 커밋
@@ -187,7 +191,7 @@ Phase 8.1에서 `{testCommand}` 실행 결과를 `## Test Baseline`과 대조해
 
 ## 분류 우선순위 (위에서부터 먼저 적용)
 
-Tombstone 매핑(`## Test Baseline`)은 분류 **전에** 식별자에 적용한다. 셀 파싱 실패·항목 수 불일치·Tombstone 중복 매핑이면 해당 suite 행 전체를 `unparsed`로 취급한다.
+Tombstone 매핑(`## Test Baseline`)은 분류 **전에** 식별자에 적용한다. 셀 파싱 실패·항목 수 불일치·패키지 없는 Go baseline·중복 ID·Tombstone 중복 매핑이면 해당 suite 행 전체를 `unparsed`로 취급한다.
 
 | # | 조건 | 분류 |
 |---|------|------|
@@ -198,7 +202,8 @@ Tombstone 매핑(`## Test Baseline`)은 분류 **전에** 식별자에 적용한
 | 5 | 3·4 판정 전 **1회 재실행**, 결과가 뒤집히면 | `flaky` |
 
 - `flaky`는 regression 집계에서 제외하고 보고만 한다. 유령을 쫓는 수정을 막기 위한 장치다.
-  재실행은 러너별 verbose 옵션 필수(go `-v`, jest `--verbose`, vitest `--reporter=verbose`) — `--rerun FILE2 --rerun-exit-code M`으로 전달한다. `flaky` ⇔ 재실행이 완주했고 **그 식별자가 PASS로 명시**됨(go `--- PASS: {ID}`, jest/vitest `✓ {ID}`). 그 외(미완주·PASS 줄 부재)는 원 분류 유지 + `rerun_incomplete` 표기 — 필터 문자열·테스트 수는 증거로 인정하지 않는다.
+  재실행은 러너별 verbose 옵션 필수(go `-v`, jest `--verbose`, vitest `--reporter=verbose`) — `--rerun FILE2 --rerun-exit-code M`으로 전달한다. `flaky` ⇔ 재실행에 unparsed가 없고 완주했으며 **그 식별자가 PASS로 명시**됨(go는 같은 패키지 요약과 PASS로 구성한 전체 ID, jest/vitest는 같은 파일의 전체 ID). 그 외(미완주·PASS 줄 부재)는 원 분류 유지 + `rerun_incomplete` 표기 — 필터 문자열·테스트 수는 증거로 인정하지 않는다.
+- 재실행의 unparsed와 최초 로그에 없던 추가 실패도 최종 대조 결과에 포함한다.
 - `unparsed`·러너 완주 `N`이 남아 있으면 `PASS` 판정을 내릴 수 없다. 오케스트레이터가 로그를 직접 읽어 분류하고, 그래도 분류하지 못하면 **판정 불가** = 테스트 판정 `FAIL`로 취급한다(light: 승격 ③).
 - **이름 변경·삭제**: Spec이 승인한 경우에만 허용하고 `## Test Baseline`에 tombstone(`{구 식별자} → {신 식별자}` 또는 `{식별자} → 삭제(근거)`)을 append한다. 승인 없는 소멸은 `regression`으로 취급한다.
   tombstone은 baseline의 **판정 데이터를 바꾸지 않는다** — 대조 시 매핑에만 쓰인다.
@@ -241,3 +246,9 @@ Phase 8.5 통합 수정 에이전트에는 이 순서대로 이슈를 전달하�
 | **진단 분류 (데이터)** | `red_assertion` `already_satisfied` `cannot_compile` `deferred_e2e` `regression` `pre_existing` `new_red` `flaky` `unparsed` `rerun_incomplete` | `## TDD Test Map` 과 회귀 대조 표의 셀 안에서만 |
 
 **진단 분류가 Phase Assignments의 Status 열에 등장하면 규약 위반이다.**
+
+## 검증 결과와 현재 변경 범위
+
+검증 전후 `workflow_results.py tree --cwd "{CWD}"`가 같을 때만 tested_tree로 기록한다. Sol High만 RESULTS_FILE에 새 iteration의 unit/build/lint/typecheck/e2e/readback 결과 객체를 기록한다. unit에는 regression_count를 포함한다. 하위 역할은 결과만 반환한다.
+JSON의 최종 판정·회귀 수가 Gate/리포트의 정본이며 Markdown 요약은 표시용이다. 수정 뒤 과거 PASS를 재사용하지 않는다. TDD SKIP도 실제 검증 실패를 PASS로 바꾸는 조건이 아니다.
+품질·리뷰·E2E·Read-back 범위는 START_SHA부터 현재 작업 트리까지 workflow_scope.py가 수집한 명시 목록이다. committed/staged/unstaged/소유 untracked·삭제·symlink를 보존한다. Read-back 자식은 이 목록으로만 복원하고 Spec/Plan/상태 경로를 받지 않는다.

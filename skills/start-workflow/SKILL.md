@@ -14,19 +14,26 @@ BE 작업을 Build, Analyze, Verify 중 한 모드로 실행한다. 프로젝트
 모든 모드의 역할·모델·bootstrap·writer 경계는 [agent-topology.md](references/agent-topology.md)가
 canonical이다. 이 스킬에만 적용하는 고정 토폴로지 예외다.
 
+## 진입 검사
+
+모든 모드에서 [entry-contract.md](references/entry-contract.md)를 읽고 `workflow_policy.py route`를 `entry:be`로 실행한다.
+READY 이후 [run-lifecycle.md](references/run-lifecycle.md)의 생성/재개 검증을 수행한다. 두 절차는 profile resolve와 첫 dispatch보다 앞선다. bootstrap으로 검증된 실행 경로를 받은 orchestrator continuation은 같은 RUN을 승계하고 create를 다시 실행하지 않는다.
+`{PLUGIN_ROOT}`는 이 파일에서 두 단계 위의 실제 플러그인 루트다. 새 실행은 운영 메타데이터만 만들며 source·branch·상태 본문은 승인 시점을 따른다.
+
 ## 모드와 플래그
 
 | 플래그 | 모드/효과 |
 |--------|-----------|
 | `--analyze`, `-a` | Analyze: 코드 수정 없이 Phase A1~A4 실행 |
 | `--verify`, `-v` | Verify: Phase V1~V5 실행 후 `PASS/WARN/FAIL` 판정 |
+| `--resume {STATE_FILE}` | 모든 모드: 절대 상태 경로로 같은 저장소·모드의 미완료 실행을 검증해 계속한다 |
 | `--hard`, `-h` | Build에서 브랜치 생성 없이 현재 브랜치에 일반 push; PR 생략 |
 | `--no-tdd` | Build의 Red 및 baseline 수집 생략. 검증 티어는 standard 강제. |
 | `--tier standard` | Build: Phase 2 판정과 무관하게 검증 티어를 standard로 강제한다(light 축소 비활성). light 강제 플래그는 없다 |
 | `--topology-models {슬롯}={model}[@{effort}],…` | 모든 모드: 이번 실행에 한해 토폴로지 슬롯의 model/effort를 교체한다(`{슬롯}=default` 허용). profile에는 기록하지 않는다 — 영구 변경은 `$codex-be-harness:config topologyModels=…`. 규칙: [agent-topology.md](references/agent-topology.md) "슬롯 설정" |
 | `--reflect` | Build의 Phase 11 실행; 기본은 `SKIPPED:REFLECT_NOT_REQUESTED` |
 
-`--analyze`와 `--verify`는 상호 배타적이다. 둘 다 있으면 하나를 선택받는다. `--hard`·`--no-tdd`·`--tier standard`·`--reflect`는
+`--analyze`와 `--verify`는 상호 배타적이다. 둘 다 있으면 진입 gate에서 `BLOCKED:MODE_CONFLICT`로 종료한다. `--hard`·`--no-tdd`·`--tier standard`·`--reflect`는
 Build 전용이며 다른 모드에서는 무시한다. `--topology-models`는 모든 모드에 적용된다. 모드 플래그 뒤 경로는 범위이고, 없으면 profile의
 `sourceDirs`를 기본 후보로 사용한다.
 
@@ -57,24 +64,23 @@ Build에 누락이 있으면 영향 Phase를 구체적으로 나열하고, 해�
 
 ## 실행별 상태
 
-Build는 Phase 4.4 승인 후 Phase 5 진입 시, Analyze/Verify는 모드 범위가 확정된 뒤 안전한 임시 루트
-아래에 전용 디렉터리를 만든다. 고정 `/tmp` 파일명을 재사용하지 않는다.
+[run-lifecycle.md](references/run-lifecycle.md)의 `workflow_run.py create|resume` JSON이 RUN 경로의 유일한 원천이다.
+`RUN_ID`는 create가 생성한 UUID이며 재생성하지 않는다. `run.json`과 `owned-files.json`을 보존한다.
 
 ```text
-{RUN_DIR}=mktemp -d "${TMPDIR:-/tmp}/codex-be-workflow.XXXXXX"
-{STATE_FILE}={RUN_DIR}/workflow-state.md
-{IMPL_NOTES}={RUN_DIR}/implementation-notes.md
-{WORK_REPORT}={RUN_DIR}/workflow-report.md
-{RUN_ID}=`## Flags`의 RUN_ID (Phase 5에서 1회 생성)
-{START_SHA}=`## Flags`의 START_SHA (Phase 5 기준 커밋)
+{RUN_DIR}, {RUN_ID}, {STATE_FILE}, {IMPL_NOTES}, {WORK_REPORT}, {RESULTS_FILE}, {OWNED_FILES}=helper의 절대 경로/ID
+{START_SHA}=Phase 5에서 구현 직전 git rev-parse HEAD로 1회 고정한 커밋
 {REPORT_DIR}=profile.reportDir 또는 .codex/harness-reports
 {CWD}=검증된 프로젝트 루트 절대 경로
-{PROFILE_PATH}=PROFILE.md의 "profile 해석"으로 확정한 profile 절대 경로
-{SKILL_DIR}=이 SKILL.md가 있는 디렉터리의 절대 경로 (assets/·references/ 해석 기준)
-{PLAN_MAX}=Phase 4.3 상한 — standard 5 / light 2
-{QL_MAX}=Phase 8 상한 — standard 3 / light 2
-{TOPOLOGY_MODELS}=Pre-flight 확정 슬롯 문자열 — Phase 5부터는 `## Flags`의 TOPOLOGY_MODELS(Phase 2 이후 executor 확정값 포함)
+{PROFILE_PATH}=PROFILE.md의 profile 해석 결과
+{SKILL_DIR}=이 SKILL.md의 절대 디렉터리
+{PLAN_MAX}=standard 5 / light 2
+{QL_MAX}=standard 3 / light 2
+{TOPOLOGY_MODELS}=Pre-flight 확정값, Phase 5 이후 Flags의 기록값
 ```
+
+첫 검증 전에 [result-contract.md](references/result-contract.md)대로 RESULTS_FILE을 초기화한다.
+품질·리뷰 범위는 [scope-contract.md](references/scope-contract.md), writer 종료·격리는 [writer-safety.md](references/writer-safety.md)를 따른다.
 
 해결된 절대 경로를 모든 서브에이전트에 전달한다. **Build 상태**에는 `Flags`, `Run`, `Profile Snapshot`,
 `Verification Tier`, `Current Phase`, `Phase Assignments`, `Remaining Phases`, `Final Decisions`, `Artifacts`,
@@ -84,17 +90,20 @@ Build는 Phase 4.4 승인 후 Phase 5 진입 시, Analyze/Verify는 모드 범�
 
 ### 재개 규칙
 
-- Build 상태 파일의 `## Flags`(SCHEMA·MODE·HARD_MODE·TDD·REFLECT·TIER·TOPOLOGY_MODELS·RUN_ID·START_SHA)는 컨텍스트 요약·세션 재개로 CLI 인자를 잃은 뒤 이어갈 때 **유일한 기준** — CLI 인자와 충돌하면 기록값 우선 + 고지. `RUN_ID`는 Phase 5에서 1회 생성하며 재생성하지 않는다. Analyze/Verify는 최소 헤더의 `Mode`·`Scope`·`Focus`·`TOPOLOGY_MODELS`가 같은 역할을 한다.
-- 재개 시 Phase dispatch 전에 **Build 상태 파일**(`MODE: be`)의 스키마를 검사한다(Analyze/Verify 상태 파일은 [analyze-verify-modes.md](references/analyze-verify-modes.md)의 최소 헤더만 확인한다): `## Flags` 정확히 1개 + 필수 키 9개 각 1회 + `SCHEMA: 3` / `## Profile Snapshot` 정확히 1개 + `profile_path`(비어 있지 않음)·`profile_sha256`(16진수 64자)·`resolved_report_dir`·`resolved_e2e_lock_dir`(절대 경로) + profile 키 23개(`topologyModels` 포함) 각 정확히 1회(`키: 값` 1줄, 배열은 인라인, 빈 값 허용) / `## Verification Tier` 정확히 1개 + `- 계산 티어:`·`- 최종 티어:` 각 1회 / `## Test Baseline` 헤더 0개 또는 1개. 하나라도 어긋나면 `BLOCKED:STATE_SCHEMA_MISMATCH`(누락·중복 항목 나열)로 종료하고 새 실행을 안내한다 — 구버전·쓰기 중단 상태 파일은 마이그레이션하지 않는다. **유일한 예외**: `SCHEMA: 2` 파일(0.4.0)은 `TOPOLOGY_MODELS`·`topologyModels`를 제외한 검사를 통과하면 Phase dispatch 전에 1회 보완한다 — `## Flags`에 `- TOPOLOGY_MODELS:`(기본값; executor effort는 상태 파일에 기록된 난이도 `[N]/10`으로 `high|max` 확정, 난이도 기록이 없으면 Phase 2 이전이므로 `BLOCKED:STATE_SCHEMA_MISMATCH`), `## Profile Snapshot`에 `- topologyModels: default`를 추가하고 `SCHEMA: 3`으로 올린다. 같은 디렉터리의 임시 파일 `mktemp "{RUN_DIR}/.workflow-state.XXXXXX"`에 전체를 쓰고 스키마 3 검사를 통과시킨 뒤 `mv -f`로 교체한다(실패 시 임시 파일만 삭제, 원본 불변, `BLOCKED:STATE_SCHEMA_MISMATCH`). 보완 사실을 고지하고 이후 Flags는 다시 불변이다(유일한 예외는 `TIER` — [verification-tier.md](references/verification-tier.md)의 단방향 승격 `light → standard` 갱신).
-- 검사를 통과한 뒤 `## Test Baseline` 완전성([tdd.md](references/tdd.md) Phase 5 canonical)이 미완이면 스키마 차단이 아니라 Phase 5 미완 재개로 처리한다.
-- 형제 스킬·서브에이전트·재개된 오케스트레이터는 `## Profile Snapshot` 값(resolved 경로 포함)만 쓰고 profile을 다시 읽지 않는다(live 아님). `profile_sha256`은 출처 기록용이며 재개 시 비교하지 않는다. 본문(Project Notes)은 스냅샷 대상이 아니며 읽기 전용 참조만 허용한다(frontmatter 값 재독 금지). Analyze/Verify는 Pre-flight 확정값을 그대로 쓰며 상태 파일에 Snapshot을 두지 않는다.
-- 상태 파일 생성 이전 중단은 재개 대상이 아니라 Pre-flight부터 재시작한다(profile 재확정).
+- 명시적 `--resume` 또는 현재 실행의 보관한 절대 경로로만 재개한다. 새 요청을 재개로 해석하거나 임시 디렉터리를 스캔하지 않는다.
+- `workflow_run.py resume`의 run.json/Run/CWD/MODE/RUN_ID/RUN_DIR/미완료 검사가 먼저다. 없는 구 실행 메타데이터를 추측해서 만들지 않는다. 실패하면 `BLOCKED:RUN_MISMATCH`이며 새 실행을 안내한다.
+- **Build 상태 파일**은 `## Flags` 정확히 1개, `SCHEMA: 4`, MODE/HARD_MODE/TDD/REFLECT/TIER/TOPOLOGY_MODELS/RUN_ID/START_SHA/PUBLISH_POLICY/ROUTE_TARGET 각 1회, `## Profile Snapshot` 정확히 1개를 요구한다. Snapshot은 profile 23키와 profile_path/profile_sha256/resolved_report_dir/resolved_e2e_lock_dir를 각각 1회 포함한다. 해시는 64 hex, resolved 경로는 절대 경로다. `## Verification Tier`의 계산/최종 티어 각 1회, Test Baseline 헤더 0~1개도 검사한다. 불일치는 `BLOCKED:STATE_SCHEMA_MISMATCH`; schema 2/3를 자동 변환하지 않는다.
+- Flags의 기록값이 재개 인자보다 우선이며 명시적 모드 충돌은 entry gate에서 차단한다. TIER의 단방향 승격 외에는 실행 도중 Flags를 재결정하지 않는다.
+- baseline 미완은 [tdd.md](references/tdd.md)의 Phase 5 미완 재개로 처리한다. 기존 상태·노트·OWNED_FILES·결과 events를 초기화하지 않는다.
+- 형제 스킬/서브에이전트는 `## Profile Snapshot`만 쓰고 frontmatter를 다시 읽지 않는다. profile_sha256은 출처 기록이며 live 파일과 비교하지 않는다. Project Notes 본문만 읽기 전용 참조할 수 있다.
+- **Analyze/Verify 상태**는 Run 공통 헤더와 최소 mode/scope/focus/topology/publish/route/Remaining Phases를 검증한다. Build 스키마나 Snapshot을 두지 않는다. 같은 실행의 Pre-flight 확정값을 재사용한다.
+- 상태 본문 생성 전 중단은 새 실행으로 시작한다. 불완전 상태를 덮어서 성공한 재개로 보고하지 않는다.
 
 Build 상태 템플릿과 최종 보고는 [templates.md](references/templates.md)를 사용한다.
 
 ## Build 불변 계약
 
-- Phase 1~4.4는 planning-only 구간으로 읽기·질문·Spec·Plan만 수행한다. 파일 편집, 브랜치, 커밋,
+- Phase 1~4.4는 planning-only 구간으로 읽기·질문·Spec·Plan만 수행한다. 프로젝트 파일 편집, 브랜치, 커밋,
   push, PR을 금지한다.
 - Phase 4.4에서 확정 Spec/Plan과 이후의 브랜치·코드 변경·커밋·push·PR 효과를 명시하고 사용자에게
   실행 승인을 받는다. 승인 전에는 Phase 5로 넘어가지 않는다.
@@ -110,7 +119,7 @@ Build 상태 템플릿과 최종 보고는 [templates.md](references/templates.m
 - Phase 8은 최대 `{QL_MAX}`회이며 single-writer 수정과 격리 Read-back을 보장한다.
   [quality-loop.md](references/quality-loop.md)를 따른다.
 - 외부 상태를 바꾸는 commit/push/PR 절차는 승인된 Phase 5 이후에만 실행한다. Phase 10 직전
-  Assumption Gate를 다시 적용한다.
+  현재 결과 freshness와 Assumption Gate를 다시 적용한다.
 - 독립 리뷰는 Phase 4.2 Luna 리뷰어(최대 3)와 Phase 4.3 Sol Max advisor다. 전역 지침의 이중/교차 리뷰
   요건은 이로써 충족되며, `claude -p`·`gemini` 등 **외부 CLI 리뷰어를 호출하지 않는다**. 스킬 밖 작업이면
   fresh-context 서브에이전트 1개로 대체한다.
@@ -171,6 +180,7 @@ Phase 상태는 `DONE`, `IN_PROGRESS`, `PENDING`, `SKIPPED:{사유}`, `BLOCKED:{
 검증 판정은 `PASS/WARN/FAIL`이다. 다음 계약 상태를 보존한다.
 
 - `BLOCKED:FULLSTACK_HANDOFF_REQUIRED`, `BLOCKED:MAX_ITERATIONS`, `BLOCKED:BUILD_FAIL`
+- `BLOCKED:RUN_MISMATCH`, `BLOCKED:RESULT_CONTRACT`, `BLOCKED:REVIEW_SCOPE`, `BLOCKED:WRITER_UNKNOWN`, `BLOCKED:SLICE_SCOPE`
 - `BLOCKED:DUPLICATE_IN_PROGRESS`
 - `BLOCKED:NO_VALID_RED`, `BLOCKED:REGRESSION_AT_RED`, `BLOCKED:TEST_NOT_GREEN`
 - `BLOCKED:AGENT_DIED`, `BLOCKED:ASSUMPTION_UNRESOLVED`, `BLOCKED:STATE_SCHEMA_MISMATCH`

@@ -163,7 +163,7 @@ Sol High가 조정하는 수정 커밋은 `Fix: 품질 루프 수정 (반복 N)`
 
 ## 입력 소스
 
-1. base 대비 변경된 `testDirs` 테스트 파일
+1. 부모가 scope-contract.md의 START_SHA/OWNED_FILES로 수집한 scope.paths 중 `testDirs`의 테스트 파일
 2. 없으면 8.6 E2E 리포트(`## Artifacts` `e2e-report:` 경로의 md)
 3. 없으면 변경된 handler/route의 공개 인터페이스
 
@@ -218,3 +218,11 @@ E는 참조 구현 `file:line`이 있는 행만 판정한다. B/D는 보고만 �
 
 Phase 8.8은 코드와 Spec을 수정하지 않는다. Diff를 상태에 기록하고 `FAIL`이어도 Phase 9로 진행해
 Phase 12에서 사용자 결정을 받는다.
+
+## 검증 결과와 현재 변경 범위
+
+검증 전후 `workflow_results.py tree --cwd "{CWD}"`가 같을 때만 tested_tree로 기록한다. Sol High만 RESULTS_FILE에 새 iteration의 unit/build/lint/typecheck/e2e/readback 결과 객체를 기록한다. unit에는 regression_count를 포함한다. 하위 역할은 결과만 반환한다.
+JSON의 최종 판정·회귀 수가 Gate/리포트의 정본이며 Markdown 요약은 표시용이다. 수정 뒤 과거 PASS를 재사용하지 않는다. TDD SKIP도 실제 검증 실패를 PASS로 바꾸는 조건이 아니다.
+품질·리뷰·E2E·Read-back 범위는 START_SHA부터 현재 작업 트리까지 workflow_scope.py가 수집한 명시 목록이다. committed/staged/unstaged/소유 untracked·삭제·symlink를 보존한다. Read-back 자식은 이 목록으로만 복원하고 Spec/Plan/상태 경로를 받지 않는다.
+
+`BLOCKED:INTERRUPTED`는 기존 E2E 기록·수정 건수·중단 원인·실제 리포트 경로를 보존한다. SKIP이나 리포트 없음으로 축약하지 않는다. Phase 10 Gate의 최신 결과는 JSON이며 위 종료 출력 줄은 표시용이다.

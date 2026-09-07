@@ -2,3 +2,4 @@ __pycache__/
 *.pyc
 .codex/be-harness.local.md
 .codex/harness-reports/
+skills/doc-gen/assets/node_modules/

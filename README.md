@@ -16,9 +16,19 @@ Fullstack으로 판정되면 BE로 조용히 진행하지 않고 `BLOCKED:FULLST
 High/Max는 source/test/API 문서 등 업무 변경 파일의 유일한 writer 및 승인된 push/PR 실행자이며, Luna xHigh는 읽기 전용 검토를 맡는다.
 Phase 4.3은 매번 새 Sol Max advisor context로 Plan만 검증한다. 모든 고정 spawn은 `fork_turns:none`이다.
 
+## 0.6.0 변경
+
+현재 버전: `codex-be-harness@0.6.0`.
+
+- upstream 작업 트리의 `be-harness@1.5.4`와 기존 공통 의존 스킬(`common@0.14.2`) 동기화. 원본 HEAD와 파일별 SHA-256은 [UPSTREAM-SYNC.json](UPSTREAM-SYNC.json)에 기록한다.
+- 실행별 경로/명시적 `--resume`, schema 4, 결과 JSON·검증 tree·리뷰 범위·writer 종료 계약을 연결했다. 구 schema 2/3 실행은 새 실행으로 시작해야 한다.
+- E2E는 v2 socket-resource lease, 수정 빌드 검증, 중단 이력 보존, JSON 기반 리포트를 사용한다. Python 3.9+/POSIX가 필요하며 동일 자원의 v1 실행과 혼용하지 않는다.
+- config는 원자적 preview/apply와 상속 profile을 지원한다. Codex topologyModels·모델/effort·단일 writer 경계를 유지한다.
+- commit은 사용자 index 보존과 현재 HEAD Gate를 적용한다. doc-gen은 고정 Node/Chromium 의존성으로 실제 Mermaid·오프라인 HTML을 검증한다.
+
 ## 0.5.1 변경
 
-현재 버전: `codex-be-harness@0.5.1`.
+이전 버전: `codex-be-harness@0.5.1`.
 
 - `e2e-lock.sh`: 락 디렉토리 `mkdir`의 비-EEXIST 실패(권한·파일시스템)를 대기 없이 즉시 `ERROR` exit 1로 끝낸다 → e2e-test `BLOCKED:LOCK_UNAVAILABLE`(upstream be-harness 1.5.1 미러)
 - `render_e2e_report.py`: upstream 1.5.1 사본으로 갱신 — dead option `--level full-command` 제거(SHA-256 고정값 갱신)
@@ -89,6 +99,9 @@ $codex-be-harness:config reportDir=.codex/reports
 
 ```bash
 python3 tests/validate_port.py
+python3 -B -m unittest discover -s tests -p 'test_*.py'
+npm ci --prefix skills/doc-gen/assets
+node --test tests/docgen.test.mjs
 python3 /home/dev/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py .
 ```
 

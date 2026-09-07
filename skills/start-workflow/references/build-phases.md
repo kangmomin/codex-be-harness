@@ -64,13 +64,14 @@ Spec 확인 전에 같은 기능이 이미 진행 중인지 확인한다. 먼저
 
 ## Phase 3: 실행 전략
 
-기본은 `sequential`이다. 다음 5개를 모두 충족할 때만 2~3개 `parallel-slices`를 허용한다.
+기본은 `sequential`이다. 다음 조건을를 모두 충족할 때만 2~3개 `parallel-slices`를 허용한다.
 
 1. 각 슬라이스가 독립 endpoint/feature의 수직 슬라이스다.
 2. 파일 소유권이 겹치지 않고 공유 DTO, middleware, DI wiring 변경이 없다.
 3. 기존 테이블 변경이나 공통 계약 변경이 없다.
 4. 슬라이스별로 빌드와 테스트가 가능하다.
 5. 순서 의존이 없다.
+6. writer-safety.md대로 별도 checkout의 실제 cwd/writable root를 호스트가 강제할 수 있다. 아니면 순차 writer로 실행한다.
 
 FE와 BE 변경이 모두 필요하면 더 진행하지 않는다. 상태/보고에 다음을 포함하고 종료한다.
 
@@ -159,8 +160,8 @@ Plan 모드 전환 명령에 의존하지 않는다. Plan의 파일 목록으로
 - 일반 모드: 현재 브랜치가 `feat/**`/`hotfix/**`가 아니면 profile prefix로 feature 브랜치를 만든다.
   보호 브랜치에 직접 커밋하지 않는다.
 - `--hard`: 브랜치를 만들지 않고 현재 브랜치를 사용한다.
-- `RUN_ID`·`START_SHA`를 [templates.md](templates.md)의 bash로 1회 계산한다(재생성 금지).
-- 초기 생성 Write는 [templates.md](templates.md) 앵커 안 템플릿 전체 — `## Flags`(`SCHEMA: 3`, MODE·HARD_MODE·TDD·REFLECT·TIER·TOPOLOGY_MODELS·RUN_ID·START_SHA), `## Profile Snapshot`(Pre-flight 확정값 23키 + `profile_path`·`profile_sha256`·`resolved_report_dir`·`resolved_e2e_lock_dir`), `## Verification Tier`(Phase 2 판정·승격 이력)를 반드시 함께 포함한다. `## Test Baseline`은 초기 템플릿에 없다. 이어서 같은 문서의 Implementation Notes 템플릿을 `{IMPL_NOTES}`에 생성한다. Spec에 `[Assumption]`이 있으면 각 항목을 `{IMPL_NOTES}` `## 편차`에 태그 그대로 이월한다(없으면 섹션은 비워 둔다).
+- `RUN_ID`는 검증된 create 출력 그대로 쓰고 `START_SHA`만 구현 직전 1회 계산한다. RUN_DIR/run.json을 다시 생성하지 않는다.
+- 초기 생성 Write는 [templates.md](templates.md) 앵커 안 템플릿 전체 — `## Flags`(`SCHEMA: 4`, MODE·HARD_MODE·TDD·REFLECT·TIER·TOPOLOGY_MODELS·RUN_ID·START_SHA·PUBLISH_POLICY·ROUTE_TARGET), `## Profile Snapshot`(Pre-flight 확정값 23키 + `profile_path`·`profile_sha256`·`resolved_report_dir`·`resolved_e2e_lock_dir`), `## Verification Tier`(Phase 2 판정·승격 이력)를 반드시 함께 포함한다. `## Test Baseline`은 초기 템플릿에 없다. 이어서 같은 문서의 Implementation Notes 템플릿을 `{IMPL_NOTES}`에 생성한다. Spec에 `[Assumption]`이 있으면 각 항목을 `{IMPL_NOTES}` `## 편차`에 태그 그대로 이월한다(없으면 섹션은 비워 둔다).
 - [tdd.md](tdd.md)의 적용 판정과 baseline 수집을 수행한다.
 - 수집(또는 SKIP 판정) 직후 `## Test Baseline` 블록을 `## TDD Test Map` 앞에 정확히 1회 삽입한다(완전성 canonical: [tdd.md](tdd.md) Phase 5).
 
@@ -230,11 +231,15 @@ TDD가 생략됐으면 수정 0건만으로 종료할 수 있다. `{QL_MAX}`회 
 
 ## Phase 10: Assumption Gate와 PR/push
 
+[finalization.md](finalization.md)와 [result-contract.md](result-contract.md)를 적용한다. `workflow_results.py check-current "{RESULTS_FILE}" --run-id "{RUN_ID}" --cwd "{CWD}"`에 해당 실행의 필수 kind를 `--require`로 전달한다. Git commit으로 HEAD가 변했어도 새 검증 이벤트가 필요하다. stale/실패/필수 검증 차단이 남으면 push/PR을 보류하고 Phase 11~12에서 해결한다.
+`PUBLISH_POLICY:local`이면 동봉 commit으로 소유 변경을 로컬 커밋한 뒤 원격 절차를 생략한다. push는 commit-hard-push, pr은 commit-pr을 사용한다. none은 Build 반영을 실행하지 않는다.
+
+
 진입 직전 light면 승격 ⑦ 재평가([verification-tier.md](verification-tier.md) §4) — 발화 시 Phase 8을 standard 루프로 1회 재진입(카운터 0부터, `{QL_MAX}` = 3, 이력 `⑦: Phase 8 재진입`)한 뒤 돌아온다.
 
 base diff의 추가 라인, 미push 커밋 본문, `{IMPL_NOTES}`의 `## 편차`에서 `[Assumption]`을 검색한다. 하나라도 있으면 push/PR을
 금지하고 `BLOCKED:ASSUMPTION_UNRESOLVED`와 위치 목록을 기록한 뒤 Phase 11~12로 간다. 사용자가
-결정하고 태그가 제거된 후 Phase 10만 재실행한다.
+결정하고 태그가 제거된 후 finalization.md의 관련 재검증을 마친 뒤 Phase 10 미완료 작업을 실행한다.
 
 `Phase Results`의 최신 8.6 행이 `BLOCKED:LOCK_UNAVAILABLE`이면(다른 검사가 green이어도) push/PR 전에
 `USER_INPUT_REQUIRED: {질문}` relay로 세 선택지를 받는다 — (1) `락 재시도`: 마지막 8.6과 같은 인자로 형제
@@ -246,17 +251,19 @@ base diff의 추가 라인, 미push 커밋 본문, `{IMPL_NOTES}`의 `## 편차`
 재판정(기존 규칙대로 실행 또는 SKIP) → Phase 10 복귀 / `수정: N` ∧ 그 외 `BLOCKED:*`(`MAX_ITERATIONS`·
 `NO_PROGRESS`) → 기존 규칙대로(진행을 막지 않고 Phase 12 결정으로 이연) Gate 재판정. (2) `E2E 없이 진행`:
 즉시 `{STATE_FILE}` `## Final Decisions`에 `| E2E 미실행 승인 | BLOCKED:LOCK_UNAVAILABLE — E2E 없이 진행 | {시각} |`을
-기록하고 Phase 10만 재실행한다(Assumption Gate의 "결정 후 Phase 10만 재실행" 패턴). 이후 Gate 재진입(Phase 12
+기록하고 Phase 10만 재실행한다(Assumption Gate의 "관련 재검증 후 Phase 10 미완료 작업 실행" 패턴). 이후 Gate 재진입(Phase 12
 remediation 뒤 포함)은 이 결정을 재사용해 자동 재질문하지 않는다(사용자가 명시적으로 `락 재시도`를 지시하면
 승인을 override해 재시도 경로로 진입). 승인 행은 최신 8.6 행이 `BLOCKED:LOCK_UNAVAILABLE`인 동안만 유효하며,
 재시도로 8.6이 `DONE`이 되면 `SUPERSEDED`로 취급한다. Workflow Report §4 `- **E2E**:`는 항상 최신 8.6 행을
 우선하고 미실행 승인 문구는 승인이 유효할 때만 렌더링한다. (3) `중단`: 워크플로우를
 `BLOCKED:LOCK_UNAVAILABLE`로 종료한다.
 
-- 일반 모드: 형제 `../../commit-pr/SKILL.md`를 읽고 논리 커밋, base/branch 결정, VERSION patch bump,
+- `PUBLISH_POLICY:pr`: 형제 `../../commit-pr/SKILL.md`를 읽고 논리 커밋, base/branch 결정, VERSION patch bump,
   기존 PR 처리, 일반 push, draft PR을 수행한다. PR URL은 필수 결과다.
-- `--hard`: 형제 `../../commit-hard-push/SKILL.md`의 Assumption Gate와 일반 push 절차를 읽고 현재
+- `PUBLISH_POLICY:push`: 형제 `../../commit-hard-push/SKILL.md`의 Assumption Gate와 일반 push 절차를 읽고 현재
   브랜치에 push한다. PR은 만들지 않는다.
+
+VERSION/commit 후에는 commit-pr의 workflow 배리어대로 Terra가 Sol High에 반환한다. Sol High가 새 HEAD 검증/JSON/check-current/Gate를 완료한 뒤 같은 HEAD의 미완료 push/PR만 Terra에 재개시킨다.
 
 Phase 4.4에서 승인되지 않은 원격 효과가 새로 필요하면 여기서 멈춰 추가 승인을 받는다. 승인된 push/PR의 실제 실행은 Terra executor가 한다.
 
@@ -275,7 +282,7 @@ Phase 4.4에서 승인되지 않은 원격 효과가 새로 필요하면 여기�
 3. Read-back Diff 결정
 4. Phase 11이 DONE이면 보완점의 로컬 저장 여부 결정
    2~4의 결정은 받는 즉시 `## Final Decisions`에 기록한다(재개 시 재질문 금지).
-5. 상태 마감 **후** `{SKILL_DIR}/assets/workflow_archive.py`로 `{REPORT_DIR}`에 md 아카이브(`*-workflow-report.md`) 1회 배타 생성(부록 A 실행 요약 / B 상태 파일 전문 / C Implementation Notes), stdout `경로:`/`상태:`를 `## Artifacts`에 기록하고 경로 보고 — 재렌더링 없음
+5. finalization.md의 영향 검증·승인 반영·상태/결과 마감 **후** `{SKILL_DIR}/assets/workflow_archive.py`로 `{REPORT_DIR}`에 md 아카이브(`*-workflow-report.md`) 1회 배타 생성(부록 A 실행 요약 / B 상태 파일 전문 / C Implementation Notes), stdout `경로:`/`상태:`를 `## Artifacts`에 기록하고 경로 보고 — 재렌더링 없음
 
 전역 보고 양식이 따로 있어도 Workflow Report의 섹션 머리글(§1~§9)은 바꾸지 않는다.
 
@@ -286,3 +293,5 @@ Phase 4.4에서 승인되지 않은 원격 효과가 새로 필요하면 여기�
 Phase 12의 사용자 승인 remediation이 작업 트리 diff를 바꾸면, Sol High는 Phase 10 Assumption Gate와
 Phase 4.4에서 승인된 push/PR 범위를 다시 확인한다. 재확인 뒤 필요한 수정 또는 승인된 외부 효과는 Terra
 executor만 수행한다.
+
+Phase 12 승인 수정 후 마감·아카이브는 [finalization.md](finalization.md)를 반드시 수행한다. 모든 Phase 일괄 DONE 처리와 검증되지 않은 tree의 원격 반영은 금지한다.
