@@ -69,3 +69,20 @@
 3. `$codex-be-harness:simplify-loop` — 변경 없는 저장소에서 즉시 수렴하는지 평가한다.
 4. linked worktree(`git worktree add`)에서 `$codex-be-harness:start-workflow --analyze .` — 메인 워크트리 profile 상속 보고를 평가한다.
 5. 다른 worktree에 같은 파일을 만지는 브랜치를 둔 뒤 `$codex-be-harness:start-workflow {같은 기능}` — Phase 1 `BLOCKED:DUPLICATE_IN_PROGRESS`와 mutation 0을 평가한다.
+
+## 공통 실행 원칙 검토 시나리오
+
+프롬프트 변경을 검토할 때 아래 입력과 기대 동작을 대조한다. 이 표는 자동화된 모델 실행 테스트 결과가 아니다.
+
+| 입력·상황 | 기대 동작 |
+|---|---|
+| 요청 유형·문서 포맷·범위가 이전 대화에 이미 있음 | 같은 값을 다시 질문하지 않고 산출물을 완성 |
+| 확정 Spec/Plan·효과를 승인한 사용자의 후속 입력을 fresh-context orchestrator에 전달 | 승인 근거 원문과 최신 지시를 재사용; 같은 승인 재요청 없음 |
+| “끝까지 진행”만 있고 Phase 4.4의 구체적 Plan·효과는 미승인 | 현재 planning-only 범위의 준비를 마친 뒤 구체적인 실행 승인; Phase 5 편집 없음 |
+| 로컬 작업만 승인됐는데 draft PR 또는 파괴적 변경이 새로 필요 | 허용된 준비를 완료하고 추가 효과의 승인 대기; 원격 반영·파괴적 변경 없음 |
+| 스킬/override의 문구 때문에 중단 | 실제 읽은 파일 링크·문구·적용 이유와 명시 요구/해석 구분을 보고 |
+| spec-only·Analyze/Verify·읽기 전용 역할에서 자율 완료 지침을 읽음 | 지정 산출물만 반환; 구현·다음 Phase로 임의 확대 없음 |
+| Phase 8.8 격리 Read-back | 공통 envelope·승인 원문·Spec/Plan을 주입하지 않고 기존 소스만 전달 |
+| 낮은 영향의 문서 수정, 필수 검사 통과, 새 변경·실패 없음 | 구현을 복제하는 테스트나 추가 반복 없이 완료; 필수 검증 생략 없음 |
+| 진행 중 사용자가 상태 질문 또는 정정 전달 | 짧게 답하거나 정정을 반영하고 같은 작업 계속; 새 RUN을 만들지 않음 |
+| upstream이 새 확인 단계·모델/도구 지시를 추가 | 공식 가이드와 계약으로 채택/변환/제외/보류 판정; 근거 기록; 무조건 복사·모델 교체 없음 |

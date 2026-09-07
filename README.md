@@ -25,6 +25,9 @@ Phase 4.3은 매번 새 Sol Max advisor context로 Plan만 검증한다. 모든 
 - E2E는 v2 socket-resource lease, 수정 빌드 검증, 중단 이력 보존, JSON 기반 리포트를 사용한다. Python 3.9+/POSIX가 필요하며 동일 자원의 v1 실행과 혼용하지 않는다.
 - config는 원자적 preview/apply와 상속 profile을 지원한다. Codex topologyModels·모델/effort·단일 writer 경계를 유지한다.
 - commit은 사용자 index 보존과 현재 HEAD Gate를 적용한다. doc-gen은 고정 Node/Chromium 의존성으로 실제 Mermaid·오프라인 HTML을 검증한다.
+- [공통 실행 원칙](skills/start-workflow/references/execution-policy.md): 문맥 기반 자율 완료, 기존 승인 재사용, 지침 충돌 설명, 변경에 맞는 검증을 실행 스킬에 적용한다. 모델 배정과 필수 Gate는 기존 계약을 따른다.
+
+upstream 동기화는 [선택적 동기화 기준](COMPATIBILITY.md#선택적-동기화-기준)을 따른다. 공식 모델 가이드를 확인하고 기능 계약·필요한 수정만 채택하며, 호스트 종속 동작은 Codex에 맞게 변환한다. 채택·변환·제외·보류 근거는 `SYNC-REPORT.md`, 원본과 적용 결과의 해시는 `UPSTREAM-SYNC.json`에 남긴다.
 
 ## 0.5.1 변경
 

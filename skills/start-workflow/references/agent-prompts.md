@@ -18,6 +18,10 @@ profile 스냅샷: {Pre-flight 확정값 — Phase 5부터는 {STATE_FILE}의 ##
 남은 Phase: {REMAINING}
 배정 model/effort: {TOPOLOGY_MODELS}의 해당 슬롯 확정값 (orchestrator / executor / readonly / advisor)
 파일 소유권: {읽기 범위 / 수정 허용 범위}
+공통 실행 원칙: {SKILL_DIR}/references/execution-policy.md (먼저 읽고 배정 범위에만 적용)
+현재 유효한 사용자 지시: {원본 요청에 반영된 정정·추가 조건}
+승인된 범위·효과: {대상 Spec/Plan·외부 효과와 사용자 승인 근거 원문}
+미결 결정: {아직 답이 필요한 항목 또는 없음}
 반환 계약: {해당 Phase 출력 형식}
 ```
 

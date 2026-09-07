@@ -3,6 +3,8 @@ name: unit-test
 description: "Spec의 추적 ID(AC/EC/RC)를 근거로 단위 테스트를 필요한 만큼만 작성하고 실행한다. '테스트 작성해줘', '유닛 테스트 돌려줘', 구현 전 실패 테스트를 먼저 만들 때 사용. start-workflow Phase 6.1에서 자동 호출됨."
 ---
 
+실행 전에 [공통 실행 원칙](../start-workflow/references/execution-policy.md)을 읽는다.
+
 > **Project Overrides**: 실행 전 `.codex/be-harness/common.md`와 `.codex/be-harness/skills/unit-test.md`가 있으면 읽는다.
 > 존재하면 추가 규칙/예외로 흡수하고 충돌 시 오버라이드가 우선한다. 상세 규약: 플러그인 루트 `OVERRIDES.md`.
 

@@ -9,6 +9,25 @@
 
 호환성은 문장 일치가 아니라 관찰 가능한 workflow 동작을 기준으로 한다. Phase 순서, 승인·차단 게이트, 상태 코드, 루프 상한, 보고서 머리글을 invariant로 본다.
 
+## 선택적 동기화 기준
+
+Claude용 upstream을 동기화할 때는 [OpenAI 모델 가이드](https://developers.openai.com/api/docs/guides/latest-model?model=gpt-6-astra)의 현재 본문을 먼저 확인한다. 모델 가이드는 Codex의 행동 지침을 조정하는 근거이며, upstream 기능 명세나 이 저장소의 호환성 계약을 대신하지 않는다. 문서 접근이 불가하면 마지막 확인일과 미확인 범위를 기록하고 최신 권고를 확인했다고 보고하지 않는다.
+
+1. `UPSTREAM-SYNC.json`의 source HEAD·파일 해시와 비교해 새 변경의 목적·관찰 가능한 효과를 파악한다. 미커밋 입력 포함 여부와 동기화 범위를 명시한다.
+2. 아래 기준으로 각 변경을 판정한다. 계약에 필요한 변경을 단순히 “핵심 아님”으로 생략하지 않는다. 계약 변경이 필요하면 별도 근거와 영향·검증을 이 문서에 기록한다.
+3. 프롬프트는 필요한 결정 기준만 남기고 공통 규칙은 한 곳에 둔다. 단독 스킬과 fresh-context 위임까지 읽기 경로를 연결하고, 기존 승인 재요청·사용자 지시와 충돌하는 파일 규칙·불필요한 테스트 반복을 점검한다.
+4. `SYNC-REPORT.md`에 공식 가이드 URL·확인일, 변경별 채택/변환/제외/보류와 이유·적용 파일·검증 결과를 기록한다. 로컬 지침만 수정할 때는 기존 source 정보를 보존하고 변경된 매핑 파일의 target 해시만 갱신한다. 새 upstream 입력을 채택하면 실제 source HEAD·파일 해시와 적용 결과의 target 해시를 함께 기록한다. 로컬 전용 지침에 upstream 출처를 만들어 붙이지 않는다.
+5. `AGENTS.md`의 필수 검증을 완료한다. 상태 전이·원격 효과·writer 격리·독립 리뷰·재개 동작은 [시나리오 계약](tests/scenario-contracts.md)과 대조한다. 정적 검사와 실제 실행 결과를 구분한다.
+
+| 판정 | 가져올 내용과 처리 |
+|---|---|
+| 채택 | BE 기능·버그 수정, 데이터/상태 계약, 실패 보존, 검증 근거 등 관찰 가능한 품질에 필요한 변경. 호스트 중립 helper는 의존성과 호출 계약을 확인한 뒤 재사용 |
+| 변환 | 도구 호출·경로·모델 배정·세션 관리처럼 호스트에 종속된 구현. Codex 도구, profile, topology, writer 계약에 맞게 변환 |
+| 제외 | 중복 설명, 구체적 실패 근거 없이 늘어난 확인·위임·검증 단계, 기존 제품 범위 밖 기능. 이유를 기록하고 원문 전체나 모델 가이드를 복사하지 않음 |
+| 보류 | 필요한 호스트 기능·입력이 없거나 계약 영향을 확인하지 못한 변경. 누락 영향과 해소 조건을 기록하고 동기화 완료로 보고하지 않음 |
+
+가이드의 API 기능(async tool calling, configuration update 등)은 호스트 지원을 확인해야 한다. Markdown 지침만 추가하고 지원했다고 주장하지 않는다. 모델·effort 기본값을 자동 교체하지 않으며, 역할·비용 구조를 유지하고 교체 요청은 `topologyModels`/`--topology-models` 경로로 다룬다.
+
 ### 이식 이력 (아래 과거 릴리스 계약은 0.6.0 변경으로 대체될 수 있음)
 
 | upstream 버전 | 핵심 변경 | 포팅 상태 | 포팅 버전 |
@@ -163,3 +182,16 @@
 새 lifecycle/result/scope/writer/finalization reference와 config/commit/doc-gen assets는 각 skill 또는 Phase 진입점에서 로드한다. E2E renderer는 Markdown 대신 JSON을 입력으로 받으며 workflow_archive에는 --results를 전달한다. 구 Markdown-only archive 출력은 helper의 DEGRADED 호환 경로일 뿐 신규 workflow에서 사용하지 않는다.
 
 이전 이식 표의 2d7a01c/41142d7 SHA 고정은 릴리스 이력이다. 현재 기준은 [UPSTREAM-SYNC.json](UPSTREAM-SYNC.json)의 복사 당시 source_sha256/target_sha256이다. 검증은 플러그인 구조·native adapter·실제 로컬 Git/worktree/lock·오프라인 renderer까지이며 외부 모델 전체 workflow나 실제 서비스 API/push/PR를 실행했다는 뜻은 아니다.
+
+### 0.6.0 공통 실행 지침 보강 (2026-09-07)
+
+[공통 실행 원칙](skills/start-workflow/references/execution-policy.md)은 OpenAI 가이드와 사용자의 자율 실행 요청을 적용한 로컬 지침이다. 참조 전용 `default-conventions`를 제외한 16개 실행 스킬에서 읽는다.
+
+| 영역 | 달라지는 동작 | 유지하는 계약 |
+|---|---|---|
+| 요청·승인 | 문맥에서 확정 가능한 내용은 알리고 진행; 같은 대상·효과의 기존 승인 재사용; 필요한 질문은 현재 Phase에서 허용된 준비 후 구체적으로 제시 | Phase 4.4의 구체적 Plan 승인, 미해소 Assumption Gate, 승인된 원격 효과 범위 |
+| 지침 충돌 | 사용자 명시 지시 우선, 중단을 유발한 실제 파일·문구·해석 공개; 소비 프로젝트 override 규칙과 플러그인 유지보수 범위 구분 | 호스트 권한, 모드 범위, 명시된 종료 조건 |
+| 위임 | bootstrap·일반 envelope에 최신 지시·승인 원문·미결 결정 전달 | 고정 topology·effort·단일 writer; Phase 8.8 소스 전용 격리 |
+| 검증·보고 | 변경 규모에 맞는 검증, 근거 없는 추가 반복 생략, 간결한 일반 설명 | 프로젝트·티어별 필수 검증, 수정 후 재검증, 출력 머리글·결과 스키마 |
+
+모델 기본값·API 요청·실행 자산은 이 지침 보강의 변경 대상이 아니다. 이후 upstream 동기화에서도 위 로컬 차이를 보존한다.

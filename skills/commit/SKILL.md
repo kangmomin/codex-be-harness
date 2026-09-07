@@ -3,6 +3,8 @@ name: commit
 description: "현재까지의 작업을 논리적 단위별로 나눠 컨벤션에 맞는 메시지로 순차 커밋한다. '커밋해줘', '작업 단위로 커밋', 변경사항을 정리해 커밋해야 할 때 사용."
 ---
 
+실행 전에 [공통 실행 원칙](../start-workflow/references/execution-policy.md)을 읽는다.
+
 > **Project Overrides**: 실행 전 `.codex/be-harness/common.md`와 `.codex/be-harness/skills/commit.md`를 읽기.
 > 존재하면 추가 규칙/예외로 흡수하고 충돌 시 오버라이드가 우선한다. 상세 규약: 플러그인 루트 `OVERRIDES.md`.
 

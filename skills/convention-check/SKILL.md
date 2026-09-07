@@ -3,6 +3,8 @@ name: convention-check
 description: "프로젝트 컨벤션 위배 사항을 검사하고 보고한다 (보고 전용 — 코드를 수정하지 않음). 커밋/PR 전 점검, '컨벤션 검사해줘' 요청 시 사용. --init으로 적용 컨벤션 선택, --doctor로 설정 진단."
 ---
 
+실행 전에 [공통 실행 원칙](../start-workflow/references/execution-policy.md)을 읽는다.
+
 > **Project Overrides**: 실행 전 `.codex/be-harness/common.md`와 `.codex/be-harness/skills/convention-check.md`가 있으면 읽는다.
 > 존재하면 추가 규칙/예외로 흡수하고 충돌 시 오버라이드가 우선한다. 상세 규약: 플러그인 루트 `OVERRIDES.md`.
 

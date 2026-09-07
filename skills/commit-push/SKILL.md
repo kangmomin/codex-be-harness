@@ -3,6 +3,8 @@ name: commit-push
 description: "브랜치 검증/생성 후 $codex-be-harness:commit 절차로 커밋하고 push까지 수행한다. '커밋하고 푸시해줘', '올려줘' 요청 시 사용. 보호 브랜치에 있으면 새 브랜치를 먼저 생성하고, 브랜치명이 컨벤션에 맞지 않으면 재생성한다."
 ---
 
+실행 전에 [공통 실행 원칙](../start-workflow/references/execution-policy.md)을 읽는다.
+
 > **Project Overrides**: 실행 전 `.codex/be-harness/common.md`와 `.codex/be-harness/skills/commit-push.md`를 읽기.
 > 존재하면 추가 규칙/예외로 흡수하고 충돌 시 오버라이드가 우선한다. 상세 규약: 플러그인 루트 `OVERRIDES.md`.
 
@@ -48,6 +50,8 @@ git branch --show-current
 
 ### Step 1.2: 보호 브랜치 → 새 브랜치 생성
 
+사용자나 호출자가 prefix·브랜치명을 이미 정했으면 그대로 검증해 사용하고 해당 확인을 생략한다. 아래 질문은 남은 미확정 항목만 한 번에 묻는다.
+
 1. `git diff`의 변경 파일·내용을 읽고 핵심 변경을 2~4 단어로 요약한다.
 2. 사용자에게 prefix를 질문한다 (diff 분석 기반 추천 표시):
    > "현재 보호 브랜치(`{브랜치명}`)에 있습니다. 새 브랜치를 생성합니다. prefix를 선택해주세요:
@@ -60,6 +64,8 @@ git branch --show-current
 4. `git checkout -b {브랜치명}` 후 Step 2로 진행한다.
 
 ### Step 1.3: 컨벤션 불일치 → 브랜치 이름 재생성
+
+같은 대상에 대한 이름 변경 결정과 새 이름이 이미 승인됐으면 재질문하지 않는다.
 
 1. Step 1.2의 1~3과 동일하게 새 이름을 만들고 확인을 받는다:
    > "현재 브랜치(`{현재 이름}`)가 컨벤션에 맞지 않습니다. `{새 이름}`으로 변경할까요? (Y/수정할 이름 입력)"

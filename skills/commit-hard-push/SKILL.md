@@ -3,6 +3,8 @@ name: commit-hard-push
 description: "보호 브랜치 제한 없이 /commit 진행 후 현재 브랜치에 그대로 push한다. main 등 보호 브랜치에 직접 push해야 할 때, '그냥 현재 브랜치에 올려줘' 요청 시 사용."
 ---
 
+실행 전에 [공통 실행 원칙](../start-workflow/references/execution-policy.md)을 읽는다.
+
 > **Project Overrides**: 실행 전 `.codex/be-harness/common.md`와 `.codex/be-harness/skills/commit-hard-push.md`를 읽기.
 > 존재하면 추가 규칙/예외로 흡수하고 충돌 시 오버라이드가 우선한다. 상세 규약: 플러그인 루트 `OVERRIDES.md`.
 

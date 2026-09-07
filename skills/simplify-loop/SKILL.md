@@ -3,6 +3,8 @@ name: simplify-loop
 description: "변경 코드의 동작을 보존하는 단순화 후보를 네 관점으로 독립 리뷰하고 최대 10회까지 수렴시킨다. 구현 직후 코드 정리, '심플리파이 돌려줘', '코드 간소화' 요청과 start-workflow 품질 루프에서 사용한다."
 ---
 
+실행 전에 [공통 실행 원칙](../start-workflow/references/execution-policy.md)을 읽는다.
+
 > **Project Overrides**: 실행 전 `.codex/be-harness/common.md`와 `.codex/be-harness/skills/simplify-loop.md`를 읽는다.
 > 존재하면 추가 규칙/예외로 흡수하고 충돌 시 오버라이드가 우선한다. 상세 규약: 플러그인 루트 `OVERRIDES.md`.
 

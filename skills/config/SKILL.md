@@ -3,6 +3,8 @@ name: config
 description: "be-harness project profile(.codex/be-harness.local.md)의 설정 값을 조회하고 키 단위로 수정한다. '프로필 설정 확인해줘', '설정 값 바꿔줘', '{키} 값 뭐야', '{키}를 {값}으로 바꿔줘' 요청 시, init 재실행 없이 값 하나만 보거나 고칠 때 사용. 파일 생성·환경 진단은 하지 않는다 (init·doctor 담당)."
 ---
 
+실행 전에 [공통 실행 원칙](../start-workflow/references/execution-policy.md)을 읽는다.
+
 # be-harness Config
 
 실행 전 `.codex/be-harness/common.md`, `.codex/be-harness/skills/config.md`와 `../../PROFILE.md`를 읽는다.

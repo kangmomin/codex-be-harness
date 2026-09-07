@@ -3,6 +3,8 @@ name: resolve-assumption
 description: "코드·커밋 메시지에 남은 `[Assumption]` 추론 태그를 항목별로 하나씩 확인받아 해소한다. 'assumption 해소해줘', '추론 태그 정리해줘', '가정한 것들 확인해줘', push 전에 미리 태그를 정리하고 싶을 때 사용. 승인된 항목은 태그만 삭제하며 '확정' 같은 대체 워딩을 남기지 않는다."
 ---
 
+실행 전에 [공통 실행 원칙](../start-workflow/references/execution-policy.md)을 읽는다.
+
 > **Project Overrides**: 실행 전 `.codex/be-harness/common.md`와 `.codex/be-harness/skills/resolve-assumption.md`를 읽기.
 > 존재하면 추가 규칙/예외로 흡수하고 충돌 시 오버라이드가 우선한다. 상세 규약: 플러그인 루트 `OVERRIDES.md`.
 
@@ -125,7 +127,7 @@ restoreStock(ctx, order.Items)
 
 ### 변경 커밋
 
-태그 제거·코드 수정으로 발생한 변경은 관련 논리 단위 커밋에 amend하거나, 별도로 묶어 `Chore: 확인된 Assumption 태그 정리`로 커밋한다. **커밋 여부는 사용자에게 확인받는다** — 본 스킬은 push하지 않는다.
+태그 제거·코드 수정으로 발생한 변경은 관련 논리 단위 커밋에 amend하거나, 별도로 묶어 `Chore: 확인된 Assumption 태그 정리`로 커밋한다. 해당 변경의 커밋이 이미 요청·승인됐으면 재확인하지 않고, 미승인일 때만 커밋 여부를 묻는다. 본 스킬은 push하지 않는다.
 
 ## Step 5: 보고
 

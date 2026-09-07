@@ -3,6 +3,8 @@ name: e2e-test
 description: "기능 추가/수정 후 연관 HTTP API를 실제 요청으로 E2E 테스트한다. 'API 실제로 테스트해줘', 구현 검증이 필요할 때 사용. profile의 runServerCommand/serverUrl 기반, Bash+curl만 사용."
 ---
 
+실행 전에 [공통 실행 원칙](../start-workflow/references/execution-policy.md)을 읽는다.
+
 > **Project Overrides**: 실행 전 `.codex/be-harness/common.md`와 `.codex/be-harness/skills/e2e-test.md`를 읽는다.
 > 존재하면 추가 규칙/예외로 흡수하고 충돌 시 오버라이드가 우선한다. 상세 규약: 플러그인 루트 `OVERRIDES.md`.
 

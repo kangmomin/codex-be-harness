@@ -3,6 +3,8 @@ name: commit-pr
 description: "커밋, 브랜치 생성, push, PR 오픈까지 전체 워크플로우를 수행한다. 'PR 올려줘', '커밋하고 PR까지', 'ready로 열어줘', 'version 올리고 PR 열어줘' 요청 시 사용. 기본은 draft PR이며 --ready로 ready 생성, --bump-only로 VERSION 범프 전용 PR을 만든다."
 ---
 
+실행 전에 [공통 실행 원칙](../start-workflow/references/execution-policy.md)을 읽는다.
+
 > **Project Overrides**: 실행 전 `.codex/be-harness/common.md`와 `.codex/be-harness/skills/commit-pr.md`를 읽기.
 > 존재하면 추가 규칙/예외로 흡수하고 충돌 시 오버라이드가 우선한다. 상세 규약: 플러그인 루트 `OVERRIDES.md`.
 

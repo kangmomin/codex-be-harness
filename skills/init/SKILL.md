@@ -3,6 +3,8 @@ name: init
 description: "be-harness 플러그인의 project profile(.codex/be-harness.local.md)을 대화형으로 생성/갱신한다. 플러그인 최초 설정, '초기화해줘', doctor가 MISSING을 보고할 때 사용. Go/Node 프리셋 지원."
 ---
 
+실행 전에 [공통 실행 원칙](../start-workflow/references/execution-policy.md)을 읽는다.
+
 > **Project Overrides**: 실행 전 `.codex/be-harness/common.md`와 `.codex/be-harness/skills/init.md`가 있으면 읽는다.
 > 존재하면 추가 규칙/예외로 흡수하고 충돌 시 오버라이드가 우선한다. 상세 규약: 플러그인 루트 `OVERRIDES.md`.
 

@@ -3,6 +3,8 @@ name: e2e-test-loop
 description: "E2E 테스트 → 이슈 수정 → 재테스트를 반복한다 (최대 5회). 종료 시 정직한 자기 점검 md 리포트를 스크립트로 생성한다. 기능 구현 후 'E2E 돌려줘', '테스트 통과할 때까지 고쳐줘' 요청 시 사용. start-workflow 품질 루프에서 자동 호출됨."
 ---
 
+실행 전에 [공통 실행 원칙](../start-workflow/references/execution-policy.md)을 읽는다.
+
 > **Project Overrides**: 실행 전 `.codex/be-harness/common.md`와 `.codex/be-harness/skills/e2e-test-loop.md`를 읽기.
 > 존재하면 추가 규칙/예외로 흡수하고 충돌 시 오버라이드가 우선한다. 상세 규약: 플러그인 루트 `OVERRIDES.md`.
 

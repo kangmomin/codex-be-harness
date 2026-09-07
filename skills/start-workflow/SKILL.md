@@ -3,6 +3,8 @@ name: start-workflow
 description: "BE 개발 전 과정을 오케스트레이션한다. '워크플로우 시작', '기능을 전 과정으로 구현해줘' 요청에는 Build(기본), '코드 분석해줘'에는 --analyze, '보안·성능·버그를 검증해줘'에는 --verify로 사용한다."
 ---
 
+실행 전에 [공통 실행 원칙](references/execution-policy.md)을 읽는다.
+
 # Start Workflow
 
 BE 작업을 Build, Analyze, Verify 중 한 모드로 실행한다. 프로젝트 지침과

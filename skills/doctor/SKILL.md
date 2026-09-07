@@ -3,6 +3,8 @@ name: doctor
 description: "be-harness 환경 상태를 진단한다. profile 유효성, 명령 실행 가능성, Git 상태, convention 설정을 점검. 워크플로우가 SKIP을 내거나 설정이 의심될 때, '환경 진단해줘' 요청 시 사용."
 ---
 
+실행 전에 [공통 실행 원칙](../start-workflow/references/execution-policy.md)을 읽는다.
+
 > **Project Overrides**: 실행 전 `.codex/be-harness/common.md`와 `.codex/be-harness/skills/doctor.md`가 있으면 읽는다.
 > 존재하면 추가 규칙/예외로 흡수하고 충돌 시 오버라이드가 우선한다. 상세 규약: 플러그인 루트 `OVERRIDES.md`.
 
