@@ -18,8 +18,8 @@
 
 ### 4. Status
 
-- **Verification**: 구현 후 필수 검증은 orchestration 단계에서 실행한다.
-- **Cleanup**: 개인 설정·설치 cache·RUN 상태 파일은 변경하지 않았다.
+- **Verification**: `HARNESS_DOCGEN_NO_SANDBOX=1 bash scripts/verify.sh`가 validate_port, Python 109개, Node 5개를 통과했고 plugin validator, 17개 전체 skill validator, shellcheck도 PASS했다. 옵션 없는 첫 Chromium sandbox 실패는 격리 환경 문제였으며, isolated read-back WARN A=1/C=0/E=0은 동작 실패가 아닌 test-source 재구성 한계다.
+- **Cleanup**: 개인 설정과 설치 cache는 변경하지 않았고 RUN 상태·로그는 저장소 밖에 남겼으며, 승인된 프로젝트 override README를 포함했다.
 
 ## 📋 Task Report: Codex BE Harness 동기화
 
