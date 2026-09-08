@@ -5,9 +5,10 @@
 - upstream: `kangmomin/harness-plugins`
 - 전체 동기화 기준: `f9ce681427ccfbfd9194d3c3f204a445ae6f45dd` + 당시 미커밋 작업 트리 (파일별 실제 입력 해시는 UPSTREAM-SYNC.json)
 - 2026-09-08 선택 반영: `80366fe4e83210368a9f3015fed73d1fbdafb878`의 AI 활용성 개선 커밋. `UPSTREAM-SYNC.json`의 `selective_updates`와 해당 파일의 `source_head`가 이 부분의 출처다. 전체 동기화 기준과 나머지 파일의 출처는 보존한다.
+- 검증 개선 입력(2026-09-08): source `ae6900e4504a594bd6b9124043a59b7350ee33e8`에 커밋된 R1~R8. 해당 선택 기록은 `source_state:committed`와 실제 파일 해시를 사용한다. source plugin은 `be-harness@1.5.6`·`common@0.14.4`다.
 - 전체 동기화 source plugin: `be-harness@1.5.4`; inlined common `common@0.14.2`
 - 2026-09-08 선택 반영 source plugin: `be-harness@1.5.5`; `common@0.14.3`
-- target plugin: `codex-be-harness@0.6.1`
+- target plugin: `codex-be-harness@0.6.2`
 
 호환성은 문장 일치가 아니라 관찰 가능한 workflow 동작을 기준으로 한다. Phase 순서, 승인·차단 게이트, 상태 코드, 루프 상한, 보고서 머리글을 invariant로 본다.
 
@@ -44,7 +45,21 @@ Claude용 upstream을 동기화할 때는 [OpenAI 모델 가이드](https://deve
 
 Claude의 새 정책 파일은 복제하지 않고 기존 Codex [공통 실행 원칙](skills/start-workflow/references/execution-policy.md)에 필요한 결정 기준만 합쳤다. 이 파일과 topology/build-phases는 계속 로컬 전용이다. 기존 모델·effort 역할, host 도구, 상태 스키마·출력 머리글을 유지하며 별도 승인·검증 단계를 추가하지 않는다. 문구 검사와 모델 행동 검토 및 실제 테스트 실행 결과는 SYNC-REPORT에서 구분한다.
 
-### 이식 이력 (아래 과거 릴리스 계약은 0.6.0 변경으로 대체될 수 있음)
+### 검증 신뢰성과 재개 개선 (0.6.2, 2026-09-08)
+
+| 계약 | 현재 동작과 호환성 경계 |
+|---|---|
+| 실제 내용 지문 v2 | HEAD/index/비무시 untracked에서 찾은 실제 파일의 경로·타입·내용·실행 비트·symlink 대상을 해시한다. textconv와 index 최적화 플래그는 변경을 숨기지 못한다. 초기화된 submodule의 HEAD·내용을 포함하고, 불완전 submodule·부모 symlink·특수 파일·unmerged index는 오류로 처리한다. ignored 파일이나 저장소 밖 입력 전체를 보장하는 지문은 아니다. |
+| 커밋 후 재사용 | v2 내용이 같고 HEAD 비의존인 검증만 재사용한다. HEAD 의존 여부가 미확인이면 `--include-head`로 기록한다. 과거 이벤트는 보존하고, legacy 지문을 v2로 자동 변환하지 않는다. 기존 결과는 읽을 수 있지만 현재 v2와 대조하려면 새 검증이 필요하다. |
+| 통합 테스트 결과 | 결과 schema 1에 `integration` kind와 regression_count를 추가했다. BE Phase 8.7 baseline 비교, 두 suite의 latest 합산, archive, 필수 검증 목록이 함께 소비한다. 이전 reader는 새 kind를 해석하지 못하므로 helper와 소비자를 같이 배포한다. TDD 생략은 실제 실패를 성공으로 바꾸지 않는다. |
+| 태그 리터럴 | 오케스트레이터가 검토한 경로·줄·원래 줄 바이트 해시·이유가 정확히 맞는 경우만 선택적으로 제외한다. 기본 검사는 그대로 엄격하며, commit message나 파일 전체 예외는 없다. 실제 미해결 사항은 기존 사용자 결정 대상이다. |
+| 테스트 후보 | 같은 Go 패키지와 지정 testDirs의 후보를 `candidate`로 반환한다. 후보 발견이나 파일명 대응만으로 관련 커버리지·light 자격을 인정하지 않는다. |
+| Verify 재개 | 명령 4종과 CWD·RUN_ID·profile 출처를 한 번 저장하고 resume helper가 검증한다. live profile 변경·삭제와 무관하게 저장 명령을 사용한다. 스냅샷이 없는 구 Verify 실행은 원본을 보존하고 차단하며 새 실행이 필요하다. Build 전체 Snapshot과 Analyze 계약은 추가하지 않는다. |
+| 포트 검증 | Codex 전용 `scripts/verify.sh`가 구조 검사·Python unittest·Node renderer를 실행하고 실패를 전달한다. source 저장소는 기존 전체 runner와 FE lock 정상화를 사용한다. |
+
+공통 helper는 BE/FE/common과 같은 바이트를 사용하고, Phase 실행·경로·writer 지침만 Codex 호스트에 맞게 변환했다. 기존 모델 배정·승인 범위·루프 상한·Read-back 격리와 실패 이력 보존은 유지한다. 전체 source 동기화로 보고하지 않으며 선택한 변경과 로컬 전용 파일을 UPSTREAM-SYNC.json에 구분했다.
+
+### 이식 이력 (아래 과거 릴리스 계약은 이후 변경으로 대체될 수 있음)
 
 | upstream 버전 | 핵심 변경 | 포팅 상태 | 포팅 버전 |
 |---|---|---|---|

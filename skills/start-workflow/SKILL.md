@@ -44,7 +44,7 @@ Analyze 또는 Verify라면 [analyze-verify-modes.md](references/analyze-verify-
 
 ## Pre-flight
 
-모든 모드에서 profile을 읽어 다음 값을 추출한다. profile 경로 `{PROFILE_PATH}`는 플러그인 루트 `PROFILE.md`의
+신규 실행은 profile을 읽어 다음 값을 추출한다. Verify 재개는 live profile 조회 전에 run-lifecycle의 resume으로 VERIFY_COMMANDS를 검증·복원하고 명령 4종을 다시 해석하지 않는다. profile 경로 `{PROFILE_PATH}`는 플러그인 루트 `PROFILE.md`의
 "profile 해석" 규칙으로 확정한다 — 프로젝트 루트의 `.codex/be-harness.local.md`가 우선이고, linked worktree에
 없으면 메인 워크트리의 것을 상속하며 `[Assumption] 메인 워크트리 profile 상속: {경로}`로 보고한다.
 
@@ -53,7 +53,7 @@ Analyze 또는 Verify라면 [analyze-verify-modes.md](references/analyze-verify-
 `mainBranch`, `featureBranchPrefix`, `hotfixBranchPrefix`, `commitPrefixes`, `commitCoAuthor`,
 `projectConventions`, `reportDir`, `feedbackUpstreamRepo`, `e2eLockDir`, `language`, `topologyModels`.
 
-프로젝트 루트와 메인 워크트리 어디에도 profile이 없으면(`PROFILE_MISSING`) 값을 추측하지 않고
+신규 실행에서 프로젝트 루트와 메인 워크트리 어디에도 profile이 없으면(`PROFILE_MISSING`) 값을 추측하지 않고
 `.codex/be-harness.local.md` 생성이 필요하다고 알린 뒤 mutation 없이 종료한다. Build에서는 누락된
 명령 때문에 생략될 Phase와 위험을 승인 전에 알린다. `buildCommand`, `testCommand`, E2E 3종 값,
 `apiDocsPath`, `makeTestCommand`을 검사한다. Analyze/Verify의 명령 누락은 해당 단계에
@@ -98,7 +98,7 @@ Build에 누락이 있으면 영향 Phase를 구체적으로 나열하고, 해�
 - Flags의 기록값이 재개 인자보다 우선이며 명시적 모드 충돌은 entry gate에서 차단한다. TIER의 단방향 승격 외에는 실행 도중 Flags를 재결정하지 않는다.
 - baseline 미완은 [tdd.md](references/tdd.md)의 Phase 5 미완 재개로 처리한다. 기존 상태·노트·OWNED_FILES·결과 events를 초기화하지 않는다.
 - 형제 스킬/서브에이전트는 `## Profile Snapshot`만 쓰고 frontmatter를 다시 읽지 않는다. profile_sha256은 출처 기록이며 live 파일과 비교하지 않는다. Project Notes 본문만 읽기 전용 참조할 수 있다.
-- **Analyze/Verify 상태**는 Run 공통 헤더와 최소 mode/scope/focus/topology/publish/route/Remaining Phases를 검증한다. Build 스키마나 Snapshot을 두지 않는다. 같은 실행의 Pre-flight 확정값을 재사용한다.
+- **Analyze/Verify 상태**는 Run 공통 헤더와 최소 mode/scope/focus/topology/publish/route/Remaining Phases를 검증한다. Build 스키마나 전체 Profile Snapshot을 두지 않는다. Verify는 별도 verify-commands.json의 버전·실행 ID·CWD·명령 4종·출처를 helper가 검증하고 같은 실행의 값을 재사용한다. 누락 시 자동 복구하지 않는다.
 - 상태 본문 생성 전 중단은 새 실행으로 시작한다. 불완전 상태를 덮어서 성공한 재개로 보고하지 않는다.
 
 Build 상태 템플릿과 최종 보고는 [templates.md](references/templates.md)를 사용한다.

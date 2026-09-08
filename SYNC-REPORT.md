@@ -99,3 +99,39 @@
 - **Test environment**: 기존 doc-gen 의존성을 사용했다. Python 검증은 임시 venv, 격리 컨테이너의 renderer에는 HARNESS_DOCGEN_NO_SANDBOX=1을 사용했다.
 - **한계**: 실제 업무의 전체 workflow·서비스 API·원격 작업을 실행하지 않았다. 현재 검증 엔진은 전체 tree에 근거를 묶으므로 최종 문서/commit 변경도 stale 검증의 재실행을 요구할 수 있다.
 - **Cleanup**: 검증 프로세스와 fixture 자원은 종료했고 임시 검토 자료를 정리했다. 후속 커밋·푸시 요청에 따라 0.6.1로 게시하며 적용 범위와 기존 모델 슬롯 유지 결정을 재사용한다.
+
+## 📋 Task Report: 검증 신뢰성과 재개 개선 (0.6.2, 2026-09-08)
+
+### 1. Pre-Review (Plan)
+
+- **Orchestrator Feedback**: 개선 분석 R1~R8에 대한 변경·계속 요청을 근거로 원본 BE/FE/common과 Codex 포트의 관련 구현을 수정했다.
+- **독립 리뷰어 Feedback**: fresh-context 리뷰어가 지문 비교의 단일화·실제 파일 집합·통합 결과의 종료/아카이브 연결·원래 바이트 해시의 리터럴 예외·Verify helper의 재개 검증을 요구했다. 외부 CLI 리뷰어는 호출하지 않았다.
+- **Refinement**: 기존 지문을 자동 변환하지 않고 기록된 HEAD 의존성을 보존한다. 후보 탐색은 커버리지 판단과 분리한다. 실패와 불완전한 저장 상태는 보존한다.
+- **Guide**: [공식 모델 가이드](https://developers.openai.com/api/docs/guides/latest-model?model=gpt-6-astra)를 2026-09-08 다시 확인했다. 필요한 수정·검증·명확한 완료 근거에 관한 행동 기준을 유지하며 모델 슬롯은 변경하지 않았다.
+
+### 2. Implementation Details
+
+- **Assumptions**: 없음. 앞서 제시한 R1~R8과 사용자의 변경 승인을 적용했다.
+- **Provenance**: source HEAD `ae6900e4504a594bd6b9124043a59b7350ee33e8`에 커밋된 R1~R8 파일이 이번 동기화의 정본이다. target 구현 기준은 `21b15a5e30e98c2ecd5856c565262c8f43adb22e`다. UPSTREAM-SYNC.json의 21개 선택 source 해시와 전체 78개 target 해시를 기록했다. 이전 전체 동기화와 선택 반영 이력은 보존했다.
+
+| 판정 | 내용과 적용 |
+|---|---|
+| 채택 | R1/R5 실제 파일 지문 v2·내용 동일 커밋 재사용, R3 integration 결과와 합산·아카이브, R6 검토한 줄의 리터럴 예외, R7 패키지/testDirs 후보, R8 Verify 명령 저장·재개 검증. 관련 순수 helper와 새 회귀 테스트를 원본에서 재사용했다. |
+| 변환 | BE Phase 8.7 baseline 비교·test-summary·필수 integration, commit 검증 배리어의 재사용, Verify Pre-flight/재개 명령 출처를 Codex profile·역할·경로 계약에 연결했다. |
+| 로컬 구현 | R2 단일 verify runner와 CI, AGENTS/README, 충돌하던 시나리오 기대값을 정리했다. Python/Node 실패를 실제로 주입하는 runner 테스트를 추가했다. |
+| 원본에서 적용 | R4 FE fixture lock 정상화와 Node/npm 고정은 FE fixture가 있는 원본 저장소에 적용했다. Codex에는 기존 doc-gen 의존성과 새 verify CI를 사용한다. |
+
+호환성 세부 사항은 [COMPATIBILITY.md](COMPATIBILITY.md)의 0.6.2 개선 표와 [결과 계약](skills/start-workflow/references/result-contract.md), [실행 재개 계약](skills/start-workflow/references/run-lifecycle.md)에 있다. 새 integration reader/writer는 같이 갱신하며, 구 지문과 명령 스냅샷 없는 구 Verify 실행을 자동으로 새 근거로 바꾸지 않는다.
+
+### 3. Final Convention Review
+
+- **Layer Analysis**: 애플리케이션 DB 변경은 없다. 스킬이 실행 흐름을 설명하고 helper가 지문·결과·스냅샷을 검증한다. 단일 writer·승인 범위·Read-back 격리·실패 이력과 루프 상한은 유지했다.
+- **Simplicity Check**: 기존 helper와 형식에 필요한 필드·명령만 추가했다. 리터럴 예외는 정확한 줄에만 적용하고, 테스트 후보를 자동 커버리지로 승격하지 않는다.
+- **독립 행동 검증**: A — 내용 동일 commit의 기존 unit PASS 재사용과 최종 결과 검증 성공. B — unit 최신 PASS 뒤에도 integration FAIL·회귀 1건 유지. C-valid — profile 변경 후 저장된 `recorded-command` 실행, exit 0과 결과 JSON 검증 성공. 원본 C fixture의 필수 메타데이터 누락은 BLOCKED 증거로 별도 보존했다. 최종 대조에서 TDD 생략 시의 이전 요약 문장도 합산 규칙에 맞췄다.
+
+### 4. Status
+
+- **Verification**: `bash scripts/verify.sh` exit 0 — 구조 검사(17 skills, 26 resources), Python 109개, 실제 Chromium doc-gen 5개 통과. plugin validator, 17개 skill validator, shellcheck 통과. 전체 검사 뒤 추가한 디렉터리↔파일 전환 경계는 두 저장소의 지문 회귀 검사 7개로 재검증했다. 원본의 전체 runner도 Python 212개·work-log Python 10개/Node 31개·doc-gen 5개·FE Jest 6개/Vitest 11개·loopback gRPC를 통과했다.
+- **한계**: 실제 로컬 helper·Git·브라우저와 지정된 독립 행동을 검증했다. 원격 CI, 실제 서비스의 전체 Build→PR, Verify V3~V5, 모델별 시간·비용은 이번에 실행하지 않았다. ignored 파일·저장소 밖 입력은 내용 지문의 범위 밖이며 HEAD 의존성이 불명확한 검증은 include-head로 보수적으로 기록한다.
+- **Integrity**: 전체 target 해시 78개·선택 source 해시 21개와 공유 helper 사본이 일치한다. 최종 구조 검사와 git diff --check가 통과했고, 두 저장소 HEAD·index는 시작 시점 그대로다.
+- **Cleanup**: 검증 로그·독립 행동 결과를 보존하고 소유 프로세스가 없음을 확인한 뒤 임시 venv·fixture·패키지 캐시를 삭제했다. Git에서 제외된 기존 개발 의존성은 유지했다. 후속 commit-hard-push 요청에 따라 0.6.2 게시 내용을 확정했다. 독립 게시 검토에서 커밋 분할·리터럴 분류·원본 출처를 확인했으며 설치 갱신은 이번 요청 범위에 포함하지 않는다.

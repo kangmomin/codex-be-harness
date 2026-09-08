@@ -9,7 +9,7 @@
 | Phase 1 중복 스캔 — 다른 worktree/open PR의 변경 파일이 Spec 대상과 교차 | 후보 목록 보고 후 `BLOCKED:DUPLICATE_IN_PROGRESS`, 스캔 전후 mutation 0 |
 | Phase 1 중복 스캔 — 현재 브랜치/현재 PR만 매칭 | 차단하지 않음 |
 | Phase 1 중복 스캔 — worktree·PR에 연결되지 않은 단독 로컬 브랜치만 매칭 | 차단하지 않음 |
-| request 질문 기본값 승인 | 빈 응답/`skip`/"기본값으로 진행"이면 기본값 채택 + `[Assumption]` 표기 |
+| request 질문 기본값 승인 | 선택적 질문에 명시적 `skip`/"기본값으로 진행"이면 기본값 채택 + `[Assumption]` 표기. 미응답은 필수 결정·승인이 아님 |
 | workflow 내부 E2E 인증 부재 | `mode: workflow`면 사용자 질문 없이 `SKIPPED:NO_AUTH` |
 | Phase 12 보고 | `{REPORT_DIR}`에 `*-workflow-report.md` 아카이브 1개(부록 A/B/C) — HTML 없음 |
 | custom profile 필수 필드 누락 | 누락 목록과 수정/중단 선택지를 제시 |
@@ -48,17 +48,18 @@
 | light 판정과 축소 | A ≤ 3 ∧ B ≤ 3 ∧ 금지 조건 0 ∧ TDD 활성 ∧ ≠ parallel-slices ∧ `--tier standard` 없음 → 4.2 Luna 1역할·`{PLAN_MAX}` 2·`{QL_MAX}` 2·8.2 `SKIPPED:TIER_LIGHT`·8.6 `--smoke`·8.8 `SKIPPED:TIER_LIGHT` |
 | 승격 latch | 루프 종료·상한 평가보다 먼저 적용, 단방향, 카운터 단조 증가; Phase 8 재진입(⑦·락 재시도 후 수정)만 새 루프 |
 | `--smoke` 무효화 | 실효 full latch·`{MAX_ITER}` 5·`실행 수준: full(smoke 미적용)` |
-| 렌더러·아카이버 exit ≠ 0 | 폴백 + `script_fallback`, stdout `경로:`/`상태:`를 그대로 기록 |
-| 렌더러·폴백 모두 실패 | `{RUN_DIR}` 보존·리포트 없음 보고·루프 판정 불변 |
+| 렌더러·아카이버 exit ≠ 0 | 실제 stdout·원문·JSON 경로와 오류를 보존. 아카이버 실패 시 cp/cat/replace 폴백 금지 |
+| 렌더러 실패 | `{RUN_DIR}`와 원문을 보존하고 생성되지 않은 리포트를 성공 경로로 보고하지 않음·루프 판정 불변 |
 | `## Flags`와 CLI 인자 충돌 | `## Flags`가 우선하며 기록값 사용 + 충돌 고지 |
-| 상태 파일 스키마 불일치(Build) | `## Flags` 부재·필수 키 누락·`## Profile Snapshot`/`## Verification Tier` 누락 시 `BLOCKED:STATE_SCHEMA_MISMATCH`; Analyze/Verify 상태 파일은 최소 헤더(`TOPOLOGY_MODELS` executor=N/A 포함)만 확인 |
-| 재개·형제 스킬 profile 해석 | `## Profile Snapshot`만 사용하며 config로 profile이 바뀌어도 실행 중 값 불변 |
+| 상태 파일 스키마 불일치(Build) | `## Flags` 부재·필수 키 누락·`## Profile Snapshot`/`## Verification Tier` 누락 시 `BLOCKED:STATE_SCHEMA_MISMATCH`; Analyze/Verify는 최소 헤더(`TOPOLOGY_MODELS` executor=N/A 포함), Verify는 별도 명령 스냅샷도 검증 |
+| Build 재개·형제 스킬 profile 해석 | `## Profile Snapshot`만 사용하며 config로 profile이 바뀌어도 실행 중 값 불변 |
 | 상태 파일 생성 이전 중단 | Pre-flight 재시작 |
+| Verify profile 변경 후 재개 | verify-commands.json의 원래 명령 4종 복원; 누락·다른 RUN·중복 키는 원본 보존 후 차단 |
 | 토폴로지 슬롯 설정 적용 | profile `topologyModels`/`--topology-models`의 유효 슬롯은 해당 역할 spawn의 model/effort로 쓰이고 `## Flags` `TOPOLOGY_MODELS`·Phase Assignments에 확정값으로 기록, 라벨은 불변 |
 | 무효 슬롯 | profile 무효 슬롯 → 그 슬롯만 기본값 + 경고(profile 불변, doctor `INVALID_SLOT`); 플래그 무효 → 대화형 재입력 1회 / 비대화형 무시 + 경고 |
 | 설정 model/effort 거부 | `model_unavailable({슬롯}:{사유})` 진단 + 해당 Phase 기존 계약, 대체·강등 재시도 없음; orchestrator 슬롯이면 상태 파일 없이 bootstrap 실패 보고 |
 | 플래그 ephemeral | `--topology-models`는 profile을 바꾸지 않으며 다음 실행에 남지 않음 |
-| `SCHEMA: 2` 재개 | 0.4.0 상태 파일은 `TOPOLOGY_MODELS`·`topologyModels` 기본값 보완 + `SCHEMA: 3`으로 임시 파일 원자 교체 후 재개; 난이도 기록 없으면 `BLOCKED:STATE_SCHEMA_MISMATCH` |
+| `SCHEMA: 2/3` Build 재개 | 자동 변환·원본 교체 없이 `BLOCKED:STATE_SCHEMA_MISMATCH`; 현재 SCHEMA:4 계약 필요 |
 
 ## Clean-room smoke prompts
 

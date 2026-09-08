@@ -133,13 +133,15 @@ E2E와 실패 수정까지 같은 배정 안에서 수행하고 구조화 결과
 `makeTestCommand`가 있으면 Sol High가 순차 실행한다. 없으면 `SKIPPED:PROFILE_EMPTY`다. 실패하면 Terra executor에게 8.5와 같은
 single-writer 수정 계약으로 실패 로그만 전달하고 Sol High가 재실행한다. 수정이 있으면 `modified = true`다.
 
+TDD 활성일 때 실행 로그를 `test_failures.py --runner auto --exit-code {EXIT} --suite integration --baseline "{STATE_FILE}" "{INTEGRATION_LOG}"`로 대조하며 unit과 같은 regression/new_red/flaky/unparsed 기준을 적용한다. TDD SKIP이면 실제 exit·완주 상태로 판정한다. Sol High가 `kind:integration`과 regression_count를 기록하고, 명령 부재도 해당 kind의 `SKIPPED:PROFILE_EMPTY`로 남긴다. integration의 regression/판정 불가도 기존 light 승격 ③의 근거다.
+
 ## iteration 종료 시 (light만): 승격 ⑦ 재평가
 
 종료 조건을 평가하기 **전에** [verification-tier.md](verification-tier.md) §4의 집계 규칙(`START_SHA` 기준 변경 소스 파일 > 3 또는 금지 조건 발견)을 재평가한다. 발화 시 standard 전환 + standard iteration 1회 추가. 승격은 1회뿐이다(latch) — standard가 된 뒤에는 평가하지 않는다. 진단 `tier_escalated(⑦)`.
 
 ## Iteration 판정
 
-TDD 활성 테스트 판정:
+각 suite의 TDD 활성 테스트 판정:
 
 | 판정 | 조건 |
 |------|------|
@@ -147,10 +149,12 @@ TDD 활성 테스트 판정:
 | `WARN` | `flaky`만 존재 |
 | `FAIL` | `regression > 0` 또는 `new_red > 0` 또는 판정 불가(`unparsed`·완주 `N` 잔존을 분류하지 못함) |
 
+종료 판단 직전에 `workflow_results.py test-summary "{RESULTS_FILE}" --run-id "{RUN_ID}" --require unit`을 실행한다. makeTestCommand가 있으면 `--require integration`도 전달한다. JSON verdict가 두 suite의 최신 합산 테스트 판정이며 exit 0은 요약 성공이다. 누락·FAIL·미완료는 TDD SKIP으로 덮지 않는다.
+
 | 종료 조건 | 결과 |
 |----------|------|
 | `modified == false` AND 테스트 `PASS` | 루프 종료 |
-| TDD 생략 AND `modified == false` | 루프 종료 |
+| TDD 생략 AND `modified == false` AND (합산 테스트 `PASS` 또는 정당한 `SKIPPED`) | 루프 종료 |
 | 그 외 | 변경 커밋 후 다음 iteration |
 | `{QL_MAX}`회 도달 및 미PASS | `BLOCKED:TEST_NOT_GREEN`, 이후 8.8 계속 |
 
@@ -225,7 +229,7 @@ Phase 12에서 사용자 결정을 받는다.
 
 ## 검증 결과와 현재 변경 범위
 
-검증 전후 `workflow_results.py tree --cwd "{CWD}"`가 같을 때만 tested_tree로 기록한다. Sol High만 RESULTS_FILE에 새 iteration의 unit/build/lint/typecheck/e2e/readback 결과 객체를 기록한다. unit에는 regression_count를 포함한다. 하위 역할은 결과만 반환한다.
+검증 전후 `workflow_results.py tree --cwd "{CWD}"`가 같을 때만 tested_tree로 기록한다. Sol High만 RESULTS_FILE에 새 iteration의 unit/integration/build/lint/typecheck/e2e/readback 결과 객체를 기록한다. unit/integration에는 regression_count를 포함한다. 하위 역할은 결과만 반환한다.
 JSON의 최종 판정·회귀 수가 Gate/리포트의 정본이며 Markdown 요약은 표시용이다. 수정 뒤 과거 PASS를 재사용하지 않는다. TDD SKIP도 실제 검증 실패를 PASS로 바꾸는 조건이 아니다.
 품질·리뷰·E2E·Read-back 범위는 START_SHA부터 현재 작업 트리까지 workflow_scope.py가 수집한 명시 목록이다. committed/staged/unstaged/소유 untracked·삭제·symlink를 보존한다. Read-back 자식은 이 목록으로만 복원하고 Spec/Plan/상태 경로를 받지 않는다.
 

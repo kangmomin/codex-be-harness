@@ -14,7 +14,7 @@
 
 ## profile 해석
 
-모든 스킬은 아래 순서로 `{PROFILE_PATH}`를 확정한다. 단독 실행 스킬도 같은 규칙을 쓴다.
+신규 실행과 단독 스킬은 아래 순서로 `{PROFILE_PATH}`를 확정한다. Verify 재개는 이 조회보다 먼저 run-lifecycle의 snapshot 검증·명령 복원을 수행하며, 보존한 명령을 live profile로 덮지 않는다.
 
 1. `{PROJECT_ROOT}` = `git rev-parse --show-toplevel`(git 저장소가 아니면 cwd). `{PROJECT_ROOT}/.codex/be-harness.local.md`가
    있으면 그것이 `{PROFILE_PATH}`다.
@@ -23,7 +23,7 @@
    보고에 `[Assumption] 메인 워크트리 profile 상속: {경로}`를 남긴다.
 3. 둘 다 없으면 `PROFILE_MISSING`이다. 값을 추측하지 않고 `init` 실행을 안내한 뒤 mutation 없이 종료한다.
 4. 확정한 `{PROFILE_PATH}`를 모든 형제 절차와 서브에이전트 envelope에 전달한다. 형제 절차는 전달받은 경로가 있으면 다시
-   해석하지 않는다. 워크플로우(`start-workflow`) 안에서 호출될 때는 호출자가 넘긴 `## Profile Snapshot`(frontmatter 값 + resolved 경로)을 profile 값으로 쓰고 frontmatter를 다시 읽지 않는다 — `{PROFILE_PATH}`는 식별·보고용이다. 본문(Project Notes)은 스냅샷 대상이 아니며 읽기 전용으로 참조할 수 있다.
+   해석하지 않는다. Build 워크플로우(`start-workflow`) 안에서 호출될 때는 호출자가 넘긴 `## Profile Snapshot`(frontmatter 값 + resolved 경로)을 profile 값으로 쓰고 frontmatter를 다시 읽지 않는다 — `{PROFILE_PATH}`는 식별·보고용이다. 본문(Project Notes)은 스냅샷 대상이 아니며 읽기 전용으로 참조할 수 있다. Verify의 명령 4종은 run-lifecycle이 보존한 verify-commands.json이 정본이며 재개 때 live profile로 재해석하지 않는다.
 
 ## 포맷
 

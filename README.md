@@ -18,9 +18,17 @@ Fullstack으로 판정되면 BE로 조용히 진행하지 않고 `BLOCKED:FULLST
 High/Max는 source/test/API 문서 등 업무 변경 파일의 유일한 writer 및 승인된 push/PR 실행자이며, Luna xHigh는 읽기 전용 검토를 맡는다.
 Phase 4.3은 매번 새 Sol Max advisor context로 Plan만 검증한다. 모든 고정 spawn은 `fork_turns:none`이다.
 
+## 0.6.2 변경
+
+현재 버전: `codex-be-harness@0.6.2`.
+
+- 실제 파일 내용 지문 v2로 변경 누락을 막고 내용이 같은 커밋의 검증 근거를 재사용한다. 통합 테스트는 단위 테스트와 별도로 기록·합산한다.
+- 검토한 추론 태그 리터럴의 좁은 제외, Go 테스트 후보 탐색, Verify 명령 보존을 적용했다.
+- `bash scripts/verify.sh`와 CI를 실제 Python·문서 렌더링 테스트에 연결했다. 호환성 경계와 검증 결과는 [COMPATIBILITY.md](COMPATIBILITY.md)와 [SYNC-REPORT.md](SYNC-REPORT.md)에 있다.
+
 ## 0.6.1 변경
 
-현재 버전: `codex-be-harness@0.6.1`.
+이전 버전: `codex-be-harness@0.6.1`.
 
 - AI 활용성 리뷰를 반영해 작업 계약·승인 재사용·인계·완료 기준을 보완했다.
 - Astra 행동 지침에 맞춰 요구사항 기반 테스트, 역할별 권한 검증, 로그 마스킹과 가설 검증을 적용했다.
@@ -62,7 +70,7 @@ upstream 동기화는 [선택적 동기화 기준](COMPATIBILITY.md#선택적-�
 관찰 가능한 동작 차이는 [COMPATIBILITY.md](./COMPATIBILITY.md)의 "0.4.0 deviations"에 있다.
 
 - 검증 티어(`light`/`standard`)와 `--tier standard`: 코드 복잡도·영향 리스크에 따라 저위험 작업의 검증 범위를 축소하고 승격 조건 충족 시 `standard`로 전환한다.
-- 결정적 단계 스크립트 4개: `risk_facts.py`, `test_failures.py`, `workflow_archive.py`, `render_e2e_report.py`는 upstream `2d7a01c`와 바이트 동일하며 SHA-256을 고정 검증한다.
+- 결정적 단계 스크립트 4개를 당시 upstream `2d7a01c`와 바이트 동일하게 도입했다. 이후 변경된 파일의 현재 해시와 출처는 `UPSTREAM-SYNC.json`에 기록한다.
 - 상태 파일 스키마 2: Flags·Profile Snapshot·Verification Tier·Final Decisions·Artifacts를 고정하고 스키마 불일치 재개를 fail-closed 처리한다.
 - Phase 12는 슬림 Workflow Report 1회 작성과 md 아카이브 1회 생성으로 단일화하고 HTML 노트를 폐지한다.
 - E2E는 md 자기 점검 리포트와 `--smoke`를 지원하며 `BLOCKED:LOCK_UNAVAILABLE`이면 Phase 10 Gate를 보류한다.
@@ -111,10 +119,9 @@ $codex-be-harness:config reportDir=.codex/reports
 ## 개발 검증
 
 ```bash
-python3 tests/validate_port.py
-python3 -B -m unittest discover -s tests -p 'test_*.py'
+python3 -m pip install PyYAML==6.0.3
 npm ci --prefix skills/doc-gen/assets
-node --test tests/docgen.test.mjs
+bash scripts/verify.sh
 python3 /home/dev/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py .
 ```
 

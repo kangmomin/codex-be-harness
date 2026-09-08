@@ -6,7 +6,7 @@
 
 # Analyze / Verify
 
-두 모드 모두 profile과 프로젝트 오버라이드를 먼저 읽고, 지정된 범위를 검증된 `{CWD}` 기준으로
+신규 실행은 profile과 프로젝트 오버라이드를 먼저 읽고, Verify 재개는 run-lifecycle의 저장된 명령을 먼저 복원한다. 지정된 범위를 검증된 `{CWD}` 기준으로
 해결한다. 경로가 없으면 `sourceDirs`를 제안하고 사용자의 범위 결정을 받는다.
 
 ## Analyze (`--analyze`, Phase A1~A4)
@@ -78,7 +78,7 @@
 ### Phase V2: 상태와 정적 분석
 
 `{STATE_FILE}`에 `Mode: verify`, `Scope`, `Focus`, `TOPOLOGY_MODELS: {TOPOLOGY_MODELS}`(executor 미사용 — `executor=N/A`), 현재/남은 Phase를 기록한다. 비어 있지 않은 명령을
-다음 순서로 실행하고 결과를 append한다.
+다음 순서로 실행하고 결과를 append한다. 신규 실행은 첫 명령 전에 [Verify 명령 스냅샷](run-lifecycle.md#verify-명령-스냅샷)을 저장하고, 이후에는 저장한 commands만 사용한다. 재개 시 누락된 스냅샷을 live profile로 다시 만들지 않는다.
 
 1. `{lintCommand}`
 2. `{buildCommand}`

@@ -189,6 +189,8 @@ Phase 6의 Terra executor 구현 프롬프트(`agent-prompts.md`)를 사용하�
 
 Phase 8.1에서 `{testCommand}` 실행 결과를 `## Test Baseline`과 대조해 실패를 분류한다. 대조는 `{SKILL_DIR}/assets/test_failures.py --runner auto --exit-code $EXIT --suite unit --baseline {STATE_FILE} {로그}`가 수행한다(호출: [quality-loop.md](quality-loop.md) Phase 8.1). 스크립트가 exit ≠ 0이면 오케스트레이터가 아래 규칙으로 직접 대조하고 진단 `script_fallback(test_failures:{사유})`를 남긴다.
 
+Phase 8.7의 makeTestCommand도 같은 baseline에 `--suite integration`으로 대조한다. 결과는 `kind:integration`으로 기록하고, 두 suite의 최신 결과를 test-summary로 합산한다. 단위 테스트 재실행은 통합 테스트 판정·회귀 수를 대체하지 않는다.
+
 ## 분류 우선순위 (위에서부터 먼저 적용)
 
 Tombstone 매핑(`## Test Baseline`)은 분류 **전에** 식별자에 적용한다. 셀 파싱 실패·항목 수 불일치·패키지 없는 Go baseline·중복 ID·Tombstone 중복 매핑이면 해당 suite 행 전체를 `unparsed`로 취급한다.
@@ -249,6 +251,6 @@ Phase 8.5 통합 수정 에이전트에는 이 순서대로 이슈를 전달하�
 
 ## 검증 결과와 현재 변경 범위
 
-검증 전후 `workflow_results.py tree --cwd "{CWD}"`가 같을 때만 tested_tree로 기록한다. Sol High만 RESULTS_FILE에 새 iteration의 unit/build/lint/typecheck/e2e/readback 결과 객체를 기록한다. unit에는 regression_count를 포함한다. 하위 역할은 결과만 반환한다.
+검증 전후 `workflow_results.py tree --cwd "{CWD}"`가 같을 때만 tested_tree로 기록한다. Sol High만 RESULTS_FILE에 새 iteration의 unit/integration/build/lint/typecheck/e2e/readback 결과 객체를 기록한다. unit/integration에는 regression_count를 포함한다. 하위 역할은 결과만 반환한다.
 JSON의 최종 판정·회귀 수가 Gate/리포트의 정본이며 Markdown 요약은 표시용이다. 수정 뒤 과거 PASS를 재사용하지 않는다. TDD SKIP도 실제 검증 실패를 PASS로 바꾸는 조건이 아니다.
 품질·리뷰·E2E·Read-back 범위는 START_SHA부터 현재 작업 트리까지 workflow_scope.py가 수집한 명시 목록이다. committed/staged/unstaged/소유 untracked·삭제·symlink를 보존한다. Read-back 자식은 이 목록으로만 복원하고 Spec/Plan/상태 경로를 받지 않는다.
