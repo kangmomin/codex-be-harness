@@ -62,3 +62,40 @@
 - **Test environment**: 기존 설치된 doc-gen 의존성을 사용했다. 격리 컨테이너의 Chromium 테스트에만 HARNESS_DOCGEN_NO_SANDBOX=1을 지정했다.
 - **Verification limits**: [행동 시나리오](tests/scenario-contracts.md#공통-실행-원칙-검토-시나리오)는 지침 대조용이다. 실제 모델로 전체 workflow를 실행하거나 원격 push·PR를 수행한 결과는 아니다.
 - **Cleanup**: 검증 프로세스는 종료됐으며 임시 검토 자료를 정리했다. 작업 시작 전의 미커밋 변경을 보존했다. commit/push·원본 저장소·설치 캐시·marketplace 변경은 수행하지 않았다.
+
+## 📋 Task Report: AI 활용성 리뷰의 Astra 튜닝 (2026-09-08)
+
+### 1. Pre-Review (Plan)
+
+- **근거**: `work-log:정리된 문서/AI 활용성/20260907-AI 활용성 리뷰.md` §6~7 및 2026-09-08 본문을 확인한 [공식 GPT-6 Astra 가이드](https://developers.openai.com/api/docs/guides/latest-model).
+- **Orchestrator Feedback**: 완료·승인·현재 기준과 인계 경계를 기존 execution-policy 및 실제 소비 경로에 연결한다. 검증은 요구의 증거를 기준으로 하고 불필요한 추가 반복을 줄인다.
+- **독립 리뷰어 Feedback**: fresh-context 리뷰어 1명이 같은 Plan/효과의 승인 재사용, 기존 Spec 보존, 직접 Spec·일반 위임 연결, Read-back 격리, 역할별 AC/EC, 해시 출처를 검토했다.
+- **Refinement**: 기존 Phase·상한·상태·topology를 유지하고 정책·소비 경로의 충돌만 수정했다. 난이도는 매핑 낮음, 정책 수정 중간, Codex 변환·호환성 기록 높음, 검증 중간이다.
+
+### 2. Implementation Details
+
+- **Assumptions**: Astra 튜닝은 현재 하네스의 행동 기준 조정으로 해석했으며 기존 모델 슬롯은 유지했다.
+
+| 판정 | 반영 대상 | 이유 |
+|---|---|---|
+| 채택 | 작업 계약의 대상·기준·범위·완료 증거·승인·미결, 요구 기반 테스트, 역할별 AC/EC, 로그 마스킹·가설 검증 | 사용성 리뷰의 관찰된 마찰을 실행 기준으로 연결 |
+| 변환 | 기존 execution-policy, request, native build-phases의 직접 Spec 및 Phase 4.4 승인 재사용 | Astra의 자율 완료·지침 민감도·적정 검증 권고를 기존 승인 계약 안에서 적용 |
+| 변환 | bootstrap·일반 envelope, templates/run-lifecycle/analyze-verify | 정확한 식별자·최신 기준·완료 증거를 기존 상태 경로로 인계; Read-back 소스 격리와 writer 역할 보존 |
+| 변환 | quality-loop/finalization | 마지막 수정·커밋 후 stale 이벤트별 실제 재검증과 Read-back 예외 명시; 과거 PASS 해시 치환 금지 |
+| 제외 | Claude 정책 파일·도구·경로·모델의 일괄 복사, 새 승인/위임 단계, 전체 스키마·검증 엔진 확장 | 필요한 결정 기준을 기존 Codex 정책에 합치고 기능·호스트 경계를 유지 |
+
+- **Provenance**: 전체 동기화 기준 `f9ce681427ccfbfd9194d3c3f204a445ae6f45dd`는 보존한다. 선택 반영한 11개 매핑의 source HEAD는 `80366fe4e83210368a9f3015fed73d1fbdafb878`의 AI 활용성 개선 커밋이며 source/target SHA-256을 함께 갱신했다. 변경 이력은 UPSTREAM-SYNC.json의 `selective_updates`에 있다. source start-workflow 계약은 기존 native entrypoint가 읽는 build-phases에 변환했다. execution-policy·agent-topology·build-phases는 로컬 전용으로 유지하며 별도 upstream 파일 매핑을 만들지 않았다.
+
+### 3. Final Convention Review
+
+- **Layer Analysis**: Presentation/Service/Repository 애플리케이션 코드 변경 없음. 공통 정책은 판단 기준, 스킬은 실행 경로, 기존 helper는 상태·검증 계약을 담당한다.
+- **Simplicity Check**: 새 스킬·프로필 키·상태 스키마·모델 슬롯·위임 단계 없음. 기존 16개 실행 스킬의 정책 읽기 경로를 활용했다.
+- **독립 행동 검토**: 별도 fresh-context 리뷰어가 6개 입력을 두 호스트 규칙에 적용했다. 동일 승인, 관리자 토큰만 있는 smoke, 설계/테스트 충돌, timeout 가설, 파일명 정정·새 worktree, 최종 tree 변경을 확인했다. 이는 읽기 전용 행동 검토이며 실제 서비스 workflow 실행은 아니다.
+- **반영한 발견**: check-current는 모든 최신 non-pr 이벤트의 tree 일치를 요구한다. 영향 범위 재검증과 Read-back 1회 규칙의 모호함을 finalization의 실제 stale 재검증·격리 예외로 해소하고 리뷰어 재확인을 받았다.
+
+### 4. Status
+
+- **Verification**: validate_port PASS, plugin validator PASS, 17개 skill validator PASS, Python 93개 PASS, 실제 Chromium 문서 렌더링 5개 PASS, shellcheck PASS, git diff --check PASS. 전체 76개 target 해시 일치와 선택 반영한 11개 source 해시를 검사했다.
+- **Test environment**: 기존 doc-gen 의존성을 사용했다. Python 검증은 임시 venv, 격리 컨테이너의 renderer에는 HARNESS_DOCGEN_NO_SANDBOX=1을 사용했다.
+- **한계**: 실제 업무의 전체 workflow·서비스 API·원격 작업을 실행하지 않았다. 현재 검증 엔진은 전체 tree에 근거를 묶으므로 최종 문서/commit 변경도 stale 검증의 재실행을 요구할 수 있다.
+- **Cleanup**: 검증 프로세스와 fixture 자원은 종료했고 임시 검토 자료를 정리했다. 후속 커밋·푸시 요청에 따라 0.6.1로 게시하며 적용 범위와 기존 모델 슬롯 유지 결정을 재사용한다.

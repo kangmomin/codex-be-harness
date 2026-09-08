@@ -2,6 +2,8 @@
 
 # 실행 경로와 재개
 
+인계 시 [공통 실행 원칙](execution-policy.md)의 작업 계약·최신 결정·미완료·승인 근거를 보존한다. Build는 기존 Spec, Analyze/Verify는 Context 또는 Scope에 기록한다. 다른 worktree/도메인의 새 실행에는 source RUN을 근거로만 남기고 기존 RUN의 경로를 변경해 재사용하지 않는다.
+
 모드 판별 직후, 토폴로지 설정 resolve·첫 dispatch보다 먼저 실행 경로를 확정한다.
 `{RUN_MODE}`는 Build `be`, Analyze `analyze`, Verify `verify`다.
 

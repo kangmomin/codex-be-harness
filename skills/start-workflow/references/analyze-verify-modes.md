@@ -1,3 +1,5 @@
+> 범위·초점은 요청·대화에 이미 명시됐으면 재질문하지 않는다. 실행 전 [공통 실행 원칙](execution-policy.md)의 작업 계약·검사 범위·결함 기준·완료 증거를 정리하고 기존 Context 또는 Scope에 보존한다. 일반 분석/검증 위임에도 필요한 항목과 정책 경로를 전달한다. 사용자 가설을 확정 원인으로 삼지 않고 측정·반증 근거를 확인한다.
+
 > `--analyze`와 `--verify`의 전용 절차다. Build Phase와 섞지 않는다.
 > 상태 파일은 상위 스킬의 실행별 `{RUN_DIR}` 안에 생성한다.
 > Analyze/Verify 상태 파일은 아래 최소 헤더와 공통 Run 헤더를 쓰며 Build 스키마(`## Flags`·`## Profile Snapshot` 등) 검사 대상이 아니다. Luna 읽기 전용 spawn은 `{TOPOLOGY_MODELS}`의 `readonly` 슬롯 확정값을 쓴다.

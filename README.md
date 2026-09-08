@@ -2,6 +2,8 @@
 
 기존 `be-harness`의 Spec → Plan → TDD → 품질 루프 → PR workflow를 Codex-native skill로 제공한다.
 
+작업 계약에 대상·현재 기준·완료 증거·승인 범위를 기록하고 다음 에이전트까지 전달한다. 동일 승인 재사용, 근거가 있는 추가 검증, 역할별 권한 검증은 기존 [공통 실행 원칙](skills/start-workflow/references/execution-policy.md)을 통해 적용한다. Astra용 변환과 유지하는 호환성 경계는 [선택적 동기화 기준](COMPATIBILITY.md#선택적-동기화-기준)에 기록한다.
+
 ## 호환 범위
 
 - Build mode: Phase 1~12
@@ -16,9 +18,17 @@ Fullstack으로 판정되면 BE로 조용히 진행하지 않고 `BLOCKED:FULLST
 High/Max는 source/test/API 문서 등 업무 변경 파일의 유일한 writer 및 승인된 push/PR 실행자이며, Luna xHigh는 읽기 전용 검토를 맡는다.
 Phase 4.3은 매번 새 Sol Max advisor context로 Plan만 검증한다. 모든 고정 spawn은 `fork_turns:none`이다.
 
+## 0.6.1 변경
+
+현재 버전: `codex-be-harness@0.6.1`.
+
+- AI 활용성 리뷰를 반영해 작업 계약·승인 재사용·인계·완료 기준을 보완했다.
+- Astra 행동 지침에 맞춰 요구사항 기반 테스트, 역할별 권한 검증, 로그 마스킹과 가설 검증을 적용했다.
+- 기존 모델 슬롯·필수 검증 경계를 유지하며, 상세 반영과 검증 결과는 [SYNC-REPORT.md](SYNC-REPORT.md)에 기록했다.
+
 ## 0.6.0 변경
 
-현재 버전: `codex-be-harness@0.6.0`.
+이전 버전: `codex-be-harness@0.6.0`.
 
 - upstream 작업 트리의 `be-harness@1.5.4`와 기존 공통 의존 스킬(`common@0.14.2`) 동기화. 원본 HEAD와 파일별 SHA-256은 [UPSTREAM-SYNC.json](UPSTREAM-SYNC.json)에 기록한다.
 - 실행별 경로/명시적 `--resume`, schema 4, 결과 JSON·검증 tree·리뷰 범위·writer 종료 계약을 연결했다. 구 schema 2/3 실행은 새 실행으로 시작해야 한다.

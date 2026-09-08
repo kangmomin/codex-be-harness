@@ -3,9 +3,11 @@
 ## 기준
 
 - upstream: `kangmomin/harness-plugins`
-- commit: `f9ce681427ccfbfd9194d3c3f204a445ae6f45dd` + 현재 미커밋 작업 트리 (파일별 실제 입력 해시는 UPSTREAM-SYNC.json)
-- source plugin: `be-harness@1.5.4`; inlined common `common@0.14.2`
-- target plugin: `codex-be-harness@0.6.0`
+- 전체 동기화 기준: `f9ce681427ccfbfd9194d3c3f204a445ae6f45dd` + 당시 미커밋 작업 트리 (파일별 실제 입력 해시는 UPSTREAM-SYNC.json)
+- 2026-09-08 선택 반영: `80366fe4e83210368a9f3015fed73d1fbdafb878`의 AI 활용성 개선 커밋. `UPSTREAM-SYNC.json`의 `selective_updates`와 해당 파일의 `source_head`가 이 부분의 출처다. 전체 동기화 기준과 나머지 파일의 출처는 보존한다.
+- 전체 동기화 source plugin: `be-harness@1.5.4`; inlined common `common@0.14.2`
+- 2026-09-08 선택 반영 source plugin: `be-harness@1.5.5`; `common@0.14.3`
+- target plugin: `codex-be-harness@0.6.1`
 
 호환성은 문장 일치가 아니라 관찰 가능한 workflow 동작을 기준으로 한다. Phase 순서, 승인·차단 게이트, 상태 코드, 루프 상한, 보고서 머리글을 invariant로 본다.
 
@@ -27,6 +29,20 @@ Claude용 upstream을 동기화할 때는 [OpenAI 모델 가이드](https://deve
 | 보류 | 필요한 호스트 기능·입력이 없거나 계약 영향을 확인하지 못한 변경. 누락 영향과 해소 조건을 기록하고 동기화 완료로 보고하지 않음 |
 
 가이드의 API 기능(async tool calling, configuration update 등)은 호스트 지원을 확인해야 한다. Markdown 지침만 추가하고 지원했다고 주장하지 않는다. 모델·effort 기본값을 자동 교체하지 않으며, 역할·비용 구조를 유지하고 교체 요청은 `topologyModels`/`--topology-models` 경로로 다룬다.
+
+### AI 활용성 피드백의 Astra 적용 (2026-09-08)
+
+근거는 `work-log:정리된 문서/AI 활용성/20260907-AI 활용성 리뷰.md` §6~7과 당일 확인한 공식 GPT-6 Astra prompting 가이드다. 요청에 맞춰 행동 기준을 조정했으며 모델 슬롯 교체는 하지 않았다.
+
+| 피드백 | Codex 적용과 경계 |
+|---|---|
+| 완료·승인 범위를 시작에 확정 | 기존 Spec에 짧은 작업 계약을 추가하고 Phase 4.4는 동일 Spec·Plan·대상·효과의 승인 근거부터 확인. 미승인 차이만 질문하며 planning-only·원격 승인 Gate 유지 |
+| 검증 반복·종료 근거 | 공통 execution-policy와 quality-loop에서 검사 범위·결함 기준·완료 증거 및 추가 검토 가설을 연결. 필수 Phase·티어 승격·상한·미해결 상태 보존 |
+| 인계 시 대상 고정 | bootstrap·일반 envelope에 정확한 식별자·최신 기준·완료 증거·미결을 전달. 상태의 Spec/Context/Scope를 재사용하며 새 worktree의 RUN 검증과 Read-back 소스 격리 유지 |
+| 선례·테스트·권한 | 현재 요구·설계 문서를 기대 동작 근거로 삼고 적합한 선례를 선택. 테스트 오류는 TestConflict/단일 writer 계약으로 처리. AC/EC별 역할 증거·UNCOVERED와 smoke 규칙 유지 |
+| 로그·사용자 가설 | 재현 요약·발췌 마스킹·지지/반박 근거를 기록. 읽기 전용 역할은 부족한 측정을 반환하고 실행 권한을 확대하지 않음 |
+
+Claude의 새 정책 파일은 복제하지 않고 기존 Codex [공통 실행 원칙](skills/start-workflow/references/execution-policy.md)에 필요한 결정 기준만 합쳤다. 이 파일과 topology/build-phases는 계속 로컬 전용이다. 기존 모델·effort 역할, host 도구, 상태 스키마·출력 머리글을 유지하며 별도 승인·검증 단계를 추가하지 않는다. 문구 검사와 모델 행동 검토 및 실제 테스트 실행 결과는 SYNC-REPORT에서 구분한다.
 
 ### 이식 이력 (아래 과거 릴리스 계약은 0.6.0 변경으로 대체될 수 있음)
 

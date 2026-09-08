@@ -7,7 +7,7 @@
     "be-harness": "1.5.4",
     "common": "0.14.2"
   },
-  "target_plugin": "codex-be-harness@0.6.0",
+  "target_plugin": "codex-be-harness@0.6.1",
   "synced_on": "2026-09-07",
   "scope": "BE native port and its existing six common skill dependencies; topology and Codex host adapters preserved",
   "files": {
@@ -121,9 +121,11 @@
     },
     "skills/e2e-test-loop/SKILL.md": {
       "source": "be-harness/skills/e2e-test-loop/SKILL.md",
-      "source_sha256": "94fe2df32b2d714f87e3817f8ba09a78d1583bb6b7227d86a12aaeeb422ea481",
+      "source_sha256": "62df349a67fd5fdffd13b12244c55d47c03022e5ddee652e6d9c3976425beb72",
       "adaptation": "codex-native",
-      "target_sha256": "980c2b9ac62f4751b4fc91d39ddcdbedf2c5ef4032739c9e80bb635dd2c2c7da"
+      "target_sha256": "3587595cd7aee24656fe6ac6b912e265bb7452ee4d271759e9563c1533b7eb97",
+      "source_head": "80366fe4e83210368a9f3015fed73d1fbdafb878",
+      "source_state": "committed"
     },
     "skills/e2e-test-loop/assets/render_e2e_report.py": {
       "source": "be-harness/skills/e2e-test-loop/assets/render_e2e_report.py",
@@ -133,9 +135,11 @@
     },
     "skills/e2e-test/SKILL.md": {
       "source": "be-harness/skills/e2e-test/SKILL.md",
-      "source_sha256": "0ba305102c1866e6063370a988c0108c25fe702a7fed9fb943443009c0565103",
+      "source_sha256": "4c3bff20b26b48f309afc65ffffd2c4f83bf882f58f0cc5234af40c9b96cc00e",
       "adaptation": "codex-native",
-      "target_sha256": "7a49aa874ad595042b7627ee8035c580467cf22ad3cacd8a7747e1423f0bb5a7"
+      "target_sha256": "438ff3339ef6f370f2400551d2b405822462ae1934ab102b396d788bf2d5cc77",
+      "source_head": "80366fe4e83210368a9f3015fed73d1fbdafb878",
+      "source_state": "committed"
     },
     "skills/e2e-test/assets/e2e-lock.sh": {
       "source": "be-harness/skills/e2e-test/assets/e2e-lock.sh",
@@ -163,9 +167,11 @@
     },
     "skills/request/SKILL.md": {
       "source": "be-harness/skills/request/SKILL.md",
-      "source_sha256": "e87286dbebeb4b8043ec83b4d00b33ef6cf6f11aa474a2badd37ecef073a8f43",
+      "source_sha256": "fabb9f49fa1335b0cc8af3a9afad26613f2e7de6cb4db2d25580f9c4ebb4113d",
       "adaptation": "codex-native",
-      "target_sha256": "92fedcf64ce97fecfddd1a1438b9b4b32b0b2985be4c9d57f9ab6b2997012b0b"
+      "target_sha256": "4f86e19b9840069b75fe947fdf0dce331b094d3c297016cb7005c742dd72580f",
+      "source_head": "80366fe4e83210368a9f3015fed73d1fbdafb878",
+      "source_state": "committed"
     },
     "skills/request/references/edge-case-analyzer.md": {
       "source": "be-harness/agents/edge-case-analyzer.md",
@@ -193,9 +199,11 @@
     },
     "skills/start-workflow/SKILL.md": {
       "source": "be-harness/skills/start-workflow/SKILL.md",
-      "source_sha256": "03d001c26f2db65d263aa609ebb71e0463e0b2eeeb409358107e8a386b235056",
+      "source_sha256": "0978285efb19fea44a86cba497b45be6fd7b326567904631eaff9a6d9bc4f43d",
       "adaptation": "codex-native",
-      "target_sha256": "7fa738849992ed82c424d731d691ede8a7c1569583223902a565f915051e4659"
+      "target_sha256": "7fa738849992ed82c424d731d691ede8a7c1569583223902a565f915051e4659",
+      "source_head": "80366fe4e83210368a9f3015fed73d1fbdafb878",
+      "source_state": "committed"
     },
     "skills/start-workflow/assets/risk_facts.py": {
       "source": "be-harness/skills/start-workflow/assets/risk_facts.py",
@@ -247,9 +255,11 @@
     },
     "skills/start-workflow/references/agent-prompts.md": {
       "source": "be-harness/skills/start-workflow/references/agent-prompts.md",
-      "source_sha256": "3e78369769ebacbb36eb16f163a5f766995a20358bff29ed2f6905e9fb8cf3dc",
+      "source_sha256": "ad2451cb23ff77b3a805dc38bb2539b54de78e3f9c68d65db97035fc7efec62e",
       "adaptation": "codex-native",
-      "target_sha256": "1904617ba6ce022a1692f269138fd676fd3a2afe4701e10f5fcd55b5f2855024"
+      "target_sha256": "a881e8e36e21dbcf1b30d2930fd407620b5a49e5665fcc00eee45b6b527886ba",
+      "source_head": "80366fe4e83210368a9f3015fed73d1fbdafb878",
+      "source_state": "committed"
     },
     "skills/start-workflow/references/agents/code-analyzer.md": {
       "source": "be-harness/agents/code-analyzer.md",
@@ -295,9 +305,11 @@
     },
     "skills/start-workflow/references/analyze-verify-modes.md": {
       "source": "be-harness/skills/start-workflow/references/analyze-verify-modes.md",
-      "source_sha256": "b59c73b6eceffcbf6b3cf117431613db07d7a751e7dd3a6d0dad69f144086e62",
+      "source_sha256": "00a6a7520b142daa4c095d35cdd1fad19bdc09bcee3c564c175d80a937c97ad4",
       "adaptation": "codex-native",
-      "target_sha256": "19b3ba34fd772ec6c316b39f0589a5e2d4a25587ded6f3ed2a60aaac7ac537a3"
+      "target_sha256": "49350131add3c95fece43521261a3f1ecfb8dac7b2be4ffa939db6b65f8c28d9",
+      "source_head": "80366fe4e83210368a9f3015fed73d1fbdafb878",
+      "source_state": "committed"
     },
     "skills/start-workflow/references/entry-contract.md": {
       "source": "be-harness/skills/start-workflow/references/entry-contract.md",
@@ -307,15 +319,19 @@
     },
     "skills/start-workflow/references/finalization.md": {
       "source": "be-harness/skills/start-workflow/references/finalization.md",
-      "source_sha256": "cab5afa53bcf02e39373f1f0b2de6c8cf46388103dc559be9312ede2505a7978",
+      "source_sha256": "9e1b4b6a240bb1fcab6a243e5193a03d5d7ef3817c859676d118231815442c01",
       "adaptation": "codex-native",
-      "target_sha256": "33a25c8a3a97fd84e8a26795acae35a30a26944f322706939e63eb762662cce4"
+      "target_sha256": "efbc81cb28bd4b3ed7674fd36ae9fb293712c206439ddc8fa2c71b4b0d2be285",
+      "source_head": "80366fe4e83210368a9f3015fed73d1fbdafb878",
+      "source_state": "committed"
     },
     "skills/start-workflow/references/quality-loop.md": {
       "source": "be-harness/skills/start-workflow/references/quality-loop.md",
-      "source_sha256": "84ab55d94c3c29020aad452f1a778947555ef0c5a63462305c01cb768a501265",
+      "source_sha256": "827592503609f8f3ab8a4ae1b35ab1b13118021fd42f72e6f461044358264a84",
       "adaptation": "codex-native",
-      "target_sha256": "57cb340f2c8b42876bb765e9d2dfe58d571a7f3ca71fb659cb61897cc6434814"
+      "target_sha256": "4eae9ab2ddecd5400c1669e840853a3c2d4212e6497afb978e029425d60231ae",
+      "source_head": "80366fe4e83210368a9f3015fed73d1fbdafb878",
+      "source_state": "committed"
     },
     "skills/start-workflow/references/result-contract.md": {
       "source": "be-harness/skills/start-workflow/references/result-contract.md",
@@ -325,9 +341,11 @@
     },
     "skills/start-workflow/references/run-lifecycle.md": {
       "source": "be-harness/skills/start-workflow/references/run-lifecycle.md",
-      "source_sha256": "78f9eff5b34c3ad76f30d30e5c5b2ab6d0830fe58284216edf824a2038f676ef",
+      "source_sha256": "784726372cac596ed4f91e2012fdefe09da996ffca02b089c0fbb01743505820",
       "adaptation": "codex-native",
-      "target_sha256": "6f8c84fd6e835e971ffc68b3342b5d97263afb23ff7d5c73b03caf46ef4afbad"
+      "target_sha256": "2cdfdee199aab443705f43c37e50e80010c73871190e41f2383ef52f300a17af",
+      "source_head": "80366fe4e83210368a9f3015fed73d1fbdafb878",
+      "source_state": "committed"
     },
     "skills/start-workflow/references/scope-contract.md": {
       "source": "be-harness/skills/start-workflow/references/scope-contract.md",
@@ -343,9 +361,11 @@
     },
     "skills/start-workflow/references/templates.md": {
       "source": "be-harness/skills/start-workflow/references/templates.md",
-      "source_sha256": "7f6f2800f584958e6be7adfc6c9f13aff2196c65d17364cbaa3bf2c3eeb741a9",
+      "source_sha256": "6217ad7ed029ef9daff8f4c2f095dfe33c2f3cdaed23ecacb9d525313f508921",
       "adaptation": "codex-native",
-      "target_sha256": "75868e885b59afb32f2570057f351793416e47654d1075eb93636af4f0c3288b"
+      "target_sha256": "4fd0de80b4aab5dcbbc54a195c5e76172a3fc309d56e30a546f9cd6251fdea48",
+      "source_head": "80366fe4e83210368a9f3015fed73d1fbdafb878",
+      "source_state": "committed"
     },
     "skills/start-workflow/references/verification-tier.md": {
       "source": "be-harness/skills/start-workflow/references/verification-tier.md",
@@ -361,9 +381,11 @@
     },
     "skills/unit-test/SKILL.md": {
       "source": "be-harness/skills/unit-test/SKILL.md",
-      "source_sha256": "f2bae0d654a2dafa2ad41edef86dc8f43fed521cb394c02a556b3c5dbb848294",
+      "source_sha256": "e94001ec95638682699c92333edafd76449d46d01bd4e64bfc8354fd8d4d783f",
       "adaptation": "codex-native",
-      "target_sha256": "0100385426d2bf589d3f61cff7a6f4d2810895d0b4121e6ad4de6b21d92ddee0"
+      "target_sha256": "1c5930590471ce3114b652fd6c0fd7ab608ee534cebb0e8552a9413dd3dffb8c",
+      "source_head": "80366fe4e83210368a9f3015fed73d1fbdafb878",
+      "source_state": "committed"
     },
     "tests/docgen.test.mjs": {
       "source": "tests/docgen.test.mjs",
@@ -467,5 +489,38 @@
       "adaptation": "codex-native",
       "target_sha256": "b6ed36dd4e1ce5c4d104393fdf10c2df3fe71e918fa92a7d6373737b29b8a21c"
     }
-  }
+  },
+  "selective_updates": [
+    {
+      "date": "2026-09-08",
+      "source_head": "80366fe4e83210368a9f3015fed73d1fbdafb878",
+      "source_state": "committed",
+      "scope": "AI usage review feedback: BE prompt contracts only; original full-sync baseline retained",
+      "feedback": "work-log:정리된 문서/AI 활용성/20260907-AI 활용성 리뷰.md",
+      "guide": "https://developers.openai.com/api/docs/guides/latest-model?model=gpt-6-astra",
+      "mapped_targets": [
+        "skills/e2e-test-loop/SKILL.md",
+        "skills/e2e-test/SKILL.md",
+        "skills/request/SKILL.md",
+        "skills/start-workflow/SKILL.md",
+        "skills/start-workflow/references/agent-prompts.md",
+        "skills/start-workflow/references/analyze-verify-modes.md",
+        "skills/start-workflow/references/finalization.md",
+        "skills/start-workflow/references/quality-loop.md",
+        "skills/start-workflow/references/run-lifecycle.md",
+        "skills/start-workflow/references/templates.md",
+        "skills/unit-test/SKILL.md"
+      ],
+      "local_only": [
+        "skills/start-workflow/references/execution-policy.md",
+        "skills/start-workflow/references/build-phases.md",
+        "skills/start-workflow/references/agent-topology.md"
+      ],
+      "target_plugin": "codex-be-harness@0.6.1",
+      "source_plugins": {
+        "be-harness": "1.5.5",
+        "common": "0.14.3"
+      }
+    }
+  ]
 }

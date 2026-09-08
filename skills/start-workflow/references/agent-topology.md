@@ -77,7 +77,7 @@ entry agent는 workflow 요청을 한 번만 다음 Sol High orchestrator에 rel
 spawn_agent(model={orchestrator.model}, reasoning_effort={orchestrator.effort}, fork_turns="none")  # orchestrator 슬롯 확정값 — 기본값 표 참조
 topology_bootstrapped=true
 topology_hop_limit=1
-payload={원본 사용자 요청, 현재 유효한 정정·추가 지시, 승인된 범위·효과와 사용자 근거 원문, 미결 결정, CWD, 프로젝트/스킬 지침, 공통 execution-policy.md 절대 경로, flags, resolved profile, resolved topology ({TOPOLOGY_MODELS}), 검증한 RUN_ID/RUN_DIR/STATE_FILE/IMPL_NOTES/WORK_REPORT/RESULTS_FILE/OWNED_FILES, entry 정책}
+payload={원본 사용자 요청, 현재 유효한 정정·추가 지시, 작업 계약(브랜치·이슈/문서·정확한 식별자·기준과 선례·완료 증거), 승인된 범위·효과와 사용자 근거 원문, 미결 결정·미완료 항목, CWD, 프로젝트/스킬 지침, 공통 execution-policy.md 절대 경로, flags, resolved profile, resolved topology ({TOPOLOGY_MODELS}), 검증한 RUN_ID/RUN_DIR/STATE_FILE/IMPL_NOTES/WORK_REPORT/RESULTS_FILE/OWNED_FILES, entry 정책}
 ```
 
 `topology_bootstrapped=true` marker를 받은 Sol High는 다시 orchestrator를 spawn하지 않는다. hop limit은

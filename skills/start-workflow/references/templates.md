@@ -67,7 +67,7 @@ Write tool로 `{STATE_FILE}`을 생성한다:
 - topologyModels: {profile 값의 compact 표기 | default}
 
 ## Spec
-[Technical Spec 전문 그대로 복사]
+[작업 계약을 포함한 Technical Spec 전문 그대로 복사. 대상·기준·완료·승인 근거·미결 결정을 보존]
 
 ## Task Type
 [생성/수정/검토/디버깅]

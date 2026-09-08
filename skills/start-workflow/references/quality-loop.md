@@ -1,3 +1,5 @@
+> 최종 수정으로 검증 트리가 바뀌면 [최종 트리와 검증 재사용](finalization.md#최종-트리와-검증-재사용)의 재검증 예외를 적용한다. Read-back 격리와 기존 반복 상한은 유지한다.
+
 > Phase 8의 상세 계약이다. 8.1~8.7은 최대 `{QL_MAX}`회(standard 3 / light 2), 8.8은 루프 밖에서 정확히 1회 실행한다.
 > 상태·노트 경로는 상위 스킬이 전달한 실행별 절대 경로만 사용한다.
 > 티어별 축소·승격 규칙은 [verification-tier.md](verification-tier.md)가 canonical이다 — light에서 달라지는 단계는 각 절에 **light:** 로 표기한다.
@@ -5,6 +7,8 @@
 # Phase 8 — Quality loop
 
 ## Loop invariant
+
+필수 검증 완료 후 추가 반복에는 [공통 실행 원칙](execution-policy.md)의 새 근거·미검증 가설·수정 영향을 기록한다. 아래 미해결 실패·티어 승격·수정 후 검증·상한 규칙을 생략하는 근거로 사용하지 않는다.
 
 ```text
 for iteration in 1..{QL_MAX}:
