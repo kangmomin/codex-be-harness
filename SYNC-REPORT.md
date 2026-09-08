@@ -1,3 +1,26 @@
+## 📋 Task Report: 기본 high + 선택 advisor (0.6.3)
+
+### 1. Pre-Review (Plan)
+
+- **Orchestrator Feedback**: executor 기본 high와 난이도·위험 신호별 advisor 자동 결정을 기존 Phase 4.2→4.4 경로에 맞춘다.
+- **독립 리뷰어 Feedback (4.2 Luna / 4.3 Sol Max)**: max 신호의 독립 OR, 4.4 재평가의 기존 iteration 상한, Analyze/Verify와 legacy resume의 unused advisor 처리를 확인했다.
+- **Refinement**: fixed override 우선, concrete spawn, raw 결과와 Assignment status 분리로 확정했다.
+
+### 2. Implementation Details
+
+- **Assumptions**: 없음.
+- **Key Changes**: executor default high, advisor auto `N/A|xhigh|max`, legacy executor tiered 호환, state/resume 계약과 parser·경계 검사를 반영했다.
+
+### 3. Final Convention Review
+
+- **Layer Analysis**: 앱 레이어 변경은 없고 topology·lifecycle·profile parser 책임을 분리했다.
+- **Simplicity Check**: 기존 점수·루프·상태 구조를 재사용하고 새 classifier나 runtime을 추가하지 않았다.
+
+### 4. Status
+
+- **Verification**: 구현 후 필수 검증은 orchestration 단계에서 실행한다.
+- **Cleanup**: 개인 설정·설치 cache·RUN 상태 파일은 변경하지 않았다.
+
 ## 📋 Task Report: Codex BE Harness 동기화
 
 ### 1. Pre-Review (Plan)

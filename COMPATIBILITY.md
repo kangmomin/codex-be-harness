@@ -8,7 +8,7 @@
 - 검증 개선 입력(2026-09-08): source `ae6900e4504a594bd6b9124043a59b7350ee33e8`에 커밋된 R1~R8. 해당 선택 기록은 `source_state:committed`와 실제 파일 해시를 사용한다. source plugin은 `be-harness@1.5.6`·`common@0.14.4`다.
 - 전체 동기화 source plugin: `be-harness@1.5.4`; inlined common `common@0.14.2`
 - 2026-09-08 선택 반영 source plugin: `be-harness@1.5.5`; `common@0.14.3`
-- target plugin: `codex-be-harness@0.6.2`
+- target plugin: `codex-be-harness@0.6.3`
 
 호환성은 문장 일치가 아니라 관찰 가능한 workflow 동작을 기준으로 한다. Phase 순서, 승인·차단 게이트, 상태 코드, 루프 상한, 보고서 머리글을 invariant로 본다.
 
@@ -44,6 +44,15 @@ Claude용 upstream을 동기화할 때는 [OpenAI 모델 가이드](https://deve
 | 로그·사용자 가설 | 재현 요약·발췌 마스킹·지지/반박 근거를 기록. 읽기 전용 역할은 부족한 측정을 반환하고 실행 권한을 확대하지 않음 |
 
 Claude의 새 정책 파일은 복제하지 않고 기존 Codex [공통 실행 원칙](skills/start-workflow/references/execution-policy.md)에 필요한 결정 기준만 합쳤다. 이 파일과 topology/build-phases는 계속 로컬 전용이다. 기존 모델·effort 역할, host 도구, 상태 스키마·출력 머리글을 유지하며 별도 승인·검증 단계를 추가하지 않는다. 문구 검사와 모델 행동 검토 및 실제 테스트 실행 결과는 SYNC-REPORT에서 구분한다.
+
+### 기본 high + 선택 advisor (0.6.3, 2026-09-08)
+
+기본 executor는 `high`이며, 명시적 legacy executor `tiered`만 D 1~8 high / D 9~10 max로 유지한다. advisor 기본은
+auto `tiered`다. Phase 4.2 뒤 UNKNOWN을 D floor 7로 처리해 D 1~3은 `SKIPPED:ADVISOR_NOT_REQUIRED`, D 4~8은 xhigh,
+D≥9 또는 동시성·데이터 정합성/이관·8+ 파일 설계·3 레이어·공유 구조 신호는 각각 max로 resolve한다. fixed advisor effort는
+항상 우선하며 symbolic `tiered`·`N/A`를 spawn하지 않는다. Phase 4.4 직전 재평가의 최소 effort 상승만 기존 iteration을 소비하고,
+상한·상태 코드·Phase 순서를 보존한다. Build는 concrete advisor와 유효 Assignment status를 기록하고 raw unavailable/interrupted는
+Plan log에 보존한다. 신규 Analyze/Verify는 `executor=N/A,advisor=N/A`이며 legacy advisor 기록도 unused로 보존한다.
 
 ### 검증 신뢰성과 재개 개선 (0.6.2, 2026-09-08)
 
@@ -177,12 +186,12 @@ Claude의 새 정책 파일은 복제하지 않고 기존 Codex [공통 실행 �
 
 | 영역 | upstream 동작 | 0.5.0 동작 | 근거 |
 |---|---|---|---|
-| 슬롯 레코드 | codexModels `{provider/agentType, model, effort}` | `topologyModels` `{model, effort?}` — provider·agentType 없음, `tiered`는 executor만 | Codex는 spawn 단위 provider 전환 미지원(실증 T3/T4) |
+| 슬롯 레코드 | codexModels `{provider/agentType, model, effort}` | `topologyModels` `{model, effort?}` — provider·agentType 없음, `tiered`는 executor·advisor만; executor 기본 high와 advisor auto의 현재 선택 규칙은 0.6.3 절을 따른다 | Codex는 spawn 단위 provider 전환 미지원(실증 T3/T4) |
 | 실행 플래그 | 플래그 값을 profile에 기록 | `--topology-models`는 실행 한정(ephemeral), profile 불변 | planning-only 경계 |
 | 폴백 | 3계층 latch·Claude 패널 폴백 | 없음 — `model_unavailable({슬롯}:{사유})` + 기존 `CODEX-UNAVAILABLE`/`SKIPPED:AGENT_DIED`/`BLOCKED:AGENT_DIED`, bootstrap 실패는 상태 파일 없음 | 대체 금지 계약 |
 | 무효 슬롯 | — | profile 무효 슬롯은 기본값 + 경고(doctor `INVALID_SLOT`), 플래그 무효는 재입력 1회/무시 + 경고 | profile 불변 |
 | 역할 라벨 | 모델명 기반 표기 | Sol High / Terra High·Max / Luna xHigh / Sol Max 라벨 고정, model·effort만 교체 | 문서·계약 문자열 안정 |
-| 상태 스키마 3 | — | `## Flags` `TOPOLOGY_MODELS`(Phase 5 기록 시 executor 확정값; 스키마 검사는 Build 상태 파일 한정, Analyze/Verify 최소 헤더는 `TOPOLOGY_MODELS`(executor=N/A) 1줄만 기록), Snapshot `topologyModels`; `SCHEMA: 2` 재개 시 기본값 보완 + 원자 교체(난이도 기록 없으면 차단) | 결정성 |
+| 상태 스키마 3 | — | `## Flags` `TOPOLOGY_MODELS`는 Build의 concrete executor/advisor 결정을 기록하고, Analyze/Verify 최소 헤더는 `executor=N/A,advisor=N/A`를 기록한다. Snapshot `topologyModels`와 schema 4 resume 계약은 유지한다 | 결정성 |
 
 ## Explicit gaps in 0.1.0
 

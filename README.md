@@ -16,11 +16,21 @@ Fullstack으로 판정되면 BE로 조용히 진행하지 않고 `BLOCKED:FULLST
 
 `start-workflow`는 승인된 고정 topology를 사용한다. Sol High는 승인·상태·판정을 조정하고, Terra
 High/Max는 source/test/API 문서 등 업무 변경 파일의 유일한 writer 및 승인된 push/PR 실행자이며, Luna xHigh는 읽기 전용 검토를 맡는다.
-Phase 4.3은 매번 새 Sol Max advisor context로 Plan만 검증한다. 모든 고정 spawn은 `fork_turns:none`이다.
+기본 Terra executor effort는 `high`다. Phase 4.3 advisor는 auto(`tiered`)에서 낮고 명확한 D 1~3 작업을
+`SKIPPED:ADVISOR_NOT_REQUIRED`로 넘기고, D 4~8은 xhigh, D≥9 또는 동시성·데이터 정합성/이관·8+ 파일 설계·3 레이어·공유 구조 변경은 max로 새 context에서 Plan만 검증한다. fixed advisor effort는 이 선택보다 우선한다. 모든 고정 spawn은 `fork_turns:none`이다.
+
+일반 Codex task에 이 원칙을 한 번 적용하려면 유효한 전역 AGENTS 파일에 작업 영향·불확실성에 비례해 탐색과 검증을 넓히고, 필수 검증 통과 뒤 새 실패·미검증 가설·수정 영향이 없으면 반복을 멈춘다는 지침을 수동으로 둘 수 있다. 이 저장소의 `AGENTS.md`는 repository 범위 지침이며 전역 파일과 다르다. base와 plan effort 예시는 각각 `model_reasoning_effort = "high"`, `plan_mode_reasoning_effort = "high"`다. 이는 개인 `~/.codex` 설정이나 현재 실행 effort를 자동 변경하지 않는 1회 안내이며 새 task부터 적용된다.
+
+## 0.6.3 변경
+
+현재 버전: `codex-be-harness@0.6.3`.
+
+- executor 기본 effort를 high로 두고, advisor auto를 `N/A|xhigh|max`으로 Phase 4.2 뒤 resolve한다. fixed override와 legacy executor tiered 호환을 유지하며 symbolic effort는 spawn하지 않는다.
+- Build 상태에는 concrete advisor 결정을, Analyze/Verify 신규 상태에는 `executor=N/A,advisor=N/A`를 기록한다. 비례 탐색·검증 종료 원칙과 선택적 전역 AGENTS 안내를 추가했다.
 
 ## 0.6.2 변경
 
-현재 버전: `codex-be-harness@0.6.2`.
+이전 버전: `codex-be-harness@0.6.2`.
 
 - 실제 파일 내용 지문 v2로 변경 누락을 막고 내용이 같은 커밋의 검증 근거를 재사용한다. 통합 테스트는 단위 테스트와 별도로 기록·합산한다.
 - 검토한 추론 태그 리터럴의 좁은 제외, Go 테스트 후보 탐색, Verify 명령 보존을 적용했다.
