@@ -171,7 +171,8 @@ skip→xhigh/max 또는 xhigh→max로 상승할 때만 남은 기존 iteration 
   보호 브랜치에 직접 커밋하지 않는다.
 - `--hard`: 브랜치를 만들지 않고 현재 브랜치를 사용한다.
 - `RUN_ID`는 검증된 create 출력 그대로 쓰고 `START_SHA`만 구현 직전 1회 계산한다. RUN_DIR/run.json을 다시 생성하지 않는다.
-- 초기 생성 Write는 [templates.md](templates.md) 앵커 안 템플릿 전체 — `## Flags`(`SCHEMA: 4`, MODE·HARD_MODE·TDD·REFLECT·TIER·TOPOLOGY_MODELS·RUN_ID·START_SHA·PUBLISH_POLICY·ROUTE_TARGET), `## Profile Snapshot`(Pre-flight 확정값 23키 + `profile_path`·`profile_sha256`·`resolved_report_dir`·`resolved_e2e_lock_dir`), `## Verification Tier`(Phase 2 판정·승격 이력)를 반드시 함께 포함한다. Build의 `TOPOLOGY_MODELS`에는 final `advisor=N/A|{concrete effort}`를 기록하고 Phase 4.3 Assignment Status는 `DONE|SKIPPED:ADVISOR_NOT_REQUIRED|SKIPPED:CODEX_UNAVAILABLE|SKIPPED:USER_INTERRUPTED`만 쓴다. `## Test Baseline`은 초기 템플릿에 없다. 이어서 같은 문서의 Implementation Notes 템플릿을 `{IMPL_NOTES}`에 생성한다. Spec에 `[Assumption]`이 있으면 각 항목을 `{IMPL_NOTES}` `## 편차`에 태그 그대로 이월한다(없으면 섹션은 비워 둔다).
+- 초기 생성 Write는 [templates.md](templates.md) 앵커 안 템플릿 전체 — `## Flags`(`SCHEMA: 4`, MODE·HARD_MODE·TDD·REFLECT·TIER·TOPOLOGY_MODELS·RUN_ID·START_SHA·PUBLISH_POLICY·ROUTE_TARGET), `## Profile Snapshot`(Pre-flight 확정값 23키 + `profile_path`·`profile_sha256`·`resolved_report_dir`·`resolved_e2e_lock_dir`), `## Verification Tier`(Phase 2 판정·승격 이력)를 반드시 함께 포함한다. `## Test Baseline`은 초기 템플릿에 없다. 이어서 같은 문서의 Implementation Notes 템플릿을 `{IMPL_NOTES}`에 생성한다. Spec에 `[Assumption]`이 있으면 각 항목을 `{IMPL_NOTES}` `## 편차`에 태그 그대로 이월한다(없으면 섹션은 비워 둔다).
+- Build `TOPOLOGY_MODELS`에는 final `advisor=N/A|{concrete effort}`를 기록하고 Phase 4.3 Assignment Status는 `DONE|SKIPPED:ADVISOR_NOT_REQUIRED|SKIPPED:CODEX_UNAVAILABLE|SKIPPED:USER_INTERRUPTED`만 쓴다.
 - [tdd.md](tdd.md)의 적용 판정과 baseline 수집을 수행한다.
 - 수집(또는 SKIP 판정) 직후 `## Test Baseline` 블록을 `## TDD Test Map` 앞에 정확히 1회 삽입한다(완전성 canonical: [tdd.md](tdd.md) Phase 5).
 
