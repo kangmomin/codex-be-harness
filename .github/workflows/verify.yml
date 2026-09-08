@@ -1,0 +1,30 @@
+name: Codex harness verification
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      PUPPETEER_CACHE_DIR: ${{ runner.temp }}/harness-chromium
+      HARNESS_DOCGEN_NO_SANDBOX: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.11.0'
+      - name: Install test dependencies
+        run: |
+          python3 -m pip install PyYAML==6.0.3
+          npm install --global npm@11.6.2 --no-audit --no-fund
+          npm ci --prefix skills/doc-gen/assets --no-audit --no-fund
+          sudo apt-get update
+          sudo apt-get install -y libnss3 libatk-bridge2.0-0 libx11-xcb1 libgbm1 libasound2t64 fonts-noto-cjk
+      - name: Verify contracts and executable behavior
+        run: bash scripts/verify.sh

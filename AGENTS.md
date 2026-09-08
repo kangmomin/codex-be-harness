@@ -26,7 +26,7 @@
 변경 후 다음을 실행한다.
 
 ```bash
-python3 tests/validate_port.py
+bash scripts/verify.sh
 python3 /home/dev/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py .
 for skill in skills/*; do
   python3 /home/dev/.codex/skills/.system/skill-creator/scripts/quick_validate.py "$skill"
@@ -35,4 +35,4 @@ done
 
 `shellcheck`가 설치되어 있으면 `skills/e2e-test/assets/e2e-lock.sh`도 검사한다.
 
-`tests/validate_port.py`는 Python 자산 문법 검사(compile, 바이트코드 없음)와 UPSTREAM-SYNC.json의 현재 자산 SHA-256 검사를 포함한다. 또한 `python3 -B -m unittest discover -s tests -p 'test_*.py'`와 설치된 doc-gen runtime의 `node --test tests/docgen.test.mjs`를 실행한다. Chromium sandbox 미지원 격리 컨테이너의 renderer 테스트에서만 HARNESS_DOCGEN_NO_SANDBOX=1을 명시할 수 있다.
+`scripts/verify.sh`는 구조 검사(`tests/validate_port.py`), Python unittest, Node doc-gen 테스트를 순서대로 실행하며 하나라도 실패하면 실패한다. 구조 검사는 Python 자산 문법(compile, 바이트코드 없음)과 UPSTREAM-SYNC.json의 현재 자산 SHA-256도 확인한다. 테스트 의존성은 `.github/workflows/verify.yml`의 설치 단계를 따른다. Chromium sandbox 미지원 격리 컨테이너의 renderer 테스트에서만 HARNESS_DOCGEN_NO_SANDBOX=1을 명시할 수 있다.
