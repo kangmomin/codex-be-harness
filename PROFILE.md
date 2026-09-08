@@ -70,7 +70,8 @@ commitCoAuthor: ""         # 비우면 Co-Authored-By 라인 생략
 # 에이전트 토폴로지 슬롯 (선택. 생략 시 기본 배정 — 규칙: start-workflow references/agent-topology.md "슬롯 설정")
 # topologyModels:
 #   executor: { model: gpt-5.6-sol, effort: high }   # executor의 model·effort 교체
-#   advisor:  { model: gpt-5.6-sol, effort: xhigh }  # advisor effort만 조정
+#   advisor:  { model: gpt-5.6-sol }                 # model만 지정하면 auto tiered 유지
+#   advisor:  { model: gpt-5.6-sol, effort: xhigh }  # fixed advisor effort로 auto보다 우선
 
 # 프로젝트 컨벤션 참조 (convention-check 및 default-conventions에서 사용)
 projectConventions:

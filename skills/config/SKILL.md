@@ -46,7 +46,7 @@ python3 -I -B "{PLUGIN_ROOT}/skills/config/assets/profile.py" edit --domain be -
 PROFILE_JSON
 ```
 
-슬롯은 `orchestrator` · `executor` · `readonly` · `advisor`다. `tiered`는 `executor`만 허용한다.
+슬롯은 `orchestrator` · `executor` · `readonly` · `advisor`다. `tiered`는 `executor`와 `advisor`만 허용한다.
 `topologyModels`의 슬롯 레코드는 model(필수)과 effort(선택)뿐이다. provider 전환은 미지원이며 모델/effort 허용값은 `../start-workflow/references/agent-topology.md`를 따른다.
 compact 입력을 JSON 슬롯 객체로 바꾼다. `{"topologyModels":{"executor":{"model":"example-model","effort":"high"},"advisor":null}}`처럼 슬롯 단위로 교체하며 null은 해당 슬롯 삭제, 빈 객체는 모든 슬롯 기본값 복귀다. 다른 슬롯/기존 레코드의 필드를 상속하지 않는다.
 기존 무효 슬롯이 수정/삭제 없이 남으면 `BLOCKED:INVALID_PROFILE`이다. 주석 소실·비지원 layout·symlink 쓰기는 `BLOCKED:UNSUPPORTED_LAYOUT`이다.

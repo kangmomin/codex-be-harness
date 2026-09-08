@@ -96,7 +96,7 @@ Phase 5 - 자율 실행 시작 (agent: Sol High orchestrator, model: {orchestrat
 | 2 | Sol High orchestrator | {orchestrator.model} | {orchestrator.effort} | DONE |
 | 3 | Sol High orchestrator | {orchestrator.model} | {orchestrator.effort} | DONE |
 | 4.2 | Luna reviewers + Sol High | {readonly.model} / {orchestrator.model} | {readonly.effort} / {orchestrator.effort} | DONE |
-| 4.3 | fresh Sol Max advisor | {advisor.model} | {advisor.effort} | DONE |
+| 4.3 | fresh Sol Max advisor | {advisor.model 또는 N/A} | {advisor.effort 또는 N/A} | {advisor.status} |
 | 4.4 | Sol High approval relay | {orchestrator.model} | {orchestrator.effort} | DONE |
 | 5 | Sol High orchestrator | {orchestrator.model} | {orchestrator.effort} | IN_PROGRESS |
 | 6.1 | Terra executor | {executor.model} | {executor.effort} | PENDING |
@@ -141,7 +141,10 @@ Phase 5 - 자율 실행 시작 (agent: Sol High orchestrator, model: {orchestrat
 [확정된 Plan 전문 그대로 복사]
 
 ## Plan Verification Log
-[Phase 4.3 검증 루프의 Iteration Diff Log]
+[Phase 4.3 검증 루프의 Iteration Diff Log. raw `CODEX-UNAVAILABLE`/`USER-INTERRUPTED`와 진단은 여기에 보존하며 Phase Assignment status로 쓰지 않는다.]
+
+Phase 4.3의 `{advisor.status}`는 `DONE`, `SKIPPED:ADVISOR_NOT_REQUIRED`, `SKIPPED:CODEX_UNAVAILABLE`,
+`SKIPPED:USER_INTERRUPTED` 중 하나다.
 
 ## Readback Diff
 [Phase 8.8 결과. Phase 8.8 실행 전에는 `미실행`, light면 `SKIPPED:TIER_LIGHT`]

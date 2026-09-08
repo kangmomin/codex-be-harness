@@ -129,13 +129,19 @@ feedbackUpstreamRepo: "{feedbackUpstreamRepo}"
 # 에이전트 토폴로지 슬롯 (선택. 생략 시 기본 배정 — 규칙: start-workflow references/agent-topology.md "슬롯 설정")
 # topologyModels:
 #   executor: { model: {model}, effort: high }   # executor의 model·effort 교체
-#   advisor:  { model: {model}, effort: xhigh }  # advisor effort만 조정
+#   advisor:  { model: {model} }                 # model만 지정하면 auto tiered 유지
+#   advisor:  { model: {model}, effort: xhigh }  # fixed advisor effort로 auto보다 우선
 ---
 
 # Project Notes
 
 (프로젝트별 메모는 아래에 자유롭게 작성)
 ```
+
+초기화 뒤 전역 적용을 원하면 repository `AGENTS.md`와 별개인 유효 전역 AGENTS 파일에 한 번 수동으로
+비례 탐색·검증 종료 원칙을 추가할 수 있다. config 예시는 `model_reasoning_effort = "high"`,
+`plan_mode_reasoning_effort = "high"`다. init은 전역 AGENTS나 개인 설정을 자동으로 만들거나 수정하지 않으며,
+이 선택은 새 task부터 적용된다.
 
 ## Step 6: convention-check 설정
 

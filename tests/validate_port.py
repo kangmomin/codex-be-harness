@@ -411,9 +411,9 @@ TOPOLOGY_BEGIN = "<!-- topology:defaults-begin -->"
 TOPOLOGY_END = "<!-- topology:defaults-end -->"
 TOPOLOGY_DEFAULTS = [
     ("orchestrator", "Sol High", "gpt-5.6-sol", "high"),
-    ("executor", "Terra High·Max", "gpt-5.6-terra", "tiered"),
+    ("executor", "Terra High·Max", "gpt-5.6-terra", "high"),
     ("readonly", "Luna xHigh", "gpt-5.6-luna", "xhigh"),
-    ("advisor", "Sol Max", "gpt-5.6-sol", "max"),
+    ("advisor", "Sol Max", "gpt-5.6-sol", "tiered"),
 ]
 topology = ""
 require(topology_path.is_file(), "start-workflow: missing agent topology")
@@ -476,7 +476,7 @@ if topology_path.is_file():
             )
             for slot, _, _, effort in topology_default_rows:
                 require(
-                    effort != "tiered" or slot == "executor",
+                    effort != "tiered" or slot in {"executor", "advisor"},
                     f"start-workflow topology: tiered effort is invalid for {slot}",
                 )
             for match in re.finditer(r"gpt-5\.[0-9]+-", topology):
@@ -518,6 +518,11 @@ if topology_path.is_file():
         "실행 중 두 번 사망하면 타 모델 대체 없이 기존",
         "`agent_died(...)`",
         "{PLAN_MAX}",
+        "SKIPPED:ADVISOR_NOT_REQUIRED",
+        "D=max(A,B)",
+        "D=max(D,7)",
+        "N/A→xhigh|max",
+        "executor=N/A,advisor=N/A",
     ]:
         require(contract in topology, f"start-workflow topology: missing {contract}")
     require(
@@ -546,7 +551,7 @@ for path in skills_dir.rglob("*.md"):
         )
 
 SLOT_PHRASE = "`orchestrator` · `executor` · `readonly` · `advisor`"
-TIERED_PHRASE = "`tiered`는 `executor`만"
+TIERED_PHRASE = "`tiered`는 `executor`와 `advisor`만"
 for document_name, document in [
     ("start-workflow topology", topology),
     ("config", config_doc),
@@ -558,8 +563,27 @@ for contract in ["INVALID_SLOT", "topologyModels", "필수 1회"]:
     require(contract in doctor_doc, f"doctor: missing topology contract {contract}")
 
 avm_doc = (skills_dir / "start-workflow" / "references" / "analyze-verify-modes.md").read_text(encoding="utf-8")
-for contract in ["{TOPOLOGY_MODELS}", "executor=N/A", "Build 스키마"]:
+for contract in ["{TOPOLOGY_MODELS}", "executor=N/A,advisor=N/A", "Build 스키마"]:
     require(contract in avm_doc, f"analyze-verify-modes: missing contract {contract}")
+
+for contract in [
+    "SKIPPED:ADVISOR_NOT_REQUIRED",
+    "SKIPPED:CODEX_UNAVAILABLE",
+    "SKIPPED:USER_INTERRUPTED",
+    "raw `CODEX-UNAVAILABLE`/`USER-INTERRUPTED`",
+]:
+    require(contract in templates_doc, f"templates: missing advisor state contract {contract}")
+
+for contract in [
+    "advisor를 concrete `N/A|xhigh|max`로 resolve",
+    "availability 검사·spawn을 하지 않는다",
+    "D>=9` 또는 동시성 제어·데이터 정합성/이관·8개 이상 파일 설계·3개 레이어 전체 변경·공유 구조 변경 중 하나라도",
+    "fixed advisor effort는 이 선택보다 우선한다",
+    "Phase 4.4 직전에 최종 Plan·사용자 정정·승인 범위를 포함한 A/B·UNKNOWN·max 신호를 항상 재평가",
+    "Phase 4.3과 같은 light→standard 승격 순서를 적용해 그 결과의 유효 `{PLAN_MAX}`를 조회",
+    "BLOCKED:MAX_ITERATIONS",
+]:
+    require(contract in build_phases, f"build-phases: missing advisor selection contract {contract}")
 
 for relative in [
     "skills/start-workflow/references/build-phases.md",

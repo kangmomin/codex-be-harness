@@ -193,7 +193,7 @@ def validate_slot(slot, value):
         v = value.get(key)
         if not isinstance(v, str) or not re.fullmatch(pattern, v) or scalar(v) != v:
             raise ProfileError("INVALID_SLOT: " + slot + "." + key)
-    if "effort" in value and (value["effort"] not in EFFORTS or value["effort"] == "tiered" and slot != "executor"):
+    if "effort" in value and (value["effort"] not in EFFORTS or value["effort"] == "tiered" and slot not in ("executor", "advisor")):
         raise ProfileError("INVALID_SLOT: " + slot + ".effort")
 
 

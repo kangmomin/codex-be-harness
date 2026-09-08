@@ -88,8 +88,8 @@ Suggestions:
 - {최소 수정 제안}
 ```
 
-Phase 4.3 fresh-context architect는 Sol Max이며 iteration마다 새 `fork_turns:none` context로 만든다.
-이전 결론을 답으로 주입하지 않는다. Spec-Plan 추적성, 레이어 책임, 파일 소유권, 검증 누락, 단순화 여지를 독립적으로 평가하도록 한다.
+Phase 4.3 fresh-context architect는 resolved concrete advisor effort일 때만 Sol Max로 iteration마다 새 `fork_turns:none` context로 만든다.
+`tiered`·`N/A`는 spawn하지 않는다. 이전 결론을 답으로 주입하지 않고, 정해진 리뷰 관점과 Spec/Plan의 가장 중요한 결정 질문 1개만 전달해 독립 평가한다.
 
 ## Phase 6.2 Green
 

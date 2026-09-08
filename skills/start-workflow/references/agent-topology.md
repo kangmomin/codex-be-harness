@@ -9,9 +9,9 @@
 | 슬롯 | 역할 라벨 | 기본 model | 기본 effort |
 |------|-----------|-----------|-------------|
 | `orchestrator` | Sol High | `gpt-5.6-sol` | `high` |
-| `executor` | Terra High·Max | `gpt-5.6-terra` | `tiered` |
+| `executor` | Terra High·Max | `gpt-5.6-terra` | `high` |
 | `readonly` | Luna xHigh | `gpt-5.6-luna` | `xhigh` |
-| `advisor` | Sol Max | `gpt-5.6-sol` | `max` |
+| `advisor` | Sol Max | `gpt-5.6-sol` | `tiered` |
 <!-- topology:defaults-end -->
 
 | 슬롯 | 권한 |
@@ -38,22 +38,23 @@ topologyModels:
 
 각 레코드는 `{ model, effort? }`다. `model`은 OpenAI 모델 id이며 `^[A-Za-z0-9._-]+$`를 따라야 하고
 provider 필드는 없다. `effort`는 `minimal|low|medium|high|xhigh|max|tiered` 중 하나이고,
-`tiered`는 `executor`만 사용할 수 있다. 생략한 슬롯은 그 슬롯의 기본값을 쓰고, effort를 생략하면
-그 슬롯의 기본 effort를 쓴다. executor의 `tiered`는 난이도 1~8에서 `high`, 9~10에서 `max`다.
+`tiered`는 `executor`와 `advisor`만 사용할 수 있다. 생략한 슬롯은 그 슬롯의 기본값을 쓰고, effort를 생략하면
+그 슬롯의 기본 effort를 쓴다. executor의 명시적 호환 `tiered`는 난이도 1~8에서 `high`, 9~10에서 `max`다.
 
 compact 표기는 `{슬롯}={model}[@{effort}]`를 쉼표로 나열하고, `{슬롯}=default`로 해당 슬롯을
 기본값으로 되돌린다. 마지막 `@` 뒤를 effort로 해석한다. 빈 항목·중복 슬롯·알 수 없는 슬롯·model
-패턴 불일치·effort enum 밖·executor 외 슬롯의 `tiered` 중 하나라도 있으면 입력 전체가 무효다.
+패턴 불일치·effort enum 밖·executor/advisor 외 슬롯의 `tiered` 중 하나라도 있으면 입력 전체가 무효다.
 
 start-workflow Pre-flight는 모든 모드에서 한 번만 슬롯 레코드 단위로
 `실행 플래그 --topology-models > profile topologyModels > 기본값` 순서로 resolve한다. profile의 무효
 슬롯은 그 슬롯만 기본값으로 대체하고 경고하며 profile은 바꾸지 않는다. 플래그가 무효면 대화형은
 재입력을 1회 받고, 비대화형은 플래그를 무시하고 경고한다. 확정 문자열 `{TOPOLOGY_MODELS}`는
 `orchestrator={model}@{effort},executor={model}@{effort},readonly={model}@{effort},advisor={model}@{effort}`
-형식과 4슬롯 고정 순서를 쓴다. executor의 `tiered`는 Phase 2 난이도 확정 시 `high|max`로 치환하고,
-그 전의 executor 미사용 구간에는 `tiered` 심볼을 유지한다. Analyze/Verify는 executor를 쓰지 않으므로
-`executor=N/A`로 기록한다. spawn 인자로는 확정값만 전달한다. `tiered`·`N/A`·`-`는 절대 전달하지
-않으며 미확정 슬롯의 spawn은 금지한다.
+형식과 4슬롯 고정 순서를 쓴다. executor의 명시적 `tiered`는 Phase 2 난이도 확정 시 `high|max`로 치환한다.
+advisor의 `tiered`(기본 및 model-only 포함)는 Phase 4.2 완료 뒤 첫 4.3 직전에 `N/A|xhigh|max`로 치환한다.
+Analyze/Verify 신규 실행은 executor와 advisor를 쓰지 않으므로 `executor=N/A,advisor=N/A`로 기록한다.
+spawn 인자로는 확정된 concrete model/effort만 전달한다. `tiered`·`N/A`·`-`는 절대 전달하지 않으며
+미확정 또는 unused 슬롯의 availability 검사와 spawn도 금지한다.
 
 provider 전환 미지원(Codex spawn 제약): `model`은 OpenAI 모델 id만 받으며 spawn 단위 provider 전환은 지원하지 않는다.
 
@@ -67,7 +68,22 @@ provider 전환 미지원(Codex spawn 제약): `model`은 OpenAI 모델 id만 �
 
 난이도 1~8은 Terra High, 9~10은 Terra Max다. 난이도 산정의 리스크에는 보안, 데이터 이관,
 복잡한 API/계약 변경을 반영한다. 이 기준 외의 모호한 승격 규칙은 만들지 않는다.
-executor 슬롯의 effort가 `tiered`(기본)일 때만 이 규칙으로 확정한다. profile이나 플래그가 `high`·`max` 등 고정 effort를 지정하면 난이도와 무관하게 그 값이다.
+executor 슬롯은 기본 `high`다. profile이나 플래그가 명시적으로 legacy `tiered`를 지정했을 때만 이 규칙으로
+확정한다. profile이나 플래그가 `high`·`max` 등 고정 effort를 지정하면 난이도와 무관하게 그 값이다.
+
+### Advisor effort 선택
+
+advisor 슬롯의 fixed effort(`minimal|low|medium|high|xhigh|max`)는 항상 실행하며 자동 선택보다 우선한다.
+model만 지정하거나 effort가 `tiered`면 자동이다. Phase 4.2의 Plan 반영 뒤 `D=max(A,B)`를 다시 계산한다.
+어느 축의 근거라도 `UNKNOWN`이면 `D=max(D,7)`이다. 다음 신호 중 하나라도 있으면 `max`다: `D>=9`, 동시성 제어,
+데이터 정합성 또는 이관, 설계 대상 파일 8개 이상, Presentation/Service/Repository 3개 레이어 전체 변경, 공유 구조 변경.
+그 외 D 4~8은 `xhigh`, D 1~3이며 UNKNOWN·max 신호가 없으면 `N/A`와
+`SKIPPED:ADVISOR_NOT_REQUIRED`다. advisor에는 현재 리뷰 관점과 Spec/Plan의 가장 중요한 결정 질문 1개만 전달한다.
+
+Phase 4.4 직전에 최종 Plan·사용자 정정·승인 범위를 포함한 A/B·UNKNOWN·max 신호를 항상 다시 평가한다. required minimum이
+`N/A→xhigh|max` 또는 `xhigh→max`로 상승한 경우에만 기존 `{PLAN_MAX}`의 다음 iteration 하나를 소비해 fresh advisor를
+실행한다. 남은 slot이 없으면 `BLOCKED:MAX_ITERATIONS`; 이미 실행한 effort가 required minimum 이상이면 재실행·downshift하지 않는다.
+fixed advisor는 자동 승격 대상이 아니다.
 
 ## Bootstrap
 
@@ -114,7 +130,7 @@ Phase 8.5의 단일 writer, Phase 6 barrier, Phase 8.8의 isolation은 이 경�
 |------|------|-----------|
 | Build 1~5, 6/8 barrier·commit, 7/8 명령·판정, 10 Assumption Gate, 12 상태·사용자 결정·보고 | Sol High | 승인과 상태를 소유하며 worktree를 직접 편집하지 않음 |
 | 1 edge-case 보강, 4.2, 8.2, 8.3, 8.4, 8.8, 11 | Luna xHigh | 읽기 전용; 8.8에는 Spec/Plan/state/Test Map을 전달하지 않음 |
-| 4.3 | Sol Max | 매 iteration 새 fresh context로 spawn, 최대 `{PLAN_MAX}`회(standard 5 / light 2) |
+| 4.3 | Sol Max | auto면 N/A·xhigh·max 중 하나, fixed면 명시 effort; 실행 시 매 iteration 새 fresh context로 spawn, 최대 `{PLAN_MAX}`회(standard 5 / light 2) |
 | 6.1 Red, 6.2 Green, 7 build-fix, 8.5, 8.6, 8.7, 9, 10 승인된 push/PR, 12 승인된 remediation | Terra High/Max | Sol이 명령/승인/상태를 조정하고 Executor가 수정 또는 외부 효과를 수행 |
 | Analyze A1/A2/A4, Verify V1/V2/V5 | Sol High | 읽기/명령/보고 소유 |
 | Analyze A3, Verify V3/V4 | Luna xHigh | 읽기 전용 구조화 결과 반환 |
@@ -128,7 +144,7 @@ push/PR을 재개한다.
 모델 capability 미가용(`model_unavailable(...)`)과 실행 중 사망을 구분한다. 진단에는
 `model_unavailable(...)`만 기록하고, 타 모델로 대체하거나 모델/effort를 낮춰 재시도하지 않는다.
 
-- Phase 4.3 advisor를 시작할 수 없거나 실행 중 두 번 사망하면 타 모델 대체 없이 기존
+- Phase 4.3의 concrete advisor를 시작할 수 없거나 실행 중 두 번 사망하면 타 모델 대체 없이 기존
   `CODEX-UNAVAILABLE` 결과로 4.4에 진행할 수 있다. 시작 불가는 `model_unavailable(...)`, 실행 중
   사망은 `agent_died(...)`와 필요한 `agent_retry(...)`를 진단에 남긴다.
 - Luna read-only 작업이 실행 중 두 번 실패하면, Phase 8.8은 `SKIPPED:AGENT_DIED`로 하고 Sol High가

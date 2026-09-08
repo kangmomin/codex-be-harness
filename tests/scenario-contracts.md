@@ -33,7 +33,9 @@
 | executor 사망 | Terra writer/external-effect가 두 번 실패하면 `BLOCKED:AGENT_DIED`, Sol High가 worktree/push를 대행하지 않음 |
 | read-back 사망 | Phase 8.8 Luna가 두 번 실패하면 `SKIPPED:AGENT_DIED`, orchestrator가 대체 복원하지 않음 |
 | 상태 writer 경계 | Sol High만 `{STATE_FILE}`과 Phase Results를 쓰고 다른 역할은 구조화 결과만 반환 |
-| Phase 4.3 | 매 iteration 새 `fork_turns:none` Sol Max context이며 최대 5회와 Phase 4.4 승인 Gate를 유지 |
+| Phase 4.3 advisor auto | UNKNOWN은 D floor 7; D 1~3은 `SKIPPED:ADVISOR_NOT_REQUIRED`, D 4~8은 xhigh, D≥9·동시성·데이터 정합성/이관·8+ 파일 설계·3 레이어·공유 구조는 각각 독립적으로 max; spawn에는 concrete effort만 전달 |
+| Phase 4.3 경계 | D=3은 skip, D=4와 D=8은 xhigh, D=9는 max; UNKNOWN은 적어도 D=7이고 각 max 신호는 단독으로 max를 만든다 |
+| Phase 4.3 fixed/rescore | fixed effort는 항상 실행하고 auto보다 우선; Phase 4.4 직전에는 최종 Plan·사용자 정정·승인 범위를 포함해 항상 재평가하고 minimum이 상승할 때만 Phase 4.3과 같은 light→standard 승격 순서와 유효 `{PLAN_MAX}`를 적용해 남은 다음 iteration을 소비하며, slot이 없으면 `BLOCKED:MAX_ITERATIONS`, 이미 높은 prior review는 재실행하지 않음 |
 | Phase 4.3 advisor 사망 | Sol Max가 두 번 사망하면 대체 모델 없이 `agent_died(...)` 진단과 `CODEX-UNAVAILABLE` 결과를 남기고 Phase 4.4로 진행 |
 | Phase 12 remediation | 사용자 승인 remediation으로 diff가 바뀌면 Phase 10 Assumption Gate와 Phase 4.4 외부 효과 범위를 다시 확인 |
 | E2E lifecycle | 같은 Terra가 중첩 spawn·직접 commit 없이 E2E와 실패 수정을 수행하고 PID/정리 결과를 반환하며 Sol High만 상태·commit을 조정 |
@@ -51,7 +53,7 @@
 | 렌더러·아카이버 exit ≠ 0 | 실제 stdout·원문·JSON 경로와 오류를 보존. 아카이버 실패 시 cp/cat/replace 폴백 금지 |
 | 렌더러 실패 | `{RUN_DIR}`와 원문을 보존하고 생성되지 않은 리포트를 성공 경로로 보고하지 않음·루프 판정 불변 |
 | `## Flags`와 CLI 인자 충돌 | `## Flags`가 우선하며 기록값 사용 + 충돌 고지 |
-| 상태 파일 스키마 불일치(Build) | `## Flags` 부재·필수 키 누락·`## Profile Snapshot`/`## Verification Tier` 누락 시 `BLOCKED:STATE_SCHEMA_MISMATCH`; Analyze/Verify는 최소 헤더(`TOPOLOGY_MODELS` executor=N/A 포함), Verify는 별도 명령 스냅샷도 검증 |
+| 상태 파일 스키마 불일치(Build) | `## Flags` 부재·필수 키 누락·`## Profile Snapshot`/`## Verification Tier` 누락 시 `BLOCKED:STATE_SCHEMA_MISMATCH`; Build는 concrete advisor N/A 또는 effort와 Phase 4.3의 유효 Assignment status만 저장하고 raw unavailable/interrupted는 Plan log에 보존; Analyze/Verify 신규는 `executor=N/A,advisor=N/A`, legacy concrete advisor는 unused로 보존하며 resolve·availability 검사·spawn하지 않음 |
 | Build 재개·형제 스킬 profile 해석 | `## Profile Snapshot`만 사용하며 config로 profile이 바뀌어도 실행 중 값 불변 |
 | 상태 파일 생성 이전 중단 | Pre-flight 재시작 |
 | Verify profile 변경 후 재개 | verify-commands.json의 원래 명령 4종 복원; 누락·다른 RUN·중복 키는 원본 보존 후 차단 |

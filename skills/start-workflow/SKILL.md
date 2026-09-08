@@ -62,7 +62,7 @@ Analyze 또는 Verify라면 [analyze-verify-modes.md](references/analyze-verify-
 Build에 누락이 있으면 영향 Phase를 구체적으로 나열하고, 해당 Phase를 `SKIPPED:{사유}`로 기록한 채
 진행할지 profile을 보완한 뒤(또는 `$codex-be-harness:config {키}={값}`으로 누락 값만 추가한 뒤) 재시작할지 결정받는다. 누락을 Phase 내부 실패로 뒤늦게 판정하지 않는다.
 
-**토폴로지 슬롯 resolve**(모든 모드, 1회): [agent-topology.md](references/agent-topology.md) "슬롯 설정" 규칙대로 슬롯 레코드 단위 `--topology-models` > profile `topologyModels` > 기본값 순으로 `{TOPOLOGY_MODELS}`를 확정한다. profile의 무효 슬롯은 그 슬롯만 기본값으로 대체하고 경고한다(profile 불변, `$codex-be-harness:doctor`가 `INVALID_SLOT`으로 보고). 플래그가 무효면 대화형은 재입력 1회, 비대화형은 플래그를 무시하고 경고한다. executor effort는 profile/플래그가 고정 effort를 지정하지 않는 한 `tiered`로 두었다가 Phase 2에서 난이도로 확정한다(Analyze/Verify는 `executor=N/A`). Pre-flight 보고에 `토폴로지 모델: 기본 | {변경 슬롯 요약 — 슬롯=model@effort, …}` 1줄을 넣는다. spawn 인자로는 확정값만 전달한다(`tiered`·`N/A`·`-` 금지).
+**토폴로지 슬롯 resolve**(모든 모드, 1회): [agent-topology.md](references/agent-topology.md) "슬롯 설정" 규칙대로 슬롯 레코드 단위 `--topology-models` > profile `topologyModels` > 기본값 순으로 `{TOPOLOGY_MODELS}`를 확정한다. profile의 무효 슬롯은 그 슬롯만 기본값으로 대체하고 경고한다(profile 불변, `$codex-be-harness:doctor`가 `INVALID_SLOT`으로 보고). 플래그가 무효면 대화형은 재입력 1회, 비대화형은 플래그를 무시하고 경고한다. 기본 executor는 `high`이고 명시적 legacy `tiered`만 Phase 2 난이도로 확정한다. advisor `tiered` 또는 model-only는 Build Phase 4.2 뒤 자동 `N/A|xhigh|max`로 resolve한다. Analyze/Verify 신규는 `executor=N/A,advisor=N/A`이며 advisor resolve·availability 검사·spawn을 하지 않는다. Pre-flight 보고에 `토폴로지 모델: 기본 | {변경 슬롯 요약 — 슬롯=model@effort, …}` 1줄을 넣는다. spawn 인자로는 concrete 값만 전달한다(`tiered`·`N/A`·`-` 금지).
 
 ## 실행별 상태
 
@@ -98,7 +98,7 @@ Build에 누락이 있으면 영향 Phase를 구체적으로 나열하고, 해�
 - Flags의 기록값이 재개 인자보다 우선이며 명시적 모드 충돌은 entry gate에서 차단한다. TIER의 단방향 승격 외에는 실행 도중 Flags를 재결정하지 않는다.
 - baseline 미완은 [tdd.md](references/tdd.md)의 Phase 5 미완 재개로 처리한다. 기존 상태·노트·OWNED_FILES·결과 events를 초기화하지 않는다.
 - 형제 스킬/서브에이전트는 `## Profile Snapshot`만 쓰고 frontmatter를 다시 읽지 않는다. profile_sha256은 출처 기록이며 live 파일과 비교하지 않는다. Project Notes 본문만 읽기 전용 참조할 수 있다.
-- **Analyze/Verify 상태**는 Run 공통 헤더와 최소 mode/scope/focus/topology/publish/route/Remaining Phases를 검증한다. Build 스키마나 전체 Profile Snapshot을 두지 않는다. Verify는 별도 verify-commands.json의 버전·실행 ID·CWD·명령 4종·출처를 helper가 검증하고 같은 실행의 값을 재사용한다. 누락 시 자동 복구하지 않는다.
+- **Analyze/Verify 상태**는 Run 공통 헤더와 최소 mode/scope/focus/topology/publish/route/Remaining Phases를 검증한다. 신규는 `executor=N/A,advisor=N/A`; legacy resume의 concrete advisor는 저장값 그대로 unused로 보존하고 resolve·availability 검사·spawn하지 않는다. Build 스키마나 전체 Profile Snapshot을 두지 않는다. Verify는 별도 verify-commands.json의 버전·실행 ID·CWD·명령 4종·출처를 helper가 검증하고 같은 실행의 값을 재사용한다. 누락 시 자동 복구하지 않는다.
 - 상태 본문 생성 전 중단은 새 실행으로 시작한다. 불완전 상태를 덮어서 성공한 재개로 보고하지 않는다.
 
 Build 상태 템플릿과 최종 보고는 [templates.md](references/templates.md)를 사용한다.
@@ -138,8 +138,8 @@ Build 상태 템플릿과 최종 보고는 [templates.md](references/templates.m
 ## 서브에이전트와 형제 스킬
 
 고정 모델·effort·`fork_turns:none`·재시도/대체 금지 규칙은
-[agent-topology.md](references/agent-topology.md)를 따른다. executor effort가 `tiered`(기본)이면 난이도 1~8 `high`(Terra High), 9~10 `max`(Terra Max)로 확정하고,
-profile/플래그의 고정 effort는 그대로 쓴다. Phase 2의 리스크 산정에는 보안, 데이터 이관, 복잡한 API/계약 변경을 반드시
+[agent-topology.md](references/agent-topology.md)를 따른다. executor 기본 effort는 `high`이며 명시적 legacy `tiered`만 난이도 1~8 `high`(Terra High), 9~10 `max`(Terra Max)로 확정한다.
+advisor auto는 Phase 4.2 뒤 concrete `N/A|xhigh|max`로 resolve하고 fixed effort는 그대로 쓴다. Phase 2의 리스크 산정에는 보안, 데이터 이관, 복잡한 API/계약 변경을 반드시
 반영한다. 각 프롬프트에는 `{CWD}`, `{STATE_FILE}`, `{IMPL_NOTES}`, 현재/남은 Phase, 파일 소유권,
 읽기/쓰기 허용 범위를 넣는다. 공통 프롬프트와 사망 처리는 [agent-prompts.md](references/agent-prompts.md)를,
 역할별 판정 계약은 [references/agents/](references/agents/) 문서를 사용한다.

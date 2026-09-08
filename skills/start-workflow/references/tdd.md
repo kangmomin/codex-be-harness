@@ -85,7 +85,7 @@ Go는 패키지 요약 줄의 import path를 포함한 `{package}::TestX/sub`를
 Terra executor (`fork_turns:none`):
   role: Red test writer
   model: {executor.model}
-  effort: {executor.effort} (tiered 기본: 난이도 1~8 high, 9~10 max)
+  effort: {executor.effort} (기본 high; 명시적 legacy tiered만 난이도 1~8 high, 9~10 max)
   prompt: |
     오케스트레이터가 전달한 unit-test `--red` 절차를 수행하세요.
     프로젝트 루트는 검증된 절대 경로 {CWD}입니다.

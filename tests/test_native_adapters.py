@@ -42,7 +42,8 @@ class NativeProfileTest(unittest.TestCase):
         self.assertNotIn('codexModels', schema)
         self.assertNotIn('codexMode', schema)
         profile.validate_slot('executor', {'model': 'example-model', 'effort': 'tiered'})
-        for slot, value in [('review', {'model': 'model'}), ('readonly', {'model': 'model', 'effort': 'tiered'}), ('executor', {'model': 'vendor/model'}), ('executor', {'provider': 'openai', 'model': 'model'})]:
+        profile.validate_slot('advisor', {'model': 'example-model', 'effort': 'tiered'})
+        for slot, value in [('review', {'model': 'model'}), ('readonly', {'model': 'model', 'effort': 'tiered'}), ('orchestrator', {'model': 'model', 'effort': 'tiered'}), ('executor', {'model': 'vendor/model'}), ('executor', {'provider': 'openai', 'model': 'model'})]:
             with self.subTest(slot=slot, value=value), self.assertRaises(profile.ProfileError):
                 profile.validate_slot(slot, value)
 

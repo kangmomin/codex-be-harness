@@ -61,7 +61,7 @@ Spec 확인 전에 같은 기능이 이미 진행 중인지 확인한다. 먼저
 `--tier standard` 미지정 → `light`(추가 리뷰 레이어·루프 상한·E2E 범위만 축소). 그 외 `standard`(기존 절차
 무변경). 풀스택은 Phase 3에서 종료되므로 판정 대상이 아니다.
 
-**executor effort 확정**: `{TOPOLOGY_MODELS}`의 executor effort가 `tiered`이면 종합 난이도 1~8 → `high`, 9~10 → `max`로 치환해 `{TOPOLOGY_MODELS}`를 확정한다(고정 effort면 그대로). 이후 모든 executor spawn은 이 값을 쓴다.
+**executor effort 확정**: 기본 executor는 `high`다. `{TOPOLOGY_MODELS}`의 executor effort가 명시적 legacy `tiered`이면 종합 난이도 1~8 → `high`, 9~10 → `max`로 치환해 확정한다(고정 effort면 그대로). 이후 모든 executor spawn은 이 값을 쓴다.
 
 출력: `난이도: 코드 [A]/10 + 리스크 [B]/10 — [근거]` / `검증 티어: light|standard — A [a]/B [b], 금지 조건 [해당 없음|{항목}], [사유]` / `executor effort: {executor.effort} ({tiered 확정: 난이도 → high|max | 고정})`
 
@@ -115,17 +115,20 @@ CONCERN은 근거가 타당한 항목만 반영한다. 결과를 Plan v1으로 �
 
 ### Phase 4.3: 독립 Plan 검증 루프
 
-매 iteration `fork_turns:none`으로 새로 만든 Sol Max fresh-context advisor로 최대 `{PLAN_MAX}`회(standard 5 / light 2) 검증한다. 매회 Spec, Plan vN, 전략, 난이도 근거를 전달하고,
-2회차부터 이전 diff와 기각 피드백/사유도 전달한다. 검토 관점은 Spec 추적성, 레이어 책임, 파일 소유권,
-테스트 누락, 더 단순한 경로다.
+Phase 4.2의 반영을 마친 뒤 첫 4.3 직전에 advisor를 concrete `N/A|xhigh|max`로 resolve한다. auto(`tiered` 또는 model-only)는
+`D=max(A,B)`에서 UNKNOWN이면 D floor 7을 적용한다. `D>=9` 또는 동시성 제어·데이터 정합성/이관·8개 이상 파일 설계·3개 레이어 전체 변경·공유 구조 변경 중 하나라도 있으면 `max`; 나머지 D 4~8은 `xhigh`; D 1~3은 `N/A`다. fixed advisor effort는 이 선택보다 우선한다.
+
+`N/A`면 Phase 4.3은 `SKIPPED:ADVISOR_NOT_REQUIRED`이며 availability 검사·spawn을 하지 않는다. concrete effort면 매 iteration
+`fork_turns:none`의 새 Sol Max fresh-context advisor로 최대 `{PLAN_MAX}`회(standard 5 / light 2) 검증한다. 매회 Spec, Plan vN, 전략,
+난이도 근거, 정해진 리뷰 관점과 가장 중요한 결정 질문 1개만 전달한다. 2회차부터 이전 diff와 기각 피드백/사유도 전달한다.
 
 매회 verdict, 반영, 기각 사유, Plan 변경 요약을 `Plan Verification Log` 초안에 누적한다.
 
 | 조건 | 결과 |
 |------|------|
 | `APPROVE` | `PROCEED` 후 4.4 |
-| 사용자 명시 중단 | `USER-INTERRUPTED`; 잔존 이슈 기록 후 4.4 가능 |
-| 독립 리뷰 실행 불가 | `CODEX-UNAVAILABLE`; 사유 기록 후 4.4 가능(light면 승격 ⑤ → standard 기록 후 진행) |
+| 사용자 명시 중단 | Phase Assignment에는 `SKIPPED:USER_INTERRUPTED`; raw `USER-INTERRUPTED`와 잔존 이슈는 Plan Verification Log에 기록 후 4.4 가능 |
+| 독립 리뷰 실행 불가 | Phase Assignment에는 `SKIPPED:CODEX_UNAVAILABLE`; raw `CODEX-UNAVAILABLE`와 사유는 Plan Verification Log에 기록 후 4.4 가능(light면 승격 ⑤ → standard 기록 후 진행) |
 | `{PLAN_MAX}`회 미승인 (light는 상한 평가 **전에** 승격 ① → `{PLAN_MAX}` = 5로 계속, iteration·동일 이슈 카운터 승계) | `BLOCKED:MAX_ITERATIONS`; 현재 Plan 진행/카운터·동일 이슈 횟수를 유지한 채 유효 상한만 `현재 iteration + 5`로 확장(`{PLAN_MAX}` 값 불변)/종료 결정 |
 
 카운터는 티어와 무관한 단조 증가값이며 승격으로 초기화하지 않는다. 순서는 항상 `iteration 카운터 증가 → 승격 판정(latch) → 새 상한 조회 → 종료 조건·상한 판정`이다(Phase 8 루프도 동일 — [quality-loop.md](quality-loop.md)).
@@ -156,6 +159,10 @@ Plan 모드 전환 명령에 의존하지 않는다. Plan의 파일 목록으로
 하나도 수행하지 않는다.** 승인 후 `Plan Verification Summary`(iterations, convergence, 잔존 이슈)를
 확정한다. 기존 승인을 재사용한 경우 Run의 `approved_at`·`approved_effects`에는 그 승인 시점·효과를 기록하고 작업 계약에 사용자 근거를 남긴다. 새 승인으로 꾸미거나 권한을 확대하지 않는다.
 
+Phase 4.4 직전에 최종 Plan·사용자 정정·승인 범위를 포함한 A/B·UNKNOWN·max 신호를 항상 재평가한다. 최소 요구 effort가
+skip→xhigh/max 또는 xhigh→max로 상승할 때만 남은 기존 iteration 하나를 소비해 해당 effort의 fresh advisor를 실행한 뒤 freeze한다.
+남은 slot 또는 `BLOCKED:MAX_ITERATIONS`를 결정하기 전에는 Phase 4.3과 같은 light→standard 승격 순서를 적용해 그 결과의 유효 `{PLAN_MAX}`를 조회한다. counter는 보존한다. 이미 더 높은 effort로 검토했거나 fixed advisor면 rerun·downshift하지 않는다.
+
 ## Phase 5: 브랜치, 상태, baseline
 
 승인 직후 시작한다.
@@ -164,7 +171,7 @@ Plan 모드 전환 명령에 의존하지 않는다. Plan의 파일 목록으로
   보호 브랜치에 직접 커밋하지 않는다.
 - `--hard`: 브랜치를 만들지 않고 현재 브랜치를 사용한다.
 - `RUN_ID`는 검증된 create 출력 그대로 쓰고 `START_SHA`만 구현 직전 1회 계산한다. RUN_DIR/run.json을 다시 생성하지 않는다.
-- 초기 생성 Write는 [templates.md](templates.md) 앵커 안 템플릿 전체 — `## Flags`(`SCHEMA: 4`, MODE·HARD_MODE·TDD·REFLECT·TIER·TOPOLOGY_MODELS·RUN_ID·START_SHA·PUBLISH_POLICY·ROUTE_TARGET), `## Profile Snapshot`(Pre-flight 확정값 23키 + `profile_path`·`profile_sha256`·`resolved_report_dir`·`resolved_e2e_lock_dir`), `## Verification Tier`(Phase 2 판정·승격 이력)를 반드시 함께 포함한다. `## Test Baseline`은 초기 템플릿에 없다. 이어서 같은 문서의 Implementation Notes 템플릿을 `{IMPL_NOTES}`에 생성한다. Spec에 `[Assumption]`이 있으면 각 항목을 `{IMPL_NOTES}` `## 편차`에 태그 그대로 이월한다(없으면 섹션은 비워 둔다).
+- 초기 생성 Write는 [templates.md](templates.md) 앵커 안 템플릿 전체 — `## Flags`(`SCHEMA: 4`, MODE·HARD_MODE·TDD·REFLECT·TIER·TOPOLOGY_MODELS·RUN_ID·START_SHA·PUBLISH_POLICY·ROUTE_TARGET), `## Profile Snapshot`(Pre-flight 확정값 23키 + `profile_path`·`profile_sha256`·`resolved_report_dir`·`resolved_e2e_lock_dir`), `## Verification Tier`(Phase 2 판정·승격 이력)를 반드시 함께 포함한다. Build의 `TOPOLOGY_MODELS`에는 final `advisor=N/A|{concrete effort}`를 기록하고 Phase 4.3 Assignment Status는 `DONE|SKIPPED:ADVISOR_NOT_REQUIRED|SKIPPED:CODEX_UNAVAILABLE|SKIPPED:USER_INTERRUPTED`만 쓴다. `## Test Baseline`은 초기 템플릿에 없다. 이어서 같은 문서의 Implementation Notes 템플릿을 `{IMPL_NOTES}`에 생성한다. Spec에 `[Assumption]`이 있으면 각 항목을 `{IMPL_NOTES}` `## 편차`에 태그 그대로 이월한다(없으면 섹션은 비워 둔다).
 - [tdd.md](tdd.md)의 적용 판정과 baseline 수집을 수행한다.
 - 수집(또는 SKIP 판정) 직후 `## Test Baseline` 블록을 `## TDD Test Map` 앞에 정확히 1회 삽입한다(완전성 canonical: [tdd.md](tdd.md) Phase 5).
 

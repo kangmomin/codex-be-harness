@@ -36,7 +36,7 @@ python3 "{PLUGIN_ROOT}/skills/start-workflow/assets/workflow_run.py" resume --cw
 ```
 
 Verify 재개는 live profile을 읽기 전에 위 helper를 실행하고 반환된 VERIFY_COMMANDS.commands의 명령 4종을 사용한다.
-검증 성공 뒤에만 상태의 Flags·TOPOLOGY_MODELS을 재사용하고 기록된 미완료 Phase부터 계속한다. 상태/노트를 새 템플릿으로 덮어쓰지 않는다.
+검증 성공 뒤에만 상태의 Flags·TOPOLOGY_MODELS을 재사용하고 기록된 미완료 Phase부터 계속한다. Build는 이미 기록한 concrete advisor `N/A|effort`와 끝난 Phase 4.3을 재사용하며 다시 resolve·availability 검사·spawn하지 않는다. Analyze/Verify 신규는 `executor=N/A,advisor=N/A`; legacy resume의 concrete advisor 값도 unused로 보존하며 resolve·availability 검사·spawn하지 않는다. 상태/노트를 새 템플릿으로 덮어쓰지 않는다.
 검증은 실제 작업 디렉토리(서로 다른 worktree 구별), 모드, RUN_ID, RUN_DIR, 상태 파일명, 미완료 여부를 대조한다.
 상태 생성 전 중단·경로 분실·구 전역 상태·불일치는 `BLOCKED:RUN_MISMATCH`로 고지하고 해당 상태를 실행하지 않는다. 새 작업은 create로 시작한다. 스크립트 실패 시 전역 경로로 폴백하지 않는다.
 

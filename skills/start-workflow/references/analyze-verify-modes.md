@@ -28,7 +28,7 @@
 
 ### Phase A2: 상태
 
-`{STATE_FILE}`에 `Mode: analyze`, `Scope`, `Focus`, `Context`, `TOPOLOGY_MODELS: {TOPOLOGY_MODELS}`(executor 미사용 — `executor=N/A`), 현재/남은 Phase를 기록하고
+`{STATE_FILE}`에 `Mode: analyze`, `Scope`, `Focus`, `Context`, `TOPOLOGY_MODELS: {TOPOLOGY_MODELS}`(executor/advisor 미사용 — `executor=N/A,advisor=N/A`), 현재/남은 Phase를 기록하고
 `코드 분석을 시작합니다.`라고 알린다.
 
 ### Phase A3: 분석
@@ -77,7 +77,7 @@
 
 ### Phase V2: 상태와 정적 분석
 
-`{STATE_FILE}`에 `Mode: verify`, `Scope`, `Focus`, `TOPOLOGY_MODELS: {TOPOLOGY_MODELS}`(executor 미사용 — `executor=N/A`), 현재/남은 Phase를 기록한다. 비어 있지 않은 명령을
+`{STATE_FILE}`에 `Mode: verify`, `Scope`, `Focus`, `TOPOLOGY_MODELS: {TOPOLOGY_MODELS}`(executor/advisor 미사용 — `executor=N/A,advisor=N/A`), 현재/남은 Phase를 기록한다. 비어 있지 않은 명령을
 다음 순서로 실행하고 결과를 append한다. 신규 실행은 첫 명령 전에 [Verify 명령 스냅샷](run-lifecycle.md#verify-명령-스냅샷)을 저장하고, 이후에는 저장한 commands만 사용한다. 재개 시 누락된 스냅샷을 live profile로 다시 만들지 않는다.
 
 1. `{lintCommand}`
@@ -163,4 +163,4 @@ Luna xHigh 역할에 전달한다. Sol High가 결과를 `위반: N건`으로 �
 - {실제 미완료 Phase}
 ```
 
-Build 스키마·Profile Snapshot은 적용하지 않는다. 실행 명령은 Pre-flight 확정값을 사용하고 결과는 result-contract.md대로 JSON에 보존한다. A4/V5에서 실제 남은 작업을 확인한 뒤 Remaining Phases를 없음으로 마감한다. 분석/검증 중 구현·commit/push를 하지 않는다. 후속 수정 승인은 별도 Build 범위다.
+Build 스키마·Profile Snapshot은 적용하지 않는다. 신규 Analyze/Verify는 advisor 자동 resolve·availability 검사·spawn을 하지 않는다. legacy resume의 concrete advisor 값은 보존하되 unused다. 실행 명령은 Pre-flight 확정값을 사용하고 결과는 result-contract.md대로 JSON에 보존한다. A4/V5에서 실제 남은 작업을 확인한 뒤 Remaining Phases를 없음으로 마감한다. 분석/검증 중 구현·commit/push를 하지 않는다. 후속 수정 승인은 별도 Build 범위다.
