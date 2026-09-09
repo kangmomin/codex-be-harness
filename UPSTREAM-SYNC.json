@@ -21,25 +21,25 @@
       "source": "be-harness/PROFILE.md",
       "source_sha256": "c6b96cdc879b7cd7d5ca9e9991031f41b179b38b922ae164ec99ca5b72d4bfd3",
       "adaptation": "codex-native",
-      "target_sha256": "011b949cad867437b371e5437f497416795cfa6936f9de08eddfc30d93086a78"
+      "target_sha256": "e57b06399ac07ac61821f67eb7d54101f9f6ccc2d3487b29e8cef39629b89c79"
     },
     "skills/commit-hard-push/SKILL.md": {
       "source": "common/skills/commit-hard-push/SKILL.md",
       "source_sha256": "de03136e0db1cd1dac9c7583c4eec52013e5ee49cf3d97d2377c80d2ff671f63",
       "adaptation": "codex-native",
-      "target_sha256": "e8251c0f76163aedcde262eaf08fa0e6f1636a5ec84bc384e8dd8f2d4755939c"
+      "target_sha256": "99f4efe16ebdd2f928cb0f663c47951d9aaea54dc444765d3993cafaa06fbcd9"
     },
     "skills/commit-pr/SKILL.md": {
       "source": "common/skills/commit-pr/SKILL.md",
       "source_sha256": "5cf1f29e5eaffc9d658fa4962ebd5d11d6cacdadc305be607fc81ffaf42c187a",
       "adaptation": "codex-native",
-      "target_sha256": "1408a1812b27c537edb1ef1ceff644d51368377200062cfbe8d1d331ea5a4ba1"
+      "target_sha256": "d69a3ee0e5a0b62881909d76bad64c78ff41e2112a6372dd89368b874317ebf5"
     },
     "skills/commit-push/SKILL.md": {
       "source": "common/skills/commit-push/SKILL.md",
       "source_sha256": "f8c34ef66aeaeca49d33d40f3711c5e81a916c3c3bd1a34238ca6251ef7261b0",
       "adaptation": "codex-native",
-      "target_sha256": "60f6a2b8419b99a64746813297f783d91b4d867a053b8d2823ae2ebc41d91b81",
+      "target_sha256": "2847df513eb6bbc119fd9e30b5208bd9071d4c4c7006c878424c23c863dbed0c",
       "source_head": "ae6900e4504a594bd6b9124043a59b7350ee33e8",
       "source_state": "committed"
     },
@@ -61,7 +61,7 @@
       "source": "be-harness/skills/config/SKILL.md",
       "source_sha256": "d021e22c2cde9c4643f212d15229c45950c511d424339b704f23a71c0399f6a9",
       "adaptation": "codex-native",
-      "target_sha256": "f7d3cc19a973f40ed86913ce443e3f4997744654e2cd3b029ff4b48bc4a59ca1"
+      "target_sha256": "35e733e186cf37b934f4651d0413658b738e27449c88f1eedeec94fbfc3d55e8"
     },
     "skills/config/assets/doctor.py": {
       "source": "be-harness/skills/config/assets/doctor.py",
@@ -73,7 +73,7 @@
       "source": "be-harness/skills/config/assets/profile.py",
       "source_sha256": "7e208d5e4796ca3d8eab9209f8569dd31dde4685c4cb4f4dda592120e7c4eeae",
       "adaptation": "codex-native",
-      "target_sha256": "d95ab181d59a310ed7e21ba1b56c124122643e2986a3a910823675b33eea1954"
+      "target_sha256": "248dcb2517cec90013e9fda69006a3f984eef5268f48d04bd25a2567610190bb"
     },
     "skills/convention-check/SKILL.md": {
       "source": "be-harness/skills/convention-check/SKILL.md",
@@ -121,13 +121,13 @@
       "source": "be-harness/skills/doctor/SKILL.md",
       "source_sha256": "95c2bfc10385b59060318f961c4a9ba6ee788ac6cb3155580712df3a076a539b",
       "adaptation": "codex-native",
-      "target_sha256": "5a166d9247b7a872eeefb436338cc940340a9b4675fc617c08b13c4feb503c1f"
+      "target_sha256": "3c9b60a7ef03c6eb507d01a7351f5a94b19c1aded4140523802598a38ba04aed"
     },
     "skills/e2e-test-loop/SKILL.md": {
       "source": "be-harness/skills/e2e-test-loop/SKILL.md",
       "source_sha256": "62df349a67fd5fdffd13b12244c55d47c03022e5ddee652e6d9c3976425beb72",
       "adaptation": "codex-native",
-      "target_sha256": "3587595cd7aee24656fe6ac6b912e265bb7452ee4d271759e9563c1533b7eb97",
+      "target_sha256": "cd1020e457a3c2b982106fac2aef3ec02d7f4176b33ed411412a62f6c78423fe",
       "source_head": "80366fe4e83210368a9f3015fed73d1fbdafb878",
       "source_state": "committed"
     },
@@ -167,7 +167,7 @@
       "source": "be-harness/skills/init/SKILL.md",
       "source_sha256": "f0b0324d035234c14f1b2f16bb8c0bc67d2f4c848709477e5c2c0fbcaad43c7a",
       "adaptation": "codex-native",
-      "target_sha256": "6d198d415e8040ab791a240f4a26f72e192bd142b88dd8b1fdb842ccbcdf3fbe"
+      "target_sha256": "8349781200f1025cfaf802c7af3619edca6e6fb5fa7828d6ffdd2b14fa4e491a"
     },
     "skills/request/SKILL.md": {
       "source": "be-harness/skills/request/SKILL.md",
@@ -207,7 +207,7 @@
       "source": "be-harness/skills/start-workflow/SKILL.md",
       "source_sha256": "9f68f9cbe951189d8b2dbf272fd5b0a33e17e0902f25cfb3d6ab9507934ea09b",
       "adaptation": "codex-native",
-      "target_sha256": "296a8b1cc314635bab5c7b53cb38c1a44ebd1ce811ef84a8313b7dbe7e711716",
+      "target_sha256": "73adacbc286eb6c5558c630a983a861181d0e7aca7bd6f077be142e8bf4998bf",
       "source_head": "ae6900e4504a594bd6b9124043a59b7350ee33e8",
       "source_state": "committed"
     },
@@ -271,7 +271,7 @@
       "source": "be-harness/skills/start-workflow/references/agent-prompts.md",
       "source_sha256": "ad2451cb23ff77b3a805dc38bb2539b54de78e3f9c68d65db97035fc7efec62e",
       "adaptation": "codex-native",
-      "target_sha256": "8553fe8764f9049bdda441e260a7e97499d035528c088f7e6e9f3e9a11769ed5",
+      "target_sha256": "cf23f5413e0141be6bd4cc3cecd2718d469f35c5e9286cecba7e41a372e9507a",
       "source_head": "80366fe4e83210368a9f3015fed73d1fbdafb878",
       "source_state": "committed"
     },
@@ -303,13 +303,13 @@
       "source": "be-harness/agents/workflow-implementer.md",
       "source_sha256": "aae9edaa0877452b2c29685216a0c4a7a8b860b79f5fe440999a0e073f46b9f7",
       "adaptation": "codex-native",
-      "target_sha256": "69464af99a5c78c9d423cb2a64cf6866e24125cc85bdfe2e5706386a792e2c6d"
+      "target_sha256": "f6cb3cf37da1eaf8c18f43f46e3e4a2fa9d7a2e1cd1e704ea162df2e4ec6c3cd"
     },
     "skills/start-workflow/references/agents/workflow-pr.md": {
       "source": "be-harness/agents/workflow-pr.md",
       "source_sha256": "2aa5b562d026f18a3b5bdd411e66eccb8a6e64ab77a56816e158b8494f7b2daf",
       "adaptation": "codex-native",
-      "target_sha256": "06bd1638a89a2a4d531d0000bc59c43a0d425ed08a009237718f49a0335d5786"
+      "target_sha256": "f0f3edf5d964eef8a7522f15d8970835e2db05cc3298e8fd6e6c9ed4b3928c91"
     },
     "skills/start-workflow/references/agents/workflow-reflection.md": {
       "source": "be-harness/agents/workflow-reflection.md",
@@ -321,7 +321,7 @@
       "source": "be-harness/skills/start-workflow/references/analyze-verify-modes.md",
       "source_sha256": "f52740cccfd0837d23eb11b081106bad700a957ef3a39cd450f67acf5528ccc6",
       "adaptation": "codex-native",
-      "target_sha256": "10dbfb69269cc1eb49827ee476d0c617e4b33ce90f5a56fc0621eb541b44894f",
+      "target_sha256": "59ab951a74b2fdcddab6dfc8f21351947f2e1b4848f9c0d5e4c031bb3acdf8df",
       "source_head": "ae6900e4504a594bd6b9124043a59b7350ee33e8",
       "source_state": "committed"
     },
@@ -335,7 +335,7 @@
       "source": "be-harness/skills/start-workflow/references/finalization.md",
       "source_sha256": "47244e4d1596bcd4d90277fc729e6904b369c666e7d9a21117d6778c0678ceea",
       "adaptation": "codex-native",
-      "target_sha256": "fb93e310b455071c43cdeaea2f008b4f88aaa36188e307bfd74ce007a7efe703",
+      "target_sha256": "ef64bdbb5ae3c52da974aa7e03e62f94a7c825f12be61b2fcf377bfc7e4eaf8a",
       "source_head": "ae6900e4504a594bd6b9124043a59b7350ee33e8",
       "source_state": "committed"
     },
@@ -343,7 +343,7 @@
       "source": "be-harness/skills/start-workflow/references/quality-loop.md",
       "source_sha256": "3ab154ca3979592a74d73729297ee56abc6c51d41e2ca16751a5b2a50299b168",
       "adaptation": "codex-native",
-      "target_sha256": "07ff597068c6365648273da1ede8ce8429f4c283a644d57db256a44b84797aff",
+      "target_sha256": "42eb93fadf7e2ba424ded026383ac75be6261c73ee58626e58978703bc10042a",
       "source_head": "ae6900e4504a594bd6b9124043a59b7350ee33e8",
       "source_state": "committed"
     },
@@ -359,7 +359,7 @@
       "source": "be-harness/skills/start-workflow/references/run-lifecycle.md",
       "source_sha256": "c03c59df99417e290e2d35a270294193b439f98170ab354f908107e1c06edbda",
       "adaptation": "codex-native",
-      "target_sha256": "0d36a171f706d1fc14b5375fa587990e539697918e53b63c65e3bd53d89f8be9",
+      "target_sha256": "108613727363b07c6fec31846128649b5b5d00c3bd1e224beeeb0fe96f5ad71c",
       "source_head": "ae6900e4504a594bd6b9124043a59b7350ee33e8",
       "source_state": "committed"
     },
@@ -373,7 +373,7 @@
       "source": "be-harness/skills/start-workflow/references/tdd.md",
       "source_sha256": "babd9397dc1beb18add407ff3cebcd406848cbadccdea0bfe81b628db3ad5433",
       "adaptation": "codex-native",
-      "target_sha256": "6c5949697123183583ee17b8e99fa91f8ad5d65ee76dc5d060d140dd50e27f07",
+      "target_sha256": "bd120ef442328e04447d81705bfbe67648a9fc9f407253a04d0b74183603430f",
       "source_head": "ae6900e4504a594bd6b9124043a59b7350ee33e8",
       "source_state": "committed"
     },
@@ -381,7 +381,7 @@
       "source": "be-harness/skills/start-workflow/references/templates.md",
       "source_sha256": "6217ad7ed029ef9daff8f4c2f095dfe33c2f3cdaed23ecacb9d525313f508921",
       "adaptation": "codex-native",
-      "target_sha256": "0960349bacc44909cc38593e02d5691a16a0ebfab78095ebce274921f4d0e343",
+      "target_sha256": "29840a517f9d337bc9a9f9dd37fd8f635f702a92741d6cbcfb421a3c278a21e4",
       "source_head": "80366fe4e83210368a9f3015fed73d1fbdafb878",
       "source_state": "committed"
     },
@@ -389,7 +389,7 @@
       "source": "be-harness/skills/start-workflow/references/verification-tier.md",
       "source_sha256": "a021eb4fc68180267e109800dc1b913b375292bc661d29142e9cdb7841fde476",
       "adaptation": "codex-native",
-      "target_sha256": "7e6f6e6f2301b2e93609eead2c766331bb843011749b24abd6c7e9269abf360d",
+      "target_sha256": "4d16a08fafab52d27717bd7ea018d61b0687e333fa571e15a68ab1511483fbe3",
       "source_head": "ae6900e4504a594bd6b9124043a59b7350ee33e8",
       "source_state": "committed"
     },
@@ -397,13 +397,13 @@
       "source": "be-harness/skills/start-workflow/references/writer-safety.md",
       "source_sha256": "06bf00f60c1653f4f685e765d7f8835a4411ab4c8ceffba11b5f4fbd44f9ebb9",
       "adaptation": "codex-native",
-      "target_sha256": "eb6e8dbc40eb3c37cd2f716be6a8fbde7d2e5efa57c98014a9595fa2ebed238a"
+      "target_sha256": "3f772d1dce3b08be0da1a9b763a88099be2d23f9b51c16de51e9b42070d26829"
     },
     "skills/unit-test/SKILL.md": {
       "source": "be-harness/skills/unit-test/SKILL.md",
       "source_sha256": "e94001ec95638682699c92333edafd76449d46d01bd4e64bfc8354fd8d4d783f",
       "adaptation": "codex-native",
-      "target_sha256": "f408996082eca835dabc7f0dc139643cf027f0e6ef6ca5f1ae496a88e41a8d8e",
+      "target_sha256": "659eacfd49214e95afb560a823db4a2e2b89a7720bc3bdbe1fdad86f5f5f1780",
       "source_head": "80366fe4e83210368a9f3015fed73d1fbdafb878",
       "source_state": "committed"
     },
@@ -532,6 +532,24 @@
       "source_head": "ae6900e4504a594bd6b9124043a59b7350ee33e8",
       "source_state": "committed",
       "source_sha256": "a4159c0b30978d56145827752bd16887bb3f0cb71ae3a35fa5dad7cdd61d1162"
+    },
+    "skills/refresh-models/SKILL.md": {
+      "source": null,
+      "adaptation": "codex-native",
+      "target_sha256": "dbdf07c36efd993e1d492a7bc7a006e1673f9dca8a8588e35f3ee5e56f663e1a",
+      "note": "Local-only session role recommendations and explicitly requested refresh; no upstream source."
+    },
+    "skills/refresh-models/agents/openai.yaml": {
+      "source": null,
+      "adaptation": "codex-native",
+      "target_sha256": "0876e4bfea80893965d2575058218033991c8f24a4d1636de72c4b1c90c0901f",
+      "note": "Local-only session role recommendations and explicitly requested refresh; no upstream source."
+    },
+    "skills/refresh-models/assets/models.py": {
+      "source": null,
+      "adaptation": "codex-native",
+      "target_sha256": "700f6e5cacc6b0d73f933c8e1398391e25f98e554808f708be42b980662a063a",
+      "note": "Local-only session role recommendations and explicitly requested refresh; no upstream source."
     }
   },
   "selective_updates": [

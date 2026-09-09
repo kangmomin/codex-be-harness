@@ -26,7 +26,7 @@ request의 즉시 실행 규칙은 사용하지 않는다.
 request를 생략해도 권한·소유권 변경의 일반 사용자 성공·미인증·권한 없음·다른 소유자 조건을 별도 AC/EC로 정리한다.
 
 엣지 케이스 보강이 필요하면 [agents/edge-case-analyzer.md](agents/edge-case-analyzer.md)를 읽고 API당 한
-Luna xHigh 읽기 전용 역할에 `incremental` 모드로 전달한다. 고정 spawn은 `fork_turns:none`이며 질문은 역할이 사용자에게 직접 보내지 않고
+Readonly 읽기 전용 역할에 `incremental` 모드로 전달한다. 고정 spawn은 `fork_turns:none`이며 질문은 역할이 사용자에게 직접 보내지 않고
 오케스트레이터에게 반환한다.
 
 Spec 전문을 사용자에게 보여주고 확인받는다. 불명확한 요구는 대안을 제시하고 결정받으며 임의로
@@ -103,12 +103,12 @@ Spec+Plan 산출물로 만든다. 중복 로직이 예상되면 최종 단순 �
 
 ### Phase 4.2: 다관점 보강 1회
 
-최대 3개 Luna xHigh 독립 리뷰어를 두 배치로 실행한다(standard). 모든 고정 spawn은 `fork_turns:none`이고,
+최대 3개 Readonly 독립 리뷰어를 두 배치로 실행한다(standard). 모든 고정 spawn은 `fork_turns:none`이고,
 모두 읽기 전용이며 Spec+Plan 전문을 받는다.
 
 - Batch 1: 유지보수성, 성능, 엣지 케이스
 - Batch 2: 데이터 정합성, 보안, 기존 코드 영향
-- **light**: 배치 없이 Luna xHigh 읽기 전용 1역할(`fork_turns:none`)이 3관점(엣지 케이스 · 기존 코드 영향 · 더 단순한 경로)을 한 번에 리뷰한다.
+- **light**: 배치 없이 Readonly 읽기 전용 1역할(`fork_turns:none`)이 3관점(엣지 케이스 · 기존 코드 영향 · 더 단순한 경로)을 한 번에 리뷰한다.
 
 반환 형식은 `Verdict: APPROVE|CONCERN|REJECT`, `Issues`, `Suggestions`다. REJECT는 Plan에 반영하고,
 CONCERN은 근거가 타당한 항목만 반영한다. 결과를 Plan v1으로 고정한다.
@@ -119,7 +119,7 @@ Phase 4.2의 반영을 마친 뒤 첫 4.3 직전에 advisor를 concrete `N/A|xhi
 `D=max(A,B)`에서 UNKNOWN이면 D floor 7을 적용한다. `D>=9` 또는 동시성 제어·데이터 정합성/이관·8개 이상 파일 설계·3개 레이어 전체 변경·공유 구조 변경 중 하나라도 있으면 `max`; 나머지 D 4~8은 `xhigh`; D 1~3은 `N/A`다. fixed advisor effort는 이 선택보다 우선한다.
 
 `N/A`면 Phase 4.3은 `SKIPPED:ADVISOR_NOT_REQUIRED`이며 availability 검사·spawn을 하지 않는다. concrete effort면 매 iteration
-`fork_turns:none`의 새 Sol Max fresh-context advisor로 최대 `{PLAN_MAX}`회(standard 5 / light 2) 검증한다. 매회 Spec, Plan vN, 전략,
+`fork_turns:none`의 새 Advisor fresh-context advisor로 최대 `{PLAN_MAX}`회(standard 5 / light 2) 검증한다. 매회 Spec, Plan vN, 전략,
 난이도 근거, 정해진 리뷰 관점과 가장 중요한 결정 질문 1개만 전달한다. 2회차부터 이전 diff와 기각 피드백/사유도 전달한다.
 
 매회 verdict, 반영, 기각 사유, Plan 변경 요약을 `Plan Verification Log` 초안에 누적한다.
@@ -190,8 +190,8 @@ baseline 수집 실패는 자율 구간 전 마지막 결정 지점이다. 회�
 TDD가 활성일 때만 `AC-nn`/`EC-nn`/`RC-nn` 근거의 실패 테스트와 최소 스텁을 작성한다. 형제
 `../../unit-test/SKILL.md`의 Red 절차를 읽어 적용한다(profile 값은 envelope의 `## Profile Snapshot`, 재독 없음).
 
-- sequential: Terra executor 테스트 작성자 1명, 커밋 조정과 상태 기록은 Sol High 소유
-- parallel-slices: Terra executor 각 작성자는 자기 테스트/스텁만 편집하고 실행·상태 기록·커밋하지 않는다.
+- sequential: Worker 테스트 작성자 1명, 커밋 조정과 상태 기록은 Orchestrator 소유
+- parallel-slices: Worker 각 작성자는 자기 테스트/스텁만 편집하고 실행·상태 기록·커밋하지 않는다.
   모두 끝난 뒤 오케스트레이터가 전역 Red 검증과 단일 커밋을 수행한다.
 
 | 결과 | 상태/진행 |
@@ -206,8 +206,8 @@ Red 커밋은 `Test: {요약} — 실패 테스트 선작성 (Red)`다. pre-comm
 
 ### Phase 6.2: Green
 
-- sequential: Terra executor implementer가 Plan 순서대로 구현하고 구조화 결과를 반환한다. Sol High가 논리 단위 커밋을 조정한다.
-- parallel-slices: 파일 범위를 겹치지 않게 Terra executor에 배정하고 각 작성자는 커밋·빌드를 하지 않는다.
+- sequential: Worker implementer가 Plan 순서대로 구현하고 구조화 결과를 반환한다. Orchestrator가 논리 단위 커밋을 조정한다.
+- parallel-slices: 파일 범위를 겹치지 않게 Worker에 배정하고 각 작성자는 커밋·빌드를 하지 않는다.
   오케스트레이터가 결과를 대조한 뒤 한 번 커밋한다.
 
 TDD 활성 시 테스트 파일 수정은 금지한다. 테스트가 잘못됐다고 판단하면 `[TestConflict]`만 보고하고
@@ -217,8 +217,8 @@ TDD 활성 시 테스트 파일 수정은 금지한다. 테스트가 잘못됐�
 
 ## Phase 7: 빌드 강제 검증
 
-`buildCommand`가 없으면 `SKIPPED:PROFILE_EMPTY`다. 있으면 Sol High가 구현 직후 실행한다. 실패할 때마다
-Terra executor build-fix가 원인 범위만 수정하고 결과를 반환한 후 Sol High가 다시 실행한다. 총 3회 실패하면
+`buildCommand`가 없으면 `SKIPPED:PROFILE_EMPTY`다. 있으면 Orchestrator가 구현 직후 실행한다. 실패할 때마다
+Worker build-fix가 원인 범위만 수정하고 결과를 반환한 후 Orchestrator가 다시 실행한다. 총 3회 실패하면
 `BLOCKED:BUILD_FAIL`로 중단하고 오류를 보고한다.
 
 ## Phase 8: 품질 루프
@@ -228,7 +228,7 @@ Terra executor build-fix가 원인 범위만 수정하고 결과를 반환한 �
 TDD 생략 시에도 수정 0건이며 unit/integration 합산 결과가 PASS 또는 정당한 SKIPPED일 때만 종료한다. `{QL_MAX}`회 뒤에도 green이 아니면
 `BLOCKED:TEST_NOT_GREEN`을 기록하되 Phase 8.8 이후를 계속한다.
 
-**light**: 8.2 = `SKIPPED:TIER_LIGHT`(Luna 통합 스캔을 convention만으로 실행), 8.6 = `e2e-test-loop --smoke`,
+**light**: 8.2 = `SKIPPED:TIER_LIGHT`(Readonly 통합 스캔을 convention만으로 실행), 8.6 = `e2e-test-loop --smoke`,
 8.8 = `SKIPPED:TIER_LIGHT`. 승격 ③(8.1 회귀·판정 불가)·⑥(8.6 BLOCKED 또는 `full(smoke 미적용)`)·⑦(iteration 종료 시 재집계)은
 [verification-tier.md](verification-tier.md) §4 — 티어 전환은 종료 조건·상한 평가보다 **먼저** 적용하고, ⑥·⑦은 standard iteration을 최소 1회 추가한다. 상세는 [quality-loop.md](quality-loop.md).
 
@@ -237,8 +237,8 @@ TDD 생략 시에도 수정 0건이며 unit/integration 합산 결과가 PASS �
 
 ## Phase 9: API 문서
 
-작업 유형이 API 생성/수정/삭제이고 `apiDocsPath`가 실제 파일일 때만 Terra executor가 문서 파일을 외과적으로
-동기화하고 결과를 반환한다. Sol High는 상태만 기록한다. 외부 플랫폼으로 push하지 않는다. 아니면 구체적인 `SKIPPED:{사유}`를 기록한다.
+작업 유형이 API 생성/수정/삭제이고 `apiDocsPath`가 실제 파일일 때만 Worker가 문서 파일을 외과적으로
+동기화하고 결과를 반환한다. Orchestrator는 상태만 기록한다. 외부 플랫폼으로 push하지 않는다. 아니면 구체적인 `SKIPPED:{사유}`를 기록한다.
 
 ## Phase 10: Assumption Gate와 PR/push
 
@@ -253,7 +253,7 @@ base diff의 추가 라인, 미push 커밋 본문, `{IMPL_NOTES}`의 `## 편차`
 결정하고 태그가 제거된 후 finalization.md의 관련 재검증을 마친 뒤 Phase 10 미완료 작업을 실행한다.
 
 `Phase Results`의 최신 8.6 행이 `BLOCKED:LOCK_UNAVAILABLE`이면(다른 검사가 green이어도) push/PR 전에
-`USER_INPUT_REQUIRED: {질문}` relay로 세 선택지를 받는다 — (1) `락 재시도`: 마지막 8.6과 같은 인자로 형제
+`USER_INPUT_REQUIRED: {질문}`으로 직접 세 선택지를 받는다 — (1) `락 재시도`: 마지막 8.6과 같은 인자로 형제
 `../../e2e-test-loop/SKILL.md` 절차를 1회 재실행하고 `Phase Results`에 8.6 행을 append(최신 8.6 행이 Gate 기준)·
 `## Artifacts` `e2e-report:`를 갱신한다. Gate-local 재시도이므로 승격 ⑥은 적용하지 않는다. 결과 분기: 다시
 `BLOCKED:LOCK_UNAVAILABLE` → 재질문 / `수정: N` ∧ `DONE`·`WARN` → 행·Artifacts 갱신만 하고 Phase 10 복귀 /
@@ -274,13 +274,13 @@ remediation 뒤 포함)은 이 결정을 재사용해 자동 재질문하지 않
 - `PUBLISH_POLICY:push`: 형제 `../../commit-hard-push/SKILL.md`의 Assumption Gate와 일반 push 절차를 읽고 현재
   브랜치에 push한다. PR은 만들지 않는다.
 
-VERSION/commit 후에는 commit-pr의 workflow 배리어대로 Terra가 Sol High에 반환한다. Sol High가 새 HEAD 검증/JSON/check-current/Gate를 완료한 뒤 같은 HEAD의 미완료 push/PR만 Terra에 재개시킨다.
+VERSION/commit 후에는 commit-pr의 workflow 배리어대로 Worker가 Orchestrator에 반환한다. Orchestrator가 새 HEAD 검증/JSON/check-current/Gate를 완료한 뒤 같은 HEAD의 미완료 push/PR만 Worker에 재개시킨다.
 
-Phase 4.4에서 승인되지 않은 원격 효과가 새로 필요하면 여기서 멈춰 추가 승인을 받는다. 승인된 push/PR의 실제 실행은 Terra executor가 한다.
+Phase 4.4에서 승인되지 않은 원격 효과가 새로 필요하면 여기서 멈춰 추가 승인을 받는다. 승인된 push/PR의 실제 실행은 Worker가 한다.
 
 ## Phase 11: 성찰
 
-`--reflect`일 때만 Luna xHigh [agents/workflow-reflection.md](agents/workflow-reflection.md) 역할로 커밋 로그와 Phase
+`--reflect`일 때만 Readonly [agents/workflow-reflection.md](agents/workflow-reflection.md) 역할로 커밋 로그와 Phase
 결과를 분석한다. 아니면 `SKIPPED:REFLECT_NOT_REQUESTED`다. 보완점은 plugin 원본이 아니라
 `.codex/be-harness/**` 후보로만 제안한다.
 
@@ -301,8 +301,8 @@ Phase 4.4에서 승인되지 않은 원격 효과가 새로 필요하면 여기�
 `SKIPPED:NO_FEEDBACK_UPSTREAM`을 기록한다. 값이 있더라도 Phase 4.4 승인 범위를 벗어난 외부 제출은
 별도 승인을 받는다. 실행 중 띄운 서버가 남아 있지 않은지 확인하고 PID/세션 핸들을 정리한다.
 
-Phase 12의 사용자 승인 remediation이 작업 트리 diff를 바꾸면, Sol High는 Phase 10 Assumption Gate와
-Phase 4.4에서 승인된 push/PR 범위를 다시 확인한다. 재확인 뒤 필요한 수정 또는 승인된 외부 효과는 Terra
+Phase 12의 사용자 승인 remediation이 작업 트리 diff를 바꾸면, Orchestrator는 Phase 10 Assumption Gate와
+Phase 4.4에서 승인된 push/PR 범위를 다시 확인한다. 재확인 뒤 필요한 수정 또는 승인된 외부 효과는 Worker
 executor만 수행한다.
 
 Phase 12 승인 수정 후 마감·아카이브는 [finalization.md](finalization.md)를 반드시 수행한다. 모든 Phase 일괄 DONE 처리와 검증되지 않은 tree의 원격 반영은 금지한다.

@@ -27,18 +27,18 @@
 | simplify 10회 도달 | 잔존 이슈와 선택지를 포함한 BLOCKED |
 | simplify no-progress | 같은 방향 수정 반복 시 조기 차단 |
 | reviewer 일부 실패 | retry 상태를 유지하고 무검증 PASS 금지 |
-| topology bootstrap | entry agent가 `fork_turns:none` Sol High를 한 번만 만들고 marker/hop limit으로 재귀 spawn을 막음 |
-| bootstrap 실패 | Phase 5 전이면 상태 파일·코드·git 효과 없이 중단 사유를 보고 |
+| 세션 orchestrator | 현재 세션이 직접 orchestration, 별도 bootstrap/relay 없음; 하위 spawn만 `fork_turns:none` |
+| Pre-flight 실패 | Phase 5 전이면 상태 파일·코드·git 효과 없이 중단 사유를 보고 |
 | 고정 모델 미가용 | `model_unavailable(...)`은 진단에만 기록하고 타 모델로 조용히 대체하지 않음 |
-| executor 사망 | Terra writer/external-effect가 두 번 실패하면 `BLOCKED:AGENT_DIED`, Sol High가 worktree/push를 대행하지 않음 |
-| read-back 사망 | Phase 8.8 Luna가 두 번 실패하면 `SKIPPED:AGENT_DIED`, orchestrator가 대체 복원하지 않음 |
-| 상태 writer 경계 | Sol High만 `{STATE_FILE}`과 Phase Results를 쓰고 다른 역할은 구조화 결과만 반환 |
+| executor 사망 | Worker writer/external-effect가 두 번 실패하면 `BLOCKED:AGENT_DIED`, Orchestrator가 worktree/push를 대행하지 않음 |
+| read-back 사망 | Phase 8.8 Readonly가 두 번 실패하면 `SKIPPED:AGENT_DIED`, orchestrator가 대체 복원하지 않음 |
+| 상태 writer 경계 | Orchestrator만 `{STATE_FILE}`과 Phase Results를 쓰고 다른 역할은 구조화 결과만 반환 |
 | Phase 4.3 advisor auto | UNKNOWN은 D floor 7; D 1~3은 `SKIPPED:ADVISOR_NOT_REQUIRED`, D 4~8은 xhigh, D≥9·동시성·데이터 정합성/이관·8+ 파일 설계·3 레이어·공유 구조는 각각 독립적으로 max; spawn에는 concrete effort만 전달 |
 | Phase 4.3 경계 | D=3은 skip, D=4와 D=8은 xhigh, D=9는 max; UNKNOWN은 적어도 D=7이고 각 max 신호는 단독으로 max를 만든다 |
 | Phase 4.3 fixed/rescore | fixed effort는 항상 실행하고 auto보다 우선; Phase 4.4 직전에는 최종 Plan·사용자 정정·승인 범위를 포함해 항상 재평가하고 minimum이 상승할 때만 Phase 4.3과 같은 light→standard 승격 순서와 유효 `{PLAN_MAX}`를 적용해 남은 다음 iteration을 소비하며, slot이 없으면 `BLOCKED:MAX_ITERATIONS`, 이미 높은 prior review는 재실행하지 않음 |
-| Phase 4.3 advisor 사망 | Sol Max가 두 번 사망하면 대체 모델 없이 `agent_died(...)` 진단과 `CODEX-UNAVAILABLE` 결과를 남기고 Phase 4.4로 진행 |
+| Phase 4.3 advisor 사망 | Advisor가 두 번 사망하면 대체 모델 없이 `agent_died(...)` 진단과 `CODEX-UNAVAILABLE` 결과를 남기고 Phase 4.4로 진행 |
 | Phase 12 remediation | 사용자 승인 remediation으로 diff가 바뀌면 Phase 10 Assumption Gate와 Phase 4.4 외부 효과 범위를 다시 확인 |
-| E2E lifecycle | 같은 Terra가 중첩 spawn·직접 commit 없이 E2E와 실패 수정을 수행하고 PID/정리 결과를 반환하며 Sol High만 상태·commit을 조정 |
+| E2E lifecycle | 같은 Worker가 중첩 spawn·직접 commit 없이 E2E와 실패 수정을 수행하고 PID/정리 결과를 반환하며 Orchestrator만 상태·commit을 조정 |
 | config 전체 조회 | 조회만 수행하고 mutation 0 (profile·상태 파일·기타 파일 불변) |
 | config 배치 수정 | 전건 검증 후 한 번의 치환 — 전건 `DONE` 또는 전건 미반영(부분 반영 없음) |
 | config 상속 profile 수정 | linked worktree에서 메인 워크트리 profile을 수정하고 절대 경로 + `[Assumption] 메인 워크트리 profile 상속` 보고 |
@@ -47,7 +47,7 @@
 | 락 acquire exit 1 (락 디렉토리 mkdir 비-EEXIST 실패 포함 — 대기 없음) | e2e-test는 `BLOCKED:LOCK_UNAVAILABLE`·서버 미기동 → e2e-test-loop는 즉시 종료·렌더링 생략·`E2E 리포트: 없음 (BLOCKED:LOCK_UNAVAILABLE)` → quality-loop 8.6 행 기록·루프 계속 → Phase 10 Gate 보류·3택(락 재시도 / E2E 없이 진행 / 중단) |
 | `## Test Baseline` 완전성 | 헤더 1개 + (`수집 실패 — regression 판정 불가` 줄 1개(있으면 행 유무 무관 완료·우선; SKIP 줄과 공존은 불완전) 또는 SKIP 줄 1개 또는 스위트별 6셀 baseline 행 1개), 불완전하면 Implementation Notes 템플릿 헤더 확인 후 재수집·교체 |
 | Phase 10 Gate 락 재시도 | 승격 ⑥ 미적용, `수정: N` ∧ DONE/WARN만 즉시 복귀, `수정: Y`이면 Phase 7 → 새 standard Phase 8 루프 → Phase 9 재판정 → Phase 10 |
-| light 판정과 축소 | A ≤ 3 ∧ B ≤ 3 ∧ 금지 조건 0 ∧ TDD 활성 ∧ ≠ parallel-slices ∧ `--tier standard` 없음 → 4.2 Luna 1역할·`{PLAN_MAX}` 2·`{QL_MAX}` 2·8.2 `SKIPPED:TIER_LIGHT`·8.6 `--smoke`·8.8 `SKIPPED:TIER_LIGHT` |
+| light 판정과 축소 | A ≤ 3 ∧ B ≤ 3 ∧ 금지 조건 0 ∧ TDD 활성 ∧ ≠ parallel-slices ∧ `--tier standard` 없음 → 4.2 Readonly 1역할·`{PLAN_MAX}` 2·`{QL_MAX}` 2·8.2 `SKIPPED:TIER_LIGHT`·8.6 `--smoke`·8.8 `SKIPPED:TIER_LIGHT` |
 | 승격 latch | 루프 종료·상한 평가보다 먼저 적용, 단방향, 카운터 단조 증가; Phase 8 재진입(⑦·락 재시도 후 수정)만 새 루프 |
 | `--smoke` 무효화 | 실효 full latch·`{MAX_ITER}` 5·`실행 수준: full(smoke 미적용)` |
 | 렌더러·아카이버 exit ≠ 0 | 실제 stdout·원문·JSON 경로와 오류를 보존. 아카이버 실패 시 cp/cat/replace 폴백 금지 |
@@ -59,7 +59,7 @@
 | Verify profile 변경 후 재개 | verify-commands.json의 원래 명령 4종 복원; 누락·다른 RUN·중복 키는 원본 보존 후 차단 |
 | 토폴로지 슬롯 설정 적용 | profile `topologyModels`/`--topology-models`의 유효 슬롯은 해당 역할 spawn의 model/effort로 쓰이고 `## Flags` `TOPOLOGY_MODELS`·Phase Assignments에 확정값으로 기록, 라벨은 불변 |
 | 무효 슬롯 | profile 무효 슬롯 → 그 슬롯만 기본값 + 경고(profile 불변, doctor `INVALID_SLOT`); 플래그 무효 → 대화형 재입력 1회 / 비대화형 무시 + 경고 |
-| 설정 model/effort 거부 | `model_unavailable({슬롯}:{사유})` 진단 + 해당 Phase 기존 계약, 대체·강등 재시도 없음; orchestrator 슬롯이면 상태 파일 없이 bootstrap 실패 보고 |
+| 설정 model/effort 거부 | `model_unavailable({슬롯}:{사유})` 진단 + 해당 Phase 기존 계약, 대체·강등 재시도 없음; orchestrator override는 경고 후 현재 세션 유지 |
 | 플래그 ephemeral | `--topology-models`는 profile을 바꾸지 않으며 다음 실행에 남지 않음 |
 | `SCHEMA: 2/3` Build 재개 | 자동 변환·원본 교체 없이 `BLOCKED:STATE_SCHEMA_MISMATCH`; 현재 SCHEMA:4 계약 필요 |
 
@@ -95,3 +95,8 @@
 | 테스트 기대값이 현재 설계와 다르고 Green writer는 테스트 수정 금지 | 테스트 오류와 구현 오류를 구분해 TestConflict/기존 승인으로 처리; 통과 목적 기대값 완화·삭제 없음 |
 | 사용자가 timeout을 의심하나 응답은 빠르고 전체 데이터 존재 | 지지·반박 근거와 대안 조사; 마스킹한 환경·재현·기대/실제만 인계·보고에 기록 |
 | 모든 검증 통과 후 승인된 수정이 tree를 변경 | 새 tree의 관련 필수 검증 수행; 통과 뒤 새 근거 없는 추가 반복은 종료하고 미검증·미해결을 숨기지 않음 |
+
+| 모델 추천 최신화 | 명시 요청 때만 refresh-models; 일반 실행은 offline resolve, 명시 profile override 보존 |
+| 모델 추천 default | 플래그 default는 profile을 무시하고 추천, config default는 profile 슬롯 삭제 |
+| 추천표 갱신 후 재개 | 기존 하위 배정과 advisor 결정을 재사용, 새 추천표 미조회 |
+| 모델 최신 근거 부족 | 공식 근거·호스트 모델/effort 미확인 시 기존 파일 보존 |

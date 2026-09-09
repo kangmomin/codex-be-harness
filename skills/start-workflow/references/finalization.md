@@ -2,7 +2,7 @@
 
 Phase 12 결정은 받는 즉시 `## Final Decisions`에 기록하고 재개 시 다시 묻지 않는다. 최초 보고서는 결정용 초안이다.
 
-1. 승인한 코드·Spec·테스트 수정은 Terra executor가 수행한다. Sol High는 상태·구현 노트만 갱신한다. Baseline 원본은 바꾸지 않는다.
+1. 승인한 코드·Spec·테스트 수정은 Worker가 수행한다. Orchestrator는 상태·구현 노트만 갱신한다. Baseline 원본은 바꾸지 않는다.
 2. 영향 범위의 Phase 7~9 빌드·단위/E2E·컨벤션 검증 및 동작 변경의 Read-back을 다시 수행한다. [result-contract.md](result-contract.md)의 RESULTS_FILE에 새 iteration과 실제 tested_tree를 기록한다. 미해결 실패는 해당 Phase의 BLOCKED/FAIL로 유지한다.
 3. 검증된 소유 변경만 동봉 commit 절차로 논리 커밋한다. `PUBLISH_POLICY`가 local이면 로컬 commit만, push이면 commit-hard-push, pr이면 commit-pr의 미완료 단계/기존 PR 갱신, none이면 Build commit/원격 반영 없이 보고만 한다. 브랜치/VERSION/PR을 중복 생성하지 않는다.
 4. 모든 commit/amend/rebase 후 현재 HEAD로 Assumption Gate를 다시 수행한다. `check-current`가 stale로 판정한 검증만 실제 재실행한다. 내용이 같은 v2 지문의 HEAD 비의존 검증은 기존 이벤트를 재사용한다. 과거 PASS의 해시를 수동으로 교체하지 않는다. 승인된 push/PR이 남아 있으면 이를 완료하고 원격 HEAD/PR URL을 확인한다.

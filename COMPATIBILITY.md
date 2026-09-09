@@ -235,3 +235,33 @@ Plan log에 보존한다. 신규 Analyze/Verify는 `executor=N/A,advisor=N/A`이
 | 검증·보고 | 변경 규모에 맞는 검증, 근거 없는 추가 반복 생략, 간결한 일반 설명 | 프로젝트·티어별 필수 검증, 수정 후 재검증, 출력 머리글·결과 스키마 |
 
 모델 기본값·API 요청·실행 자산은 이 지침 보강의 변경 대상이 아니다. 이후 upstream 동기화에서도 위 로컬 차이를 보존한다.
+
+
+## 세션 기반 역할 배정과 명시적 모델 최신화
+
+사용자 요청(2026-09-09)에 따라 고정 모델 orchestrator bootstrap/relay를 제거하고 현재 사용자 세션이
+Orchestrator를 맡는다. 신규 실행은 `orchestrator=session@inherit`로 기록한다. 모델명에서 유래한 역할 라벨을
+Orchestrator/Worker/Readonly/Advisor로 바꾸되 기존 `orchestrator`/`executor`/`readonly`/`advisor` 슬롯과
+Phase 순서·상태 코드·루프 상한·출력 머리글·단일 writer·독립 검토 권한을 유지한다. 기존 상태의 역할 라벨은
+과거 기록이며 재작성하지 않는다. legacy concrete orchestrator도 과거 값으로 보존하고 새 Phase는 현재 세션으로 수행한다.
+
+초기 advisor 모델은 Astra로 바꾸고 기존 자동 `N/A|xhigh|max` 호출 정책을 유지한다. Worker=Terra,
+Readonly=Luna는 유지한다. 공식 가이드는 설계 추론과 범위가 정해진 하위 작업을 구분하므로 역할별
+모델 배정과 책임을 분리했다. 근거: [최신 모델 가이드](https://developers.openai.com/api/docs/guides/latest-model),
+[하위 에이전트 가이드](https://learn.chatgpt.com/docs/agent-configuration/subagents). 직접 성능 비교 결과는 아니다.
+
+`refresh-models`는 사용자 요청 시에만 조사·갱신하고 일반 workflow/doctor는 오프라인이다.
+확정 profile의 부모 아래 `be-harness/models.json`에 추천 모델·effort·확인 날짜·공식 URL·역할별 이유·호스트가
+노출한 지원 effort를 저장한다. profile을 메인 worktree에서 상속하면 추천표도 공유한다. 플러그인 캐시나
+전역 설정을 수정하지 않는다. 호스트의 노출 정보는 dispatch 성공 증거와 구분한다.
+
+새 우선순위는 flags > 사용자 profile > 저장된 추천 > 번들 표다. profile의 무효 슬롯은 경고 후 추천값으로
+돌아가며(기존 bundled-only fallback에서 변경), 플래그 `slot=default`는 profile을 건너뛰고 추천을 선택한다.
+config의 default는 override 삭제다. 명시 model-only override는 기존 번들 effort 정책을 유지하며 하위
+레코드의 effort를 섞지 않는다. orchestrator override는 legacy 읽기 호환만 남기고 경고 후 현재 세션을 유지한다.
+지원 effort enum에 `ultra`를 추가하지만 모델별 실제 지원은 호스트 근거/dispatch로 구분한다.
+
+추천표는 preview/hash 비교 후 원자적으로 생성·교체한다. 손상·중복 키·비지원 schema·symlink·근거 부족은
+원본 보존으로 종료한다. 누락된 추천표는 번들 표만 읽고 자동 파일 생성이나 온라인 갱신을 하지 않는다.
+진행 중·재개 실행은 저장된 하위 배정/concrete advisor를 재사용하고 최신 추천을 읽지 않는다.
+이 변경은 별도 reviewer 슬롯, 자동 모델 승격, 성능 벤치마크, 원격 게시를 추가하지 않는다.

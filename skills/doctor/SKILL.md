@@ -41,7 +41,7 @@ profile을 읽고, be-harness 스킬이 정상 동작할 수 있는지 진단한
 | 16 | `.codex/be-harness/common.md` | `test -f` | 선택 |
 | 17 | `.codex/be-harness/skills/*.md` 개수 | `rg --files` | 정보 |
 | 18 | `.codex/be-harness/agents/*.md` 개수 | `rg --files` | 정보 |
-| 19 | `topologyModels` 슬롯 | 정적 검증 — 슬롯 이름은 `orchestrator` · `executor` · `readonly` · `advisor`, model `^[A-Za-z0-9._-]+$`, effort minimal|low|medium|high|xhigh|max|tiered, `tiered`는 `executor`와 `advisor`만, 자식은 1줄 flow 매핑; 키 없음·`{}`는 N/A, 레코드 멤버는 `model`(필수 1회) + `effort`(선택 1회)뿐 — 그 외/중복 멤버·중복 슬롯 자식은 `INVALID_SLOT` | 선택 |
+| 19 | `topologyModels` 슬롯 | 정적 검증 — 슬롯 이름은 `orchestrator` · `executor` · `readonly` · `advisor`, model `^[A-Za-z0-9._-]+$`, effort minimal|low|medium|high|xhigh|max|ultra|tiered, `tiered`는 `executor`와 `advisor`만, 자식은 1줄 flow 매핑; 키 없음·`{}`는 N/A, 레코드 멤버는 `model`(필수 1회) + `effort`(선택 1회)뿐 — 그 외/중복 멤버·중복 슬롯 자식은 `INVALID_SLOT` | 선택 |
 
 ## 보고 형식
 
@@ -90,7 +90,7 @@ profile을 읽고, be-harness 스킬이 정상 동작할 수 있는지 진단한
 3. 각 명령에 대해 첫 번째 토큰(`go`, `npm`, `make` 등)이 PATH에 있는지 `command -v` 로 확인.
 4. `sourceDirs`, `testDirs` 의 각 경로를 `test -d`로 확인.
 5. Git 초기화 및 `mainBranch` 존재 확인.
-6. `topologyModels`가 있으면 슬롯 레코드를 정적으로 검증한다(spawn하지 않는다). 무효 슬롯은 start-workflow가 기본값으로 대체하고 경고하므로 `INVALID_SLOT`은 선택 항목 WARN이다.
+6. `topologyModels`가 있으면 슬롯 레코드를 정적으로 검증한다(spawn하지 않는다). 무효 슬롯은 start-workflow가 저장된 추천(없으면 번들 표)으로 대체하고 경고하므로 `INVALID_SLOT`은 선택 항목 WARN이다.
 7. 결과를 표 형식으로 보고.
 
 ## 주의사항
@@ -108,3 +108,7 @@ python3 -I -B "{PLUGIN_ROOT}/skills/config/assets/doctor.py" --domain be --host 
 
 helper로 실효 profile·활성 Go/Node·명령 executable·topologyModels를 먼저 진단한다. 나머지 Git/경로/override 항목은 위 표대로 읽기 전용 보완한다. 복합 shell 명령은 UNVERIFIED로 표시하고 실행 성공으로 간주하지 않는다.
 진단 중 install/npx 다운로드·외부 CLI reviewer·provider probe를 실행하지 않는다. 설치가 필요하면 누락과 설치 명령만 보고한다. 도구/패키지 존재는 실제 검증 성공이 아니다. 모델 슬롯의 존재·effort 수용 여부는 실제 dispatch에서만 확인한다.
+
+모델 추천 배정은 `$codex-be-harness:refresh-models`를 명시적으로 요청할 때만 갱신한다. 일반 실행·진단은 오프라인이다. 추천표는 확정 profile의 부모 아래 `be-harness/models.json`에 두며 profile 상속 시 같은 위치를 공유한다. `topologyModels`는 사용자 override로 보존되고 추천표보다 우선한다. orchestrator override는 legacy 읽기 호환용이며 경고 후 현재 세션을 유지한다. config의 슬롯 default는 override 삭제이며 저장된 추천(없으면 번들 표)으로 돌아간다. 명시 model-only 레코드는 번들 표의 effort를 사용한다.
+
+추천표가 있으면 `skills/refresh-models/assets/models.py resolve --cwd "{CWD}"`를 플러그인 절대 경로로 실행해 스키마·기록된 지원 정보만 검사한다. 잘못된 추천표는 `INVALID_MODELS`로 보고한다. 기록된 지원 정보는 현재 가용성 검사가 아니며 refresh를 자동 호출하거나 모델을 spawn하지 않는다.

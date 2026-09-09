@@ -158,7 +158,7 @@ workflow에서는 전달받은 `## Profile Snapshot`을 사용하고 profile을 
    - **판정 `PASS`** (모든 시나리오 통과 + 미커버 0건) → 루프 종료 → Step 4
    - **판정 `WARN`** (실패 0건 + `UNCOVERED:{사유}` 1건 이상) → 루프 종료 → Step 4. 미커버는 검증 공백이지 구현 결함이 아니므로 수정 루프를 돌리지 않고, 사유를 리포트에 남긴 채 상위에 전달한다.
    - **판정 `FAIL`** → 3번으로 진행
-3. 발견된 이슈는 배정된 Terra executor가 수정한다. workflow의 Terra는 중첩 spawn/직접 commit 없이 수행하고 결과만 Sol High에 반환한다. standalone 위임도 동일 시점 단일 writer와 실제 종료 확인을 지킨다:
+3. 발견된 이슈는 배정된 Worker가 수정한다. workflow의 Worker는 중첩 spawn/직접 commit 없이 수행하고 결과만 Orchestrator에 반환한다. standalone 위임도 동일 시점 단일 writer와 실제 종료 확인을 지킨다:
    ```
    아래 E2E 실패를 수정하세요. 프로젝트 루트: {CWD}.
    failures: {실패 목록 전체}
@@ -169,7 +169,7 @@ workflow에서는 전달받은 `## Profile Snapshot`을 사용하고 profile을 
    ```
    - 오케스트레이터도 서버를 직접 재빌드/재시작하지 않는다. 다음 하위 `e2e-test` Step 4에서 자기 락 획득 후 빌드·기동한다.
    - 실패한 각 케이스에 대해 Step 2의 "실패→수정 블록 형식"으로 append 한다.
-   - 소유 변경 커밋은 Sol High가 동봉 commit 절차로 조정한다. Terra는 결과만 반환한다.
+   - 소유 변경 커밋은 Orchestrator가 동봉 commit 절차로 조정한다. Worker는 결과만 반환한다.
    - 기록과 커밋 후, `--skip-server` 또는 `runServerCommand`가 없는 외부 서버를 쓰는 경우 수정 반영 증거(실행 버전·기동 로그 등)를 확인한다. 증거가 없으면 `STOP_REASON=BLOCKED:SERVER_CODE_UNVERIFIED`로 위 중단 처리를 수행한다. 이전 바이너리의 응답으로 재검증 성공을 선언하지 않는다.
 4. 하위 호출 횟수가 `{MAX_ITER}` 미만이면 1번으로 돌아간다. 마지막 호출에서 수정했다면 재검증 미실행을 기록하고 `BLOCKED:MAX_ITERATIONS`로 Step 4에 진입한다.
 
@@ -255,5 +255,5 @@ E2E Test Loop — SKIPPED
 ## Native 결과 소유권
 
 `{PLUGIN_ROOT}`는 이 플러그인의 실제 절대 루트다. 새 standalone E2E는 먼저 workflow_run.py create --mode be로 RUN_ID/부모 RUN_DIR을 받고, workflow 호출은 부모 ID/경로를 재사용한다. E2E_RUN_DIR은 run-context.md로 별도 생성한다.
-E2E_RESULTS는 workflow_results.py init의 `domain:be,mode:build`로 생성한다. loop owner만 E2E_RESULTS를 갱신한다. workflow Terra는 부모 RESULTS_FILE을 쓰지 않고 E2E 결과 객체/경로를 Sol High에 반환하며, Sol High는 부모 event iteration을 단조 증가하게 배정해 병합한다. E2E의 종료 상태가 전체 workflow를 자동 DONE으로 만들지 않는다.
+E2E_RESULTS는 workflow_results.py init의 `domain:be,mode:build`로 생성한다. loop owner만 E2E_RESULTS를 갱신한다. workflow Worker는 부모 RESULTS_FILE을 쓰지 않고 E2E 결과 객체/경로를 Orchestrator에 반환하며, Orchestrator는 부모 event iteration을 단조 증가하게 배정해 병합한다. E2E의 종료 상태가 전체 workflow를 자동 DONE으로 만들지 않는다.
 JSON/원시 기록/리포트는 부모가 소비하기 전 삭제하지 않는다. 새 원시 파일은 `set -C` 또는 exclusive 생성으로 만들고 재개만 append한다. 중단 뒤 실패 이력은 보존한다. `BLOCKED:LOCK_UNAVAILABLE`도 실행 이력이 있으면 BLOCKED:INTERRUPTED 리포트에 남긴다.

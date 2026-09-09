@@ -137,3 +137,5 @@ profile 자체가 없으면 값을 추측하지 않는다(프로젝트 루트와
 
 `$codex-be-harness:init` 을 실행하여 대화형으로 생성한다. 기존 파일이 있으면 diff를 보여준 뒤 업데이트.
 값 하나를 조회·수정할 때는 `$codex-be-harness:config {키}` / `$codex-be-harness:config {키}={값} …`을 쓴다(init 재실행 없이, 파일 생성은 하지 않음).
+
+모델 추천 배정은 `$codex-be-harness:refresh-models`를 명시적으로 요청할 때만 갱신한다. 일반 실행·진단은 오프라인이다. 추천표는 확정 profile의 부모 아래 `be-harness/models.json`에 두며 profile 상속 시 같은 위치를 공유한다. `topologyModels`는 사용자 override로 보존되고 추천표보다 우선한다. orchestrator override는 legacy 읽기 호환용이며 경고 후 현재 세션을 유지한다. config의 슬롯 default는 override 삭제이며 저장된 추천(없으면 번들 표)으로 돌아간다. 명시 model-only 레코드는 번들 표의 effort를 사용한다.

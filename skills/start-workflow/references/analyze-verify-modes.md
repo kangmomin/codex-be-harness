@@ -2,7 +2,7 @@
 
 > `--analyze`와 `--verify`의 전용 절차다. Build Phase와 섞지 않는다.
 > 상태 파일은 상위 스킬의 실행별 `{RUN_DIR}` 안에 생성한다.
-> Analyze/Verify 상태 파일은 아래 최소 헤더와 공통 Run 헤더를 쓰며 Build 스키마(`## Flags`·`## Profile Snapshot` 등) 검사 대상이 아니다. Luna 읽기 전용 spawn은 `{TOPOLOGY_MODELS}`의 `readonly` 슬롯 확정값을 쓴다.
+> Analyze/Verify 상태 파일은 아래 최소 헤더와 공통 Run 헤더를 쓰며 Build 스키마(`## Flags`·`## Profile Snapshot` 등) 검사 대상이 아니다. Readonly 읽기 전용 spawn은 `{TOPOLOGY_MODELS}`의 `readonly` 슬롯 확정값을 쓴다.
 
 # Analyze / Verify
 
@@ -33,7 +33,7 @@
 
 ### Phase A3: 분석
 
-[agents/code-analyzer.md](agents/code-analyzer.md)를 읽고 해당 역할을 `fork_turns:none`의 Luna xHigh
+[agents/code-analyzer.md](agents/code-analyzer.md)를 읽고 해당 역할을 `fork_turns:none`의 Readonly
 독립 읽기 전용 서브에이전트에
 전달한다. 프롬프트에는 `{CWD}`, `{STATE_FILE}`, scope/focus/context, Phase A3/A4를 포함한다.
 범위가 작거나 위임이 불가능하면 같은 역할 계약으로 직접 분석하되 축소 여부를 보고한다.
@@ -89,14 +89,14 @@
 
 ### Phase V3: 코드 검증
 
-[agents/code-verifier.md](agents/code-verifier.md)를 읽고 `fork_turns:none`의 Luna xHigh 읽기 전용 검증 역할에 scope/focus, 정적 분석
+[agents/code-verifier.md](agents/code-verifier.md)를 읽고 `fork_turns:none`의 Readonly 읽기 전용 검증 역할에 scope/focus, 정적 분석
 결과, `{CWD}`, `{STATE_FILE}`, Phase V3/V4/V5를 전달한다. 이론적 가능성이 아니라 실제 도달 경로와
 `file:line` 근거가 있는 이슈만 받는다.
 
 ### Phase V4: 컨벤션 검사
 
 초점이 `전체`일 때만 형제 `../../convention-check/SKILL.md`를 읽고 그 검사 계약을 `fork_turns:none`의
-Luna xHigh 역할에 전달한다. Sol High가 결과를 `위반: N건`으로 기록한다. 그 외에는 `SKIPPED:FOCUS_NOT_FULL`이다.
+Readonly 역할에 전달한다. Orchestrator가 결과를 `위반: N건`으로 기록한다. 그 외에는 `SKIPPED:FOCUS_NOT_FULL`이다.
 
 ### Phase V5: 종합 보고
 

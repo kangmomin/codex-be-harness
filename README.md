@@ -14,10 +14,19 @@
 
 Fullstack으로 판정되면 BE로 조용히 진행하지 않고 `BLOCKED:FULLSTACK_HANDOFF_REQUIRED`로 종료한다. Minmos overlay와 원격 feedback 제출은 0.2.0 범위에도 포함하지 않는다. 세부 차이는 [COMPATIBILITY.md](./COMPATIBILITY.md)를 참고한다.
 
-`start-workflow`는 승인된 고정 topology를 사용한다. Sol High는 승인·상태·판정을 조정하고, Terra
-High/Max는 source/test/API 문서 등 업무 변경 파일의 유일한 writer 및 승인된 push/PR 실행자이며, Luna xHigh는 읽기 전용 검토를 맡는다.
-기본 Terra executor effort는 `high`다. Phase 4.3 advisor는 auto(`tiered`)에서 낮고 명확한 D 1~3 작업을
-`SKIPPED:ADVISOR_NOT_REQUIRED`로 넘기고, D 4~8은 xhigh, D≥9 또는 동시성·데이터 정합성/이관·8+ 파일 설계·3 레이어·공유 구조 변경은 max로 새 context에서 Plan만 검증한다. fixed advisor effort는 이 선택보다 우선한다. 모든 고정 spawn은 `fork_turns:none`이다.
+`start-workflow`의 Orchestrator는 사용자가 연 현재 세션이다. Worker(`executor`)는 source/test/API 문서의
+단일 writer와 승인된 push/PR 실행을, Readonly(`readonly`)는 탐색·독립 리뷰를, Advisor(`advisor`)는 Plan 검증을 맡는다.
+초기 모델은 Worker=Terra, Readonly=Luna, Advisor=Astra이며 실제 ID·effort 단일 원천은
+[agent-topology.md](skills/start-workflow/references/agent-topology.md)의 표다. 하위 spawn은 `fork_turns:none`이다.
+
+일반 workflow에서는 저장된 배정만 읽는다. 최신 공식 가이드와 호스트 지원 모델 확인은 사용자가
+`$codex-be-harness:refresh-models`를 요청할 때만 한다. 추천은 확정 profile 옆 `.codex/be-harness/models.json`에
+저장하고 사용자 `topologyModels` override는 보존한다. 갱신은 다음 신규 실행부터 적용하며 진행 중·재개 실행은 snapshot을 유지한다.
+모델 가용성 실패 시 자동 조사·대체하지 않고 기존 Phase 실패 계약을 적용한다.
+
+기본 executor effort는 `high`다. advisor의 기존 `tiered` 정책은 D 1~3의 낮고 명확한 작업을
+`SKIPPED:ADVISOR_NOT_REQUIRED`로 넘기고 D 4~8은 xhigh, D≥9 또는 기존 고위험 신호는 max로 검증한다.
+명시 fixed effort가 이 선택보다 우선하며 새 모델명으로 역할이나 Phase 계약을 바꾸지 않는다.
 
 일반 Codex task에 이 원칙을 한 번 적용하려면 유효한 전역 AGENTS 파일에 작업 영향·불확실성에 비례해 탐색과 검증을 넓히고, 필수 검증 통과 뒤 새 실패·미검증 가설·수정 영향이 없으면 반복을 멈춘다는 지침을 수동으로 둘 수 있다. 이 저장소의 `AGENTS.md`는 repository 범위 지침이며 전역 파일과 다르다. base와 plan effort 예시는 각각 `model_reasoning_effort = "high"`, `plan_mode_reasoning_effort = "high"`다. 이는 개인 `~/.codex` 설정이나 현재 실행 effort를 자동 변경하지 않는 1회 안내이며 새 task부터 적용된다.
 
@@ -69,8 +78,8 @@ upstream 동기화는 [선택적 동기화 기준](COMPATIBILITY.md#선택적-�
 
 관찰 가능한 동작 차이는 [COMPATIBILITY.md](./COMPATIBILITY.md)의 "0.5.0 deviations"에 있다.
 
-- 토폴로지 역할 슬롯 설정: profile `topologyModels`(block)로 `orchestrator` · `executor` · `readonly` · `advisor` 슬롯의 model/effort를 교체한다(`$codex-be-harness:config topologyModels=executor=gpt-5.6-sol@high,…`). 역할 라벨(Sol High / Terra High·Max / Luna xHigh / Sol Max)과 권한 경계는 불변.
-- `--topology-models {슬롯}={model}[@{effort}],…`: 실행 한정 교체(profile 미기록). resolve 순서는 플래그 > profile > 기본값, 무효 슬롯은 기본값 + 경고.
+- 토폴로지 역할 슬롯 설정: profile `topologyModels`(block)로 `orchestrator` · `executor` · `readonly` · `advisor` 슬롯의 model/effort를 교체한다(`$codex-be-harness:config topologyModels=executor=gpt-5.6-sol@high,…`). 역할명과 권한 경계는 불변이며 orchestrator override는 경고 후 현재 세션을 유지한다.
+- `--topology-models {슬롯}={model}[@{effort}],…`: 실행 한정 교체(profile 미기록). resolve 순서는 플래그 > profile > 저장된 추천 > 번들 표다. 무효 profile 슬롯은 추천값 + 경고, 플래그 default는 profile을 건너뛰고 추천값을 사용한다.
 - 폴백 없음: 설정 model/effort 거부는 `model_unavailable({슬롯}:{사유})` + 기존 Phase 계약. provider 전환은 Codex spawn 제약으로 미지원.
 - 상태 파일 스키마 3: `## Flags` `TOPOLOGY_MODELS`, Snapshot `topologyModels`. 0.4.0(`SCHEMA: 2`) 상태 파일은 재개 시 기본값으로 1회 보완(원자 교체).
 - `doctor`가 `topologyModels` 슬롯을 정적 검증한다(`INVALID_SLOT`).
@@ -114,6 +123,7 @@ upstream 동기화는 [선택적 동기화 기준](COMPATIBILITY.md#선택적-�
 | `commit*` / `resolve-assumption` | 논리 커밋, push/PR, Assumption Gate |
 | `init` / `doctor` | `.codex/be-harness.local.md` 생성 및 진단 (`topologyModels` 슬롯 검증) |
 | `config` | profile 값 조회·키 단위 수정 (init 재실행 없이, `topologyModels` 슬롯 포함) |
+| `refresh-models` | 명시 요청 시 공식 가이드·호스트 지원 정보로 추천 모델 배정 갱신, 사용자 override 보존 |
 
 Codex CLI 또는 IDE에서 `$`로 설치된 skill을 선택한다. 예:
 

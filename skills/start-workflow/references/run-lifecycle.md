@@ -73,3 +73,5 @@ python3 "{PLUGIN_ROOT}/skills/start-workflow/assets/workflow_run.py" save-verify
 기본은 실행 디렉토리를 보관한다. 정리 요청 시 서버/세션 종료를 확인하고 검증된 이번 `{RUN_DIR}`만 삭제한다. 완료된 실행의 상태는 새 작업에 재사용하지 않는다.
 
 품질·리뷰·Read-back의 범위는 `scope-contract.md`를 따른다. `OWNED_FILES`는 create가 만든 실행별 JSON 배열이며 오케스트레이터가 소유 파일만 합친다. resume에서 초기화하지 않는다. 오래된 실행에서 파일이 없으면 기존 구현 기록으로 복구한 뒤 범위 수집을 진행한다.
+
+모델 추천표가 갱신되어도 재개에서는 다시 읽거나 resolve하지 않는다. 하위 슬롯과 이미 결정한 effort는 저장값을 유지한다. legacy concrete orchestrator 값은 과거 기록으로 보존하고 현재 세션이 역할을 맡는다고 보고한다. 새 Phase 기록에는 `session@inherit`를 사용한다. 별도 orchestrator spawn은 하지 않는다.

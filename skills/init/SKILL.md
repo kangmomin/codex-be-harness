@@ -209,3 +209,5 @@ mkdir -p .codex/be-harness/skills .codex/be-harness/agents
 - 기존 `.codex/be-harness.local.md`가 있으면 덮어쓰지 않고, 변경된 필드만 수정한다.
 - `.codex/` 디렉토리가 없으면 먼저 생성한다.
 - Git이 초기화되지 않은 프로젝트도 profile은 생성한다 (Git 관련 필드는 빈 값 허용).
+
+모델 추천 배정은 `$codex-be-harness:refresh-models`를 명시적으로 요청할 때만 갱신한다. 일반 실행·진단은 오프라인이다. 추천표는 확정 profile의 부모 아래 `be-harness/models.json`에 두며 profile 상속 시 같은 위치를 공유한다. `topologyModels`는 사용자 override로 보존되고 추천표보다 우선한다. orchestrator override는 legacy 읽기 호환용이며 경고 후 현재 세션을 유지한다. config의 슬롯 default는 override 삭제이며 저장된 추천(없으면 번들 표)으로 돌아간다. 명시 model-only 레코드는 번들 표의 effort를 사용한다.

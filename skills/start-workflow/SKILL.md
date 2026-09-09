@@ -13,13 +13,13 @@ BE 작업을 Build, Analyze, Verify 중 한 모드로 실행한다. 프로젝트
 
 사용자와의 대화는 profile의 `language`(기본 `ko`)를 따른다.
 
-모든 모드의 역할·모델·bootstrap·writer 경계는 [agent-topology.md](references/agent-topology.md)가
-canonical이다. 이 스킬에만 적용하는 고정 토폴로지 예외다.
+모든 모드의 역할·모델·세션 진입·writer 경계는 [agent-topology.md](references/agent-topology.md)가
+canonical이다. 이 스킬의 하위 역할에만 적용하는 저장 배정 정책이다.
 
 ## 진입 검사
 
 모든 모드에서 [entry-contract.md](references/entry-contract.md)를 읽고 `workflow_policy.py route`를 `entry:be`로 실행한다.
-READY 이후 [run-lifecycle.md](references/run-lifecycle.md)의 생성/재개 검증을 수행한다. 두 절차는 profile resolve와 첫 dispatch보다 앞선다. bootstrap으로 검증된 실행 경로를 받은 orchestrator continuation은 같은 RUN을 승계하고 create를 다시 실행하지 않는다.
+READY 이후 [run-lifecycle.md](references/run-lifecycle.md)의 생성/재개 검증을 수행한다. 두 절차는 profile resolve와 첫 dispatch보다 앞선다. 현재 세션의 orchestrator continuation은 같은 RUN을 승계하고 create를 다시 실행하지 않는다.
 `{PLUGIN_ROOT}`는 이 파일에서 두 단계 위의 실제 플러그인 루트다. 새 실행은 운영 메타데이터만 만들며 source·branch·상태 본문은 승인 시점을 따른다.
 
 ## 모드와 플래그
@@ -62,7 +62,7 @@ Analyze 또는 Verify라면 [analyze-verify-modes.md](references/analyze-verify-
 Build에 누락이 있으면 영향 Phase를 구체적으로 나열하고, 해당 Phase를 `SKIPPED:{사유}`로 기록한 채
 진행할지 profile을 보완한 뒤(또는 `$codex-be-harness:config {키}={값}`으로 누락 값만 추가한 뒤) 재시작할지 결정받는다. 누락을 Phase 내부 실패로 뒤늦게 판정하지 않는다.
 
-**토폴로지 슬롯 resolve**(모든 모드, 1회): [agent-topology.md](references/agent-topology.md) "슬롯 설정" 규칙대로 슬롯 레코드 단위 `--topology-models` > profile `topologyModels` > 기본값 순으로 `{TOPOLOGY_MODELS}`를 확정한다. profile의 무효 슬롯은 그 슬롯만 기본값으로 대체하고 경고한다(profile 불변, `$codex-be-harness:doctor`가 `INVALID_SLOT`으로 보고). 플래그가 무효면 대화형은 재입력 1회, 비대화형은 플래그를 무시하고 경고한다. 기본 executor는 `high`이고 명시적 legacy `tiered`만 Phase 2 난이도로 확정한다. advisor `tiered` 또는 model-only는 Build Phase 4.2 뒤 자동 `N/A|xhigh|max`로 resolve한다. Analyze/Verify 신규는 `executor=N/A,advisor=N/A`이며 advisor resolve·availability 검사·spawn을 하지 않는다. Pre-flight 보고에 `토폴로지 모델: 기본 | {변경 슬롯 요약 — 슬롯=model@effort, …}` 1줄을 넣는다. spawn 인자로는 concrete 값만 전달한다(`tiered`·`N/A`·`-` 금지).
+**토폴로지 슬롯 resolve**(신규 실행, 모든 모드, 1회): [agent-topology.md](references/agent-topology.md)의 오프라인 `models.py resolve`로 슬롯 레코드 단위 `--topology-models` > profile `topologyModels` > 저장된 추천표 > 번들 기본값 순으로 `{TOPOLOGY_MODELS}`를 확정한다. orchestrator는 항상 `session@inherit`다. 일반 실행에서 온라인 조사나 `refresh-models`를 호출하지 않는다. profile 무효 슬롯은 경고 후 추천값으로, 무효 플래그는 대화형 재입력 1회 후에도 무효면 무시하고 경고한다(비대화형은 즉시 무시). 추천표가 손상되면 원본을 보존하고 중단한다. 기본 executor는 `high`이고 명시적 legacy `tiered`만 Phase 2 난이도로 확정한다. advisor `tiered` 또는 model-only는 Build Phase 4.2 뒤 자동 `N/A|xhigh|max`로 resolve한다. Analyze/Verify 신규는 `executor=N/A,advisor=N/A`이며 advisor availability 검사·spawn을 하지 않는다. Pre-flight 보고에 `토폴로지 모델: 기본 | {변경 슬롯 요약 — 슬롯=model@effort, …}` 1줄과 추천표 출처를 넣는다. 하위 spawn 인자로는 concrete 값만 전달한다(`session`·`inherit`·`tiered`·`N/A`·`-` 금지). 재개는 저장된 배정을 재사용한다.
 
 ## 실행별 상태
 
@@ -122,7 +122,7 @@ Build 상태 템플릿과 최종 보고는 [templates.md](references/templates.m
   [quality-loop.md](references/quality-loop.md)를 따른다.
 - 외부 상태를 바꾸는 commit/push/PR 절차는 승인된 Phase 5 이후에만 실행한다. Phase 10 직전
   현재 결과 freshness와 Assumption Gate를 다시 적용한다.
-- 독립 리뷰는 Phase 4.2 Luna 리뷰어(최대 3)와 Phase 4.3 Sol Max advisor다. 전역 지침의 이중/교차 리뷰
+- 독립 리뷰는 Phase 4.2 Readonly 리뷰어(최대 3)와 Phase 4.3 Advisor다. 전역 지침의 이중/교차 리뷰
   요건은 이로써 충족되며, `claude -p`·`gemini` 등 **외부 CLI 리뷰어를 호출하지 않는다**. 스킬 밖 작업이면
   fresh-context 서브에이전트 1개로 대체한다.
 - 사용자 입력이 필요하면 `USER_INPUT_REQUIRED: {질문}`으로 사용자 대면 턴을 끝내고, 응답은
@@ -137,14 +137,14 @@ Build 상태 템플릿과 최종 보고는 [templates.md](references/templates.m
 
 ## 서브에이전트와 형제 스킬
 
-고정 모델·effort·`fork_turns:none`·재시도/대체 금지 규칙은
-[agent-topology.md](references/agent-topology.md)를 따른다. executor 기본 effort는 `high`이며 명시적 legacy `tiered`만 난이도 1~8 `high`(Terra High), 9~10 `max`(Terra Max)로 확정한다.
+확정 모델·effort·`fork_turns:none`·재시도/대체 금지 규칙은
+[agent-topology.md](references/agent-topology.md)를 따른다. executor 기본 effort는 `high`이며 명시적 legacy `tiered`만 난이도 1~8 `high`(Worker High), 9~10 `max`(Worker Max)로 확정한다.
 advisor auto는 Phase 4.2 뒤 concrete `N/A|xhigh|max`로 resolve하고 fixed effort는 그대로 쓴다. Phase 2의 리스크 산정에는 보안, 데이터 이관, 복잡한 API/계약 변경을 반드시
 반영한다. 각 프롬프트에는 `{CWD}`, `{STATE_FILE}`, `{IMPL_NOTES}`, 현재/남은 Phase, 파일 소유권,
 읽기/쓰기 허용 범위를 넣는다. 공통 프롬프트와 사망 처리는 [agent-prompts.md](references/agent-prompts.md)를,
 역할별 판정 계약은 [references/agents/](references/agents/) 문서를 사용한다.
 
-모든 고정 spawn의 model/effort는 `{TOPOLOGY_MODELS}`의 해당 슬롯 확정값이며 역할 라벨(Sol High / Terra High·Max / Luna xHigh / Sol Max)은 슬롯 설정과 무관하게 유지된다.
+모든 하위 spawn의 model/effort는 `{TOPOLOGY_MODELS}`의 해당 슬롯 확정값이며 역할명(Orchestrator / Worker / Readonly / Advisor)은 모델 배정과 무관하게 유지된다.
 
 다른 기능이 필요할 때 호출 문자열에 위임하지 않는다. 해당 형제 스킬의 `SKILL.md`를 읽고 그 절차를
 현재 컨텍스트에서 수행하거나, 필요한 계약을 서브에이전트 프롬프트에 포함한다.
@@ -202,5 +202,5 @@ Phase 상태는 `DONE`, `IN_PROGRESS`, `PENDING`, `SKIPPED:{사유}`, `BLOCKED:{
 - TDD와 baseline: [tdd.md](references/tdd.md)
 - Phase 8: [quality-loop.md](references/quality-loop.md)
 - 위임 프롬프트: [agent-prompts.md](references/agent-prompts.md)
-- 고정 토폴로지: [agent-topology.md](references/agent-topology.md)
+- 세션 기반 토폴로지: [agent-topology.md](references/agent-topology.md)
 - 상태·보고·아카이브: [templates.md](references/templates.md)

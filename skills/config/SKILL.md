@@ -56,3 +56,5 @@ compact 입력을 JSON 슬롯 객체로 바꾼다. `{"topologyModels":{"executor
 `키 | 이전 | 이후 | 상태`와 실제 `{PROFILE_PATH}`를 보고한다. 상속이면 `[Assumption] 메인 워크트리 profile 상속: {경로}`를 명시한다. 수정도 이 상속 경로에 반영한다.
 상태는 DONE/PREVIEW 또는 BLOCKED:NO_PROFILE/INVALID_VALUE/INVALID_PROFILE/UNSUPPORTED_LAYOUT, 동시 변경은 STALE_PROFILE이다. 실패 시 원래 파일을 보존한다.
 `$codex-be-harness:doctor`로 확인한다. 진행 중·재개되는 워크플로우는 `## Profile Snapshot`을 유지하며 새 값은 다음 실행부터 적용한다. 오버라이드·상태·인증 설정은 수정하지 않는다.
+
+모델 추천 배정은 `$codex-be-harness:refresh-models`를 명시적으로 요청할 때만 갱신한다. 일반 실행·진단은 오프라인이다. 추천표는 확정 profile의 부모 아래 `be-harness/models.json`에 두며 profile 상속 시 같은 위치를 공유한다. `topologyModels`는 사용자 override로 보존되고 추천표보다 우선한다. orchestrator override는 legacy 읽기 호환용이며 경고 후 현재 세션을 유지한다. config의 슬롯 default는 override 삭제이며 저장된 추천(없으면 번들 표)으로 돌아간다. 명시 model-only 레코드는 번들 표의 effort를 사용한다.

@@ -19,7 +19,7 @@ helper는 읽기 전용 판정기다. evidence는 오케스트레이터가 실�
 2. 도구의 실제 cwd/sandbox writable root를 worker checkout으로 지정한다. worker CWD를 바꿀 수 없거나 스냅샷을 정확히 준비할 수 없으면 병렬 쓰기를 시작하지 않고, 기존 writer 종료 확인 뒤 한 명씩 순차 실행한다. 기본적으로 같은 CWD라는 이유로 병렬 쓰기를 강행하지 않는다.
 3. writer는 배정 파일만 수정하고 Git commit/index·다른 checkout·공유 상태를 건드리지 않는다. shared artifact는 지정된 단일 owner만 수정한다. 종료 배리어 전에는 부모로 변경을 가져오지 않는다.
 4. 종료가 확인되면 `writer_guard.py scope`에 `{cwd:worker절대경로,parent_cwd:부모root,start_sha:worker시작commit,allow_files:[…]}`를 전달한다. 시작 SHA부터의 tracked/index 변경과 **모든 nonignored 새 파일**을 검사한다. 범위 밖 경로/HEAD 이동은 BLOCKED:SLICE_SCOPE이며 patch 적용을 막는다. 부모 하위 디렉터리는 별도 checkout으로 인정하지 않는다.
-5. 위반을 발견해도 다른 writer 파일을 자동으로 되돌리지 않는다. 위반 worker의 결과와 원본을 보존해 오케스트레이터가 해당 checkout에서만 해결하고 재검사한다. PASS의 tracked patch와 **new_files payload 둘 다** 부모 시작 내용과 대조해 오케스트레이터가 검증한 뒤 배정된 단일 Terra executor가 순차 반영한다. untracked 파일은 Git patch가 비어도 new_files에 path/bytes_base64/sha256/mode(링크는 target)가 있으므로 누락하지 않는다. 새 경로가 부모에 아직 없는지 확인하고 배정 경로에만 exclusive 생성하며 bytes hash와 실행 권한을 대조한다. symlink는 링크 자체를 검토·생성하고 대상을 따라 읽거나 쓰지 않는다. 새 파일·삭제·rename을 포함한 반영 목록이 scope.paths와 일치해야 한다. 충돌·사용자 동시 편집은 덮어쓰지 않는다. 모든 반영 뒤 부모에서 빌드/테스트/tree를 다시 검증한다.
+5. 위반을 발견해도 다른 writer 파일을 자동으로 되돌리지 않는다. 위반 worker의 결과와 원본을 보존해 오케스트레이터가 해당 checkout에서만 해결하고 재검사한다. PASS의 tracked patch와 **new_files payload 둘 다** 부모 시작 내용과 대조해 오케스트레이터가 검증한 뒤 배정된 단일 Worker가 순차 반영한다. untracked 파일은 Git patch가 비어도 new_files에 path/bytes_base64/sha256/mode(링크는 target)가 있으므로 누락하지 않는다. 새 경로가 부모에 아직 없는지 확인하고 배정 경로에만 exclusive 생성하며 bytes hash와 실행 권한을 대조한다. symlink는 링크 자체를 검토·생성하고 대상을 따라 읽거나 쓰지 않는다. 새 파일·삭제·rename을 포함한 반영 목록이 scope.paths와 일치해야 한다. 충돌·사용자 동시 편집은 덮어쓰지 않는다. 모든 반영 뒤 부모에서 빌드/테스트/tree를 다시 검증한다.
 6. 임시 worktree는 모든 소유 writer 종료와 반영/보고가 확인된 뒤에만 정상 제거한다. 강제 제거·reset으로 다른 작업을 정리하지 않는다. BLOCKED worker의 receipt와 checkout은 경로를 보고하고 보존한다.
 
 Git worktree는 일반 경로의 우발적 교차 수정을 분리하지만 OS 보안 경계는 아니며 `.git` 객체/refs를 공유한다. helper는 ignored 빌드 산출물이나 Git 밖의 쓰기까지 전역 감시하지 않는다. 구현 소스를 ignored 경로에 쓰지 않고, 호스트가 제공하는 writable-root 제한을 함께 사용한다.
@@ -27,5 +27,5 @@ Git worktree는 일반 경로의 우발적 교차 수정을 분리하지만 OS �
 ## Native host 경계
 
 `interrupt_agent` 요청 접수나 `list_agents`의 단순 상태만으로 하위 writer/PTY 종료를 증명하지 않는다. 실제 작업 종료 응답과 소유 세션 정리 증거가 없으면 `BLOCKED:WRITER_UNKNOWN`이다.
-현재 collaboration spawn이 실제 cwd/writable root를 지정하는 기능을 제공하지 않으면 같은 트리에서 병렬 writer를 실행하지 않고 순차 Terra executor만 사용한다. 읽기 전용 리뷰는 병렬 실행할 수 있다.
+현재 collaboration spawn이 실제 cwd/writable root를 지정하는 기능을 제공하지 않으면 같은 트리에서 병렬 writer를 실행하지 않고 순차 Worker만 사용한다. 읽기 전용 리뷰는 병렬 실행할 수 있다.
 모델·effort·fork_turns:none과 writer 역할은 [agent-topology.md](agent-topology.md)가 정본이다. 이 문서는 타 모델 폴백을 허용하지 않는다.

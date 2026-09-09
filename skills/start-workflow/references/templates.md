@@ -10,6 +10,8 @@ Write tool로 `{STATE_FILE}`을 생성한다:
 
 `RUN_ID`는 Pre-flight `workflow_run.py create` 출력 그대로다. `START_SHA`만 구현 직전 `git rev-parse HEAD`로 1회 수집한다. Git 오류를 nogit/없음으로 대체하지 않는다. Run에는 helper가 반환한 실제 값을 넣는다.
 
+`orchestrator.model`/`orchestrator.effort`는 신규 실행에서 `session`/`inherit`다. 저장된 하위 배정은 추천표 갱신과 무관하게 재사용한다.
+
 `## Profile Snapshot`의 `profile_sha256`은 `sha256sum {PROFILE_PATH}` 64자, `resolved_*` 2줄은 Pre-flight가 해석한 절대 경로다(재개·형제 스킬은 이 값만 쓴다). `- topologyModels:`는 profile 값의 compact 표기(`default` 가능)이며 확정값은 `## Flags`의 `TOPOLOGY_MODELS`다.
 
 <!-- state-template-begin -->
@@ -87,26 +89,26 @@ Write tool로 `{STATE_FILE}`을 생성한다:
 [승격 발생 시 append — 예: `6.2 완료 직후` | `② 변경 소스 파일 5 > 3` | `a.go, b.go, …` | `standard 전환, 미재실행: 4.2`]
 
 ## Current Phase
-Phase 5 - 자율 실행 시작 (agent: Sol High orchestrator, model: {orchestrator.model}, effort: {orchestrator.effort})
+Phase 5 - 자율 실행 시작 (agent: Orchestrator, model: {orchestrator.model}, effort: {orchestrator.effort})
 
 ## Phase Assignments
 | Phase | Agent | Model | Effort | Status |
 |-------|-------|-------|--------|--------|
-| 1 | Sol High orchestrator + Luna edge-case | {orchestrator.model} / {readonly.model} | {orchestrator.effort} / {readonly.effort} | DONE |
-| 2 | Sol High orchestrator | {orchestrator.model} | {orchestrator.effort} | DONE |
-| 3 | Sol High orchestrator | {orchestrator.model} | {orchestrator.effort} | DONE |
-| 4.2 | Luna reviewers + Sol High | {readonly.model} / {orchestrator.model} | {readonly.effort} / {orchestrator.effort} | DONE |
-| 4.3 | fresh Sol Max advisor | {advisor.model 또는 N/A} | {advisor.effort 또는 N/A} | {advisor.status} |
-| 4.4 | Sol High approval relay | {orchestrator.model} | {orchestrator.effort} | DONE |
-| 5 | Sol High orchestrator | {orchestrator.model} | {orchestrator.effort} | IN_PROGRESS |
-| 6.1 | Terra executor | {executor.model} | {executor.effort} | PENDING |
-| 6.2 | Terra executor | {executor.model} | {executor.effort} | PENDING |
-| 7 | Sol High command + Terra fix | {orchestrator.model} / {executor.model} | {orchestrator.effort} / {executor.effort} | PENDING |
-| 8 | Sol High barriers + Luna review + Terra single writer | {orchestrator.model} / {readonly.model} / {executor.model} | {orchestrator.effort} / {readonly.effort} / {executor.effort} | PENDING |
-| 9 | Terra documentation executor | {executor.model} | {executor.effort} | PENDING |
-| 10 | Sol High Gate + Terra approved push/PR | {orchestrator.model} / {executor.model} | {orchestrator.effort} / {executor.effort} | PENDING |
-| 11 | Luna reflection | {readonly.model} | {readonly.effort} | PENDING |
-| 12 | Sol High report + Terra approved remediation | {orchestrator.model} / {executor.model} | {orchestrator.effort} / {executor.effort} | PENDING |
+| 1 | Orchestrator + Readonly edge-case | {orchestrator.model} / {readonly.model} | {orchestrator.effort} / {readonly.effort} | DONE |
+| 2 | Orchestrator | {orchestrator.model} | {orchestrator.effort} | DONE |
+| 3 | Orchestrator | {orchestrator.model} | {orchestrator.effort} | DONE |
+| 4.2 | Readonly reviewers + Orchestrator | {readonly.model} / {orchestrator.model} | {readonly.effort} / {orchestrator.effort} | DONE |
+| 4.3 | fresh Advisor | {advisor.model 또는 N/A} | {advisor.effort 또는 N/A} | {advisor.status} |
+| 4.4 | Orchestrator approval | {orchestrator.model} | {orchestrator.effort} | DONE |
+| 5 | Orchestrator | {orchestrator.model} | {orchestrator.effort} | IN_PROGRESS |
+| 6.1 | Worker | {executor.model} | {executor.effort} | PENDING |
+| 6.2 | Worker | {executor.model} | {executor.effort} | PENDING |
+| 7 | Orchestrator command + Worker fix | {orchestrator.model} / {executor.model} | {orchestrator.effort} / {executor.effort} | PENDING |
+| 8 | Orchestrator barriers + Readonly review + Worker single writer | {orchestrator.model} / {readonly.model} / {executor.model} | {orchestrator.effort} / {readonly.effort} / {executor.effort} | PENDING |
+| 9 | Worker documentation executor | {executor.model} | {executor.effort} | PENDING |
+| 10 | Orchestrator Gate + Worker approved push/PR | {orchestrator.model} / {executor.model} | {orchestrator.effort} / {executor.effort} | PENDING |
+| 11 | Readonly reflection | {readonly.model} | {readonly.effort} | PENDING |
+| 12 | Orchestrator report + Worker approved remediation | {orchestrator.model} / {executor.model} | {orchestrator.effort} / {executor.effort} | PENDING |
 
 ## Remaining Phases
 - Phase 6.1: 테스트 우선 (Red)
@@ -231,11 +233,11 @@ TDD SKIP이면 표 대신 `SKIPPED:{USER_OPT_OUT|NO_TEST_COMMAND|NO_TEST_INFRA|T
 1. **Workflow Report 작성 (1회 Write)**: Phase 6~11 결과를 종합해 아래 템플릿(섹션 머리글 변경 금지)으로 `{WORK_REPORT}`를 **한 번만** 작성한다. 최종 경로·파일명은 5의 스크립트가 정한다 — 오케스트레이터는 `{REPORT_DIR}` 아래에 직접 쓰지 않는다. 표 복제 금지: §2는 2~3줄 + "상세: 부록 A", §4의 단계별 건수는 "부록 B `Phase Results`"로 대신한다. §3·§4.1·§8은 유저 결정 근거이므로 그대로 채운다. `{IMPL_NOTES}`는 `## 미결 질문` 섹션만 읽는다 — 1건 이상이면 보고서 최상단에 "사용자 확인 필요" 블록을 삽입한다(다른 섹션은 읽지 않는다. 원문은 부록 C로 보존된다). 채팅에는 `{WORK_REPORT}` 경로 + §1 + 유저 결정이 필요한 항목(4.1, 8, 미결 질문, `[Assumption]`)만 출력한다. 전역 보고 양식이 따로 있어도 §1~§9 머리글을 유지한다.
 2. **TDD 미해결 항목 처리** (보고서 4.1 섹션이 비어있지 않을 때만): 자율 실행 중 이연된 `BLOCKED:*`·`[TestConflict]`·`[Breaking]`·`cannot_compile`을 각각 제시하고 결정을 받는다.
    Phase 6~8에서 유저 질문이 금지되어 이연된 항목들이므로 **여기가 첫 결정 지점**이다.
-   - 결정에 따른 작업 트리 수정이 필요하면 Terra executor가 수행하고 Sol High가 승인·상태·commit 조정을 한다. 승인 전에는 수정하지 않는다.
+   - 결정에 따른 작업 트리 수정이 필요하면 Worker가 수행하고 Orchestrator가 승인·상태·commit 조정을 한다. 승인 전에는 수정하지 않는다.
    - "이번 범위 외" 판단 항목은 보고서에 `보류`로 남긴다.
 3. **Read-back Diff 처리** (Phase 8.8 판정이 `WARN`/`FAIL`일 때만): 보고서 8번 섹션의 각 항목을 유저에게 제시하고 결정을 받는다.
    보완점 질문보다 **먼저** 처리한다 — 코드·Spec에 직접 영향을 주는 결정이기 때문이다.
-   - 결정에 따른 코드/Spec 수정이 필요하면 Terra executor가 수행하고 Sol High가 승인·상태·commit 조정을 한다. 유저가 승인하기 전에는 수정하지 않는다 (Spec 외 변경 금지 원칙).
+   - 결정에 따른 코드/Spec 수정이 필요하면 Worker가 수행하고 Orchestrator가 승인·상태·commit 조정을 한다. 유저가 승인하기 전에는 수정하지 않는다 (Spec 외 변경 금지 원칙).
    - 유저가 "이번 범위 외"로 판단한 항목은 보고서에 `보류`로 남기고 넘어간다.
 4. **보완점 적용** (Phase 11이 `DONE`일 때만): ① `.codex/be-harness/**` 로컬 저장 ② 건너뛰기 중
    결정받는다. 적용 절차·append 규칙은 아래 "보완점 적용 상세"를 따른다. 플러그인 원본은 절대

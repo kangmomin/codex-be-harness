@@ -15,8 +15,8 @@ description: "보호 브랜치 제한 없이 /commit 진행 후 현재 브랜치
 
 ## Workflow commit → 검증 → 원격 반영 배리어
 
-start-workflow 내부에서는 VERSION/논리 commit/amend/rebase 준비까지 수행한 뒤 **push 전에** 현재 HEAD·소유 변경 목록·완료 단계를 Sol High에 반환한다. Sol High가 check-current로 검증 입력을 대조한다. 내용 동일 v2·HEAD 비의존 이벤트는 재사용하고, stale인 빌드/테스트만 실행해 RESULTS_FILE에 새 iteration을 기록한다. 현재 HEAD로 check-current와 Assumption Gate를 통과시킨다.
-Sol High는 검증한 HEAD와 승인된 PUBLISH_POLICY를 전달해 같은 작업의 미완료 push/PR 단계만 재개한다. Terra는 HEAD가 같음을 즉시 확인하고 원격 반영한다. 이 재개에서는 VERSION/commit을 중복 수행하지 않는다. HEAD가 또 바뀌면 다시 배리어로 돌아간다. standalone은 요청된 검증/승인 범위를 따른다.
+start-workflow 내부에서는 VERSION/논리 commit/amend/rebase 준비까지 수행한 뒤 **push 전에** 현재 HEAD·소유 변경 목록·완료 단계를 Orchestrator에 반환한다. Orchestrator가 check-current로 검증 입력을 대조한다. 내용 동일 v2·HEAD 비의존 이벤트는 재사용하고, stale인 빌드/테스트만 실행해 RESULTS_FILE에 새 iteration을 기록한다. 현재 HEAD로 check-current와 Assumption Gate를 통과시킨다.
+Orchestrator는 검증한 HEAD와 승인된 PUBLISH_POLICY를 전달해 같은 작업의 미완료 push/PR 단계만 재개한다. Worker는 HEAD가 같음을 즉시 확인하고 원격 반영한다. 이 재개에서는 VERSION/commit을 중복 수행하지 않는다. HEAD가 또 바뀌면 다시 배리어로 돌아간다. standalone은 요청된 검증/승인 범위를 따른다.
 
 ## Step 1: 커밋
 

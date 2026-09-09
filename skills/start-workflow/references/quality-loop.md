@@ -12,9 +12,9 @@
 
 ```text
 for iteration in 1..{QL_MAX}:
-  Batch A: Sol High 8.1 command + Luna xHigh(read-only, parallel) 8.2+8.3 / 8.4
-  Phase 8.5 (Terra single writer): collected issues를 한 역할이 통합 수정
-  Batch B: Terra 8.6 E2E / 8.7 integration fix, Sol High command and judgment
+  Batch A: Orchestrator 8.1 command + Readonly(read-only, parallel) 8.2+8.3 / 8.4
+  Phase 8.5 (Worker single writer): collected issues를 한 역할이 통합 수정
+  Batch B: Worker 8.6 E2E / 8.7 integration fix, Orchestrator command and judgment
 
 after loop: Phase 8.8 isolated read-back exactly once
 ```
@@ -28,10 +28,10 @@ Batch A는 같은 기준 작업 트리를 읽으며 파일을 수정하지 않�
 
 | 단계 | light 실행 | `Phase Results` 기록 | 승격 판정 시점 |
 |------|-----------|---------------------|---------------|
-| 8.1 빌드+테스트 | 동일(Sol High 실행, `test_failures.py --baseline`) | `DONE`/`BLOCKED:*` | **③**: 회귀 대조 직후 · 종료 조건 평가 **전** — `regression ≥ 1` 또는 판정 불가(완주 N / `unparsed` 잔존) → `{QL_MAX}`=3 복원, 같은 iteration의 8.6부터 full, 루프 후 8.8 실행 |
-| 8.2 simplify dry-run + 8.3 convention (Luna 통합 스캔) | 스캔 1회는 실행하되 simplify 계약을 전달하지 않음(convention만) | 8.2 행 `SKIPPED:TIER_LIGHT`, 8.3 행 `DONE`(보고 "convention 위반: M건") | — |
+| 8.1 빌드+테스트 | 동일(Orchestrator 실행, `test_failures.py --baseline`) | `DONE`/`BLOCKED:*` | **③**: 회귀 대조 직후 · 종료 조건 평가 **전** — `regression ≥ 1` 또는 판정 불가(완주 N / `unparsed` 잔존) → `{QL_MAX}`=3 복원, 같은 iteration의 8.6부터 full, 루프 후 8.8 실행 |
+| 8.2 simplify dry-run + 8.3 convention (Readonly 통합 스캔) | 스캔 1회는 실행하되 simplify 계약을 전달하지 않음(convention만) | 8.2 행 `SKIPPED:TIER_LIGHT`, 8.3 행 `DONE`(보고 "convention 위반: M건") | — |
 | 8.4 scope-review · 8.5 통합 수정 · 8.7 통합 테스트 | 동일(축소 금지) | 동일 | — |
-| 8.6 E2E | Terra에 `--smoke` 전달(`{MAX_ITER}`=3) | 동일 | **⑥**: 8.6 결과 수신 직후 — 종료 상태 `BLOCKED:MAX_ITERATIONS`·`BLOCKED:NO_PROGRESS` 또는 실행 수준 `full(smoke 미적용: …)` → standard + 현재 iteration 종료 후 standard iteration 1회 추가(그 뒤 종료 조건 평가) |
+| 8.6 E2E | Worker에 `--smoke` 전달(`{MAX_ITER}`=3) | 동일 | **⑥**: 8.6 결과 수신 직후 — 종료 상태 `BLOCKED:MAX_ITERATIONS`·`BLOCKED:NO_PROGRESS` 또는 실행 수준 `full(smoke 미적용: …)` → standard + 현재 iteration 종료 후 standard iteration 1회 추가(그 뒤 종료 조건 평가) |
 | iteration 종료 | ⑦ 재집계(`START_SHA` 기준 변경 소스 파일 > 3 또는 금지 조건) | 승격 이력 표 행 | **⑦**: 종료 조건·`{QL_MAX}` 상한 평가 **전**, latch 1회 |
 | 8.8 Read-back | 실행 안 함 | `SKIPPED:TIER_LIGHT` (승격됐다면 실행·`DONE`) | — |
 
@@ -45,7 +45,7 @@ Batch A는 같은 기준 작업 트리를 읽으며 파일을 수정하지 않�
 python3 {SKILL_DIR}/assets/test_failures.py --runner auto --exit-code $EXIT --suite unit --command "{testCommand}" --baseline {STATE_FILE} {RUN_DIR}/test-output.log
 ```
 
-회귀 대조는 이 스크립트가 수행한다(Tombstone 매핑·`flaky` 재실행 `--rerun`·폴백은 [tdd.md](tdd.md) "Phase 8: 회귀 대조"). exit ≠ 0이면 Sol High가 tdd.md 규칙으로 직접 대조하고 진단 `script_fallback(test_failures:{사유})`를 남긴다.
+회귀 대조는 이 스크립트가 수행한다(Tombstone 매핑·`flaky` 재실행 `--rerun`·폴백은 [tdd.md](tdd.md) "Phase 8: 회귀 대조"). exit ≠ 0이면 Orchestrator가 tdd.md 규칙으로 직접 대조하고 진단 `script_fallback(test_failures:{사유})`를 남긴다.
 
 1. Test Map에 있는 실패 → `new_red`
 2. baseline 동일 ID + 동일 signature → `pre_existing`
@@ -55,11 +55,11 @@ python3 {SKILL_DIR}/assets/test_failures.py --runner auto --exit-code $EXIT --su
 수정 큐에는 `regression`, `new_red` 순서로 넣는다. `pre_existing`은 범위 밖으로 보고만 한다. TDD가
 생략됐으면 분류 없이 전체 실패 로그를 전달한다.
 
-**light 승격 ③**: `regression` ≥ 1, 또는 판정 불가(러너 완주 N / `unparsed` 잔존을 Sol High도 분류하지 못함) → 종료 조건 평가 전에 standard 전환(`{QL_MAX}` = 3 복원), 이 iteration의 8.6부터 full E2E, 루프 후 8.8 실행([verification-tier.md](verification-tier.md) §4). `## Verification Tier` 승격 이력과 `Phase Results` 진단 `tier_escalated(③)`에 기록한다.
+**light 승격 ③**: `regression` ≥ 1, 또는 판정 불가(러너 완주 N / `unparsed` 잔존을 Orchestrator도 분류하지 못함) → 종료 조건 평가 전에 standard 전환(`{QL_MAX}` = 3 복원), 이 iteration의 8.6부터 full E2E, 루프 후 8.8 실행([verification-tier.md](verification-tier.md) §4). `## Verification Tier` 승격 이력과 `Phase Results` 진단 `tier_escalated(③)`에 기록한다.
 
 ## Phase 8.2 + 8.3: Simplify + Convention
 
-`fork_turns:none`의 Luna xHigh 읽기 전용 스캐너가 두 절차를 순서대로 실행하되 결과와 상태를 분리한다.
+`fork_turns:none`의 Readonly 읽기 전용 스캐너가 두 절차를 순서대로 실행하되 결과와 상태를 분리한다.
 
 1. 오케스트레이터가 `../../simplify-loop/SKILL.md`를 읽고 `--dry-run` 계약을 스캐너에 전달해 후보만 수집한다.
 2. 오케스트레이터가 `../../convention-check/SKILL.md`를 읽고 검사 계약을 전달해 위반만 수집한다.
@@ -85,12 +85,12 @@ convention 위반: M건
 
 ## Phase 8.4: Scope review
 
-[agents/scope-reviewer.md](agents/scope-reviewer.md)를 읽고 `fork_turns:none`의 Luna xHigh 역할에서 Technical Spec 기준의 누락/불일치만 받는다.
+[agents/scope-reviewer.md](agents/scope-reviewer.md)를 읽고 `fork_turns:none`의 Readonly 역할에서 Technical Spec 기준의 누락/불일치만 받는다.
 코드 스타일은 보지 않으며 파일을 수정하지 않는다. `EC-nn` ID를 보존한다.
 
 ## Phase 8.5: Integrated fix — single writer
 
-Batch A 이슈가 하나라도 있으면 `fork_turns:none`의 Terra executor 한 수정 역할에 아래 순서로 전달한다.
+Batch A 이슈가 하나라도 있으면 `fork_turns:none`의 Worker 한 수정 역할에 아래 순서로 전달한다.
 
 1. build/test: `regression` → `new_red`
 2. Scope 누락
@@ -98,22 +98,22 @@ Batch A 이슈가 하나라도 있으면 `fork_turns:none`의 Terra executor 한
 4. 안전한 Simplify 후보
 
 TDD 활성 시 테스트 파일과 `pre_existing` 실패는 수정하지 않는다. 테스트 충돌은 `[TestConflict]`로
-보고한다. 같은 파일의 여러 이슈는 한 번의 편집으로 합친다. Terra는 설계 결정·편차·트레이드오프·
-을 구조화 결과로 반환하고, Sol High만 Implementation Notes에 append한다.
+보고한다. 같은 파일의 여러 이슈는 한 번의 편집으로 합친다. Worker는 설계 결정·편차·트레이드오프·
+을 구조화 결과로 반환하고, Orchestrator만 Implementation Notes에 append한다.
 `buildCommand`가 있으면 수정 후 확인한다. 변경이 있으면 `modified = true`다.
 
 ## Phase 8.6: E2E test loop
 
-profile의 `e2eEnabled`, `runServerCommand`, `serverUrl`이 모두 유효할 때만 Terra executor가 수행하고
-PID/세션 핸들과 정리 결과를 Sol High에 반환한다. Sol High만 그 handle을 `{STATE_FILE}`에 기록한다. 그렇지 않으면
+profile의 `e2eEnabled`, `runServerCommand`, `serverUrl`이 모두 유효할 때만 Worker가 수행하고
+PID/세션 핸들과 정리 결과를 Orchestrator에 반환한다. Orchestrator만 그 handle을 `{STATE_FILE}`에 기록한다. 그렇지 않으면
 명확한 `SKIPPED:{사유}`를 기록하고 `modified`에는 영향을 주지 않는다.
 
-Sol High가 형제 `../../e2e-test-loop/SKILL.md`와 그 skill-relative assets를 읽고, 해결된
-절대 asset 경로와 계약, `## Profile Snapshot` 전문(resolved 경로 포함)을 같은 Terra executor에 전달하고 profile 재독을 금지한다(light면 `--smoke` 인자를 함께 전달한다 — 형제 절차의 `{MAX_ITER}` = 3). Terra는 중첩 agent spawn이나 직접 commit 없이
+Orchestrator가 형제 `../../e2e-test-loop/SKILL.md`와 그 skill-relative assets를 읽고, 해결된
+절대 asset 경로와 계약, `## Profile Snapshot` 전문(resolved 경로 포함)을 같은 Worker에 전달하고 profile 재독을 금지한다(light면 `--smoke` 인자를 함께 전달한다 — 형제 절차의 `{MAX_ITER}` = 3). Worker는 중첩 agent spawn이나 직접 commit 없이
 E2E와 실패 수정까지 같은 배정 안에서 수행하고 구조화 결과만 반환한다. asset 경로를
 프로젝트 CWD나 plugin 전역 경로로 추측하지 않는다. 서버는 다음 생명주기 계약을 지킨다.
 
-- Terra가 시작한 PID 또는 실행 세션 핸들과 정리 결과를 Sol High에 반환하고, Sol High가 `{STATE_FILE}`에 기록한다.
+- Worker가 시작한 PID 또는 실행 세션 핸들과 정리 결과를 Orchestrator에 반환하고, Orchestrator가 `{STATE_FILE}`에 기록한다.
 - readiness와 lock polling은 매 wait를 60초 미만으로 yield하되 profile/형제 절차의 총 timeout을
   줄이지 않는다.
 - 성공, 테스트 실패, 수정 실패, 사용자 중단, 상위 Phase 중단을 포함한 모든 exit에서 자신이 시작한
@@ -123,17 +123,17 @@ E2E와 실패 수정까지 같은 배정 안에서 수행하고 구조화 결과
 결과는 e2e-test-loop 종료 출력 줄을 **그대로** 옮긴 `이슈: N건, 수정: Y/N, 종료 상태: {DONE|BLOCKED:*|SKIPPED:*}, 실행 수준: {smoke|full|full(smoke 미적용: 사유)}, E2E 리포트: {경로|없음 (SKIPPED:사유|BLOCKED:LOCK_UNAVAILABLE)}`다. 수정 Y면 `modified = true`다. 필드 대응: `이슈: N` = `- 발견된 이슈:` 값, `수정: Y` ⇔ `- 수정된 이슈:` ≥ 1건(0건이면 `N`), 나머지 세 필드는 `- 종료 상태:`·`- 실행 수준:`·`- E2E 리포트:` 줄의 값 그대로. e2e-test-loop의 SKIPPED·BLOCKED 출력처럼 줄이 없는 필드는 `이슈: 0건`·`수정: N`으로, 종료 상태는 그 출력의 `SKIPPED:{사유}`/`BLOCKED:*`로, 실행 수준은 요청 수준(light면 `smoke`, 아니면 `full`)으로 채운다.
 
 - `SKIPPED:*` → `modified` 불변, `Phase Results` 8.6 행에 `E2E 리포트: 없음 (SKIPPED:{사유})`.
-- Sol High가 실행 수준·종료 상태를 `Phase Results` 8.6 행에, 리포트 경로를 `## Artifacts` `e2e-report:`에 기록한다 — 렌더러 stdout `경로:`/`상태:` 2줄을 그대로(`-2`/`-3` 접미 경로·`DEGRADED({사유})`·`(원시 기록, 렌더링 실패: …)` 포함; exit code가 아니라 출력 줄이 기준).
+- Orchestrator가 실행 수준·종료 상태를 `Phase Results` 8.6 행에, 리포트 경로를 `## Artifacts` `e2e-report:`에 기록한다 — 렌더러 stdout `경로:`/`상태:` 2줄을 그대로(`-2`/`-3` 접미 경로·`DEGRADED({사유})`·`(원시 기록, 렌더링 실패: …)` 포함; exit code가 아니라 출력 줄이 기준).
 - **하위 `BLOCKED:LOCK_UNAVAILABLE`** → `Phase Results` 8.6 행 `BLOCKED:LOCK_UNAVAILABLE`, `## Artifacts` `e2e-report: 없음 (BLOCKED:LOCK_UNAVAILABLE)`, light면 승격 ⑥(E2E 미완)과 동일 취급, 루프는 다른 단계로 계속(테스트 판정 불변), Workflow Report §4 `- **E2E**:`에 그대로 표기, Phase 10 Gate 보류 3택은 [build-phases.md](build-phases.md) Phase 10.
 
 **light 승격 ⑥**: 8.6 결과 수신 직후 — 종료 상태가 `BLOCKED:MAX_ITERATIONS`·`BLOCKED:NO_PROGRESS`이거나 실행 수준이 `full(smoke 미적용: …)`이면 standard 전환 + 현재 iteration 종료 후 standard iteration 1회 추가(그 뒤 종료 조건 평가; [verification-tier.md](verification-tier.md) §4). 진단 `tier_escalated(⑥)`.
 
 ## Phase 8.7: Integration test
 
-`makeTestCommand`가 있으면 Sol High가 순차 실행한다. 없으면 `SKIPPED:PROFILE_EMPTY`다. 실패하면 Terra executor에게 8.5와 같은
-single-writer 수정 계약으로 실패 로그만 전달하고 Sol High가 재실행한다. 수정이 있으면 `modified = true`다.
+`makeTestCommand`가 있으면 Orchestrator가 순차 실행한다. 없으면 `SKIPPED:PROFILE_EMPTY`다. 실패하면 Worker에게 8.5와 같은
+single-writer 수정 계약으로 실패 로그만 전달하고 Orchestrator가 재실행한다. 수정이 있으면 `modified = true`다.
 
-TDD 활성일 때 실행 로그를 `test_failures.py --runner auto --exit-code {EXIT} --suite integration --baseline "{STATE_FILE}" "{INTEGRATION_LOG}"`로 대조하며 unit과 같은 regression/new_red/flaky/unparsed 기준을 적용한다. TDD SKIP이면 실제 exit·완주 상태로 판정한다. Sol High가 `kind:integration`과 regression_count를 기록하고, 명령 부재도 해당 kind의 `SKIPPED:PROFILE_EMPTY`로 남긴다. integration의 regression/판정 불가도 기존 light 승격 ③의 근거다.
+TDD 활성일 때 실행 로그를 `test_failures.py --runner auto --exit-code {EXIT} --suite integration --baseline "{STATE_FILE}" "{INTEGRATION_LOG}"`로 대조하며 unit과 같은 regression/new_red/flaky/unparsed 기준을 적용한다. TDD SKIP이면 실제 exit·완주 상태로 판정한다. Orchestrator가 `kind:integration`과 regression_count를 기록하고, 명령 부재도 해당 kind의 `SKIPPED:PROFILE_EMPTY`로 남긴다. integration의 regression/판정 불가도 기존 light 승격 ③의 근거다.
 
 ## iteration 종료 시 (light만): 승격 ⑦ 재평가
 
@@ -160,7 +160,7 @@ TDD 활성일 때 실행 로그를 `test_failures.py --runner auto --exit-code {
 
 ③⑥⑦ 티어 전환은 이 표의 평가보다 **먼저** 적용한다(위 공통 규칙).
 
-Sol High가 조정하는 수정 커밋은 `Fix: 품질 루프 수정 (반복 N)`이며 실제 변경 파일만 stage한다.
+Orchestrator가 조정하는 수정 커밋은 `Fix: 품질 루프 수정 (반복 N)`이며 실제 변경 파일만 stage한다.
 
 # Phase 8.8 — Isolated Spec read-back
 
@@ -180,7 +180,7 @@ Sol High가 조정하는 수정 커밋은 `Fix: 품질 루프 수정 (반복 N)`
 
 ## Isolation contract
 
-`fork_turns:none`의 Luna xHigh Read-back 역할에는 다음을 절대 전달하지 않는다.
+`fork_turns:none`의 Readonly Read-back 역할에는 다음을 절대 전달하지 않는다.
 
 - `{STATE_FILE}` 경로
 - Spec, Plan, Edge Cases
@@ -229,7 +229,7 @@ Phase 12에서 사용자 결정을 받는다.
 
 ## 검증 결과와 현재 변경 범위
 
-검증 전후 `workflow_results.py tree --cwd "{CWD}"`가 같을 때만 tested_tree로 기록한다. Sol High만 RESULTS_FILE에 새 iteration의 unit/integration/build/lint/typecheck/e2e/readback 결과 객체를 기록한다. unit/integration에는 regression_count를 포함한다. 하위 역할은 결과만 반환한다.
+검증 전후 `workflow_results.py tree --cwd "{CWD}"`가 같을 때만 tested_tree로 기록한다. Orchestrator만 RESULTS_FILE에 새 iteration의 unit/integration/build/lint/typecheck/e2e/readback 결과 객체를 기록한다. unit/integration에는 regression_count를 포함한다. 하위 역할은 결과만 반환한다.
 JSON의 최종 판정·회귀 수가 Gate/리포트의 정본이며 Markdown 요약은 표시용이다. 수정 뒤 과거 PASS를 재사용하지 않는다. TDD SKIP도 실제 검증 실패를 PASS로 바꾸는 조건이 아니다.
 품질·리뷰·E2E·Read-back 범위는 START_SHA부터 현재 작업 트리까지 workflow_scope.py가 수집한 명시 목록이다. committed/staged/unstaged/소유 untracked·삭제·symlink를 보존한다. Read-back 자식은 이 목록으로만 복원하고 Spec/Plan/상태 경로를 받지 않는다.
 

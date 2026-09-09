@@ -1,0 +1,6 @@
+interface:
+  display_name: "Refresh Models"
+  short_description: "요청 시 공식 가이드와 호스트 지원 정보로 역할별 모델 추천 갱신"
+  default_prompt: "$refresh-models 최신 모델 기준으로 이 프로젝트의 역할별 추천 배정을 갱신해줘."
+policy:
+  allow_implicit_invocation: false

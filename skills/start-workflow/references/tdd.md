@@ -82,7 +82,7 @@ Go는 패키지 요약 줄의 import path를 포함한 `{package}::TestX/sub`를
 ## sequential 모드
 
 ```
-Terra executor (`fork_turns:none`):
+Worker (`fork_turns:none`):
   role: Red test writer
   model: {executor.model}
   effort: {executor.effort} (기본 high; 명시적 legacy tiered만 난이도 1~8 high, 9~10 max)
@@ -112,7 +112,7 @@ Terra executor (`fork_turns:none`):
 
 ## parallel-slices 모드 (배리어 필수)
 
-병렬 Terra executor는 빌드·커밋·테스트 실행·상태 파일 쓰기가 모두 금지되어 있다. 따라서 **Sol High orchestrator가 검증과 기록을 단독 소유한다.**
+병렬 Worker는 빌드·커밋·테스트 실행·상태 파일 쓰기가 모두 금지되어 있다. 따라서 **Orchestrator가 검증과 기록을 단독 소유한다.**
 
 ```
 ① writer-safety.md의 실제 checkout 격리를 지원할 때만 슬라이스별 병렬; 미지원 호스트는 순차 writer
@@ -120,7 +120,7 @@ Terra executor (`fork_turns:none`):
    - 금지: 커밋 / 빌드 / 테스트 실행 / 상태 파일 쓰기
    - 반환: { Spec ID, 테스트명, 파일, 대상 심볼 } 구조화 결과
 
-② [배리어] 실제 writer 종료·scope PASS 후 단일 Terra가 소유 patch를 통합하고 Sol High가 1회 글로벌 Red 검증
+② [배리어] 실제 writer 종료·scope PASS 후 단일 Worker가 소유 patch를 통합하고 Orchestrator가 1회 글로벌 Red 검증
    {buildCommand} && {testCommand}
 
 ③ 오케스트레이터가 TDD Test Map 기록 + Red 커밋
@@ -160,7 +160,7 @@ git commit -m "Test: {작업 요약} — 실패 테스트 선작성 (Red)"
 
 # Phase 6.2: 구현 (Green)
 
-Phase 6의 Terra executor 구현 프롬프트(`agent-prompts.md`)를 사용하되, TDD가 활성일 때 아래 규칙을 **추가로** 전달한다.
+Phase 6의 Worker 구현 프롬프트(`agent-prompts.md`)를 사용하되, TDD가 활성일 때 아래 규칙을 **추가로** 전달한다.
 
 ```
     ## TDD 규칙 (Phase 6.1에서 테스트가 선작성되었습니다)
@@ -174,11 +174,11 @@ Phase 6의 Terra executor 구현 프롬프트(`agent-prompts.md`)를 사용하�
 
 ## `[TestConflict]` 판정 (오케스트레이터)
 
-자율 실행 구간이므로 Sol High가 유저에게 묻지 않고 판정한다. **기준은 Spec 원문이다.**
+자율 실행 구간이므로 Orchestrator가 유저에게 묻지 않고 판정한다. **기준은 Spec 원문이다.**
 
 | 상황 | 판정 | 행동 |
 |------|------|------|
-| 테스트 단언이 Spec 조항과 다름 | 테스트 오류 | Sol High가 Terra executor에 테스트 수정을 지시하고 Test Map 갱신·사유 기록을 조정 |
+| 테스트 단언이 Spec 조항과 다름 | 테스트 오류 | Orchestrator가 Worker에 테스트 수정을 지시하고 Test Map 갱신·사유 기록을 조정 |
 | Spec 조항이 모호하거나 부재 | Spec 문제 | 코드·테스트 **양쪽 다 유지**, `[Assumption]` 기록, 해당 ID를 미해결로 표시하고 진행 → Phase 12에서 유저 결정 |
 
 두 번째 경우 코드를 고치지 않는 이유는 `Spec 외 변경 금지 원칙`과 같다 — 유저가 승인한 Spec을 조용히 바꾸지 않는다.
@@ -231,7 +231,7 @@ Phase 8.5 통합 수정 에이전트에는 이 순서대로 이슈를 전달하�
 
 기존 격리 3규칙에 **네 번째 조항**을 추가한다:
 
-> ④ `## TDD Test Map`을 Luna xHigh read-back 에이전트에 **전달하지 않는다.**
+> ④ `## TDD Test Map`을 Readonly read-back 에이전트에 **전달하지 않는다.**
 > Test Map은 Spec ID ↔ 테스트 매핑이므로, 이를 본 에이전트는 Spec을 역추론하게 되어 격리가 무너진다.
 > Test Map은 **오케스트레이터의 대조 입력**으로만 쓴다.
 
@@ -251,6 +251,6 @@ Phase 8.5 통합 수정 에이전트에는 이 순서대로 이슈를 전달하�
 
 ## 검증 결과와 현재 변경 범위
 
-검증 전후 `workflow_results.py tree --cwd "{CWD}"`가 같을 때만 tested_tree로 기록한다. Sol High만 RESULTS_FILE에 새 iteration의 unit/integration/build/lint/typecheck/e2e/readback 결과 객체를 기록한다. unit/integration에는 regression_count를 포함한다. 하위 역할은 결과만 반환한다.
+검증 전후 `workflow_results.py tree --cwd "{CWD}"`가 같을 때만 tested_tree로 기록한다. Orchestrator만 RESULTS_FILE에 새 iteration의 unit/integration/build/lint/typecheck/e2e/readback 결과 객체를 기록한다. unit/integration에는 regression_count를 포함한다. 하위 역할은 결과만 반환한다.
 JSON의 최종 판정·회귀 수가 Gate/리포트의 정본이며 Markdown 요약은 표시용이다. 수정 뒤 과거 PASS를 재사용하지 않는다. TDD SKIP도 실제 검증 실패를 PASS로 바꾸는 조건이 아니다.
 품질·리뷰·E2E·Read-back 범위는 START_SHA부터 현재 작업 트리까지 workflow_scope.py가 수집한 명시 목록이다. committed/staged/unstaged/소유 untracked·삭제·symlink를 보존한다. Read-back 자식은 이 목록으로만 복원하고 Spec/Plan/상태 경로를 받지 않는다.

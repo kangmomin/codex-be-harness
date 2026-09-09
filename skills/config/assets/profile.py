@@ -28,7 +28,7 @@ STRINGS = set("buildCommand testCommand lintCommand typeCheckCommand runServerCo
               "feedbackUpstreamRepo e2eLockDir reportDir mainBranch featureBranchPrefix hotfixBranchPrefix commitCoAuthor".split())
 ARRAYS = set("sourceDirs testDirs commitPrefixes projectConventions".split())
 SLOTS = ("orchestrator", "executor", "readonly", "advisor")
-EFFORTS = ("minimal", "low", "medium", "high", "xhigh", "max", "tiered")
+EFFORTS = ("minimal", "low", "medium", "high", "xhigh", "max", "ultra", "tiered")
 COMMON = dict(language="ko", feedbackUpstreamRepo="", reportDir=".codex/harness-reports",
               e2eLockDir="", projectConventions=["AGENTS.md"])
 PRESETS = {
@@ -422,14 +422,14 @@ def resolve(cwd, domain):
                             validate_slot(slot, record)
                             valid[slot] = record
                         except ProfileError as exc:
-                            diagnostics.append(str(exc) + "; use this slot's agent-topology default")
+                            diagnostics.append(str(exc) + "; use saved recommendation or bundled default")
                     value = valid
                 else:
                     validate(key, value, domain)
             except ProfileError as exc:
                 if key != "topologyModels":
                     raise
-                diagnostics.append(str(exc) + "; use agent-topology slot defaults")
+                diagnostics.append(str(exc) + "; use saved recommendations or bundled defaults")
                 continue
             values[key], sources[key] = value, source
     elif domain == "fe":
