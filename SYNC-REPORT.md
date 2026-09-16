@@ -1,3 +1,26 @@
+## 📋 Task Report: Scope 리뷰 근거 보강 (0.6.4)
+
+### 1. Pre-Review (Plan)
+- **Orchestrator Feedback**: 기존 범위/결과 자산을 재사용해 diff 전달 누락과 근거 없는 PASS를 막는다.
+- **독립 리뷰어 Feedback**: index-only 변경, 병렬 8.1 pending, 시도별 자료 보존, archive 소비부를 함께 연결해야 한다.
+- **Refinement**: 별도 check-scope와 시도별 artifact를 추가하고 최초/보완 이력·처분을 보존했다.
+
+### 2. Implementation Details
+- **Assumptions**: 없음. 사용자 승인 범위는 두 플러그인 보강 및 main 직접 commit/push다.
+- **Key Changes**: scope 수집기의 선택 patch-dir, scope 결과 계약, Phase 8/10 마감, Readonly 입력·출력, 아카이브와 처분 표를 연결했다.
+- **동기화**: source helper/근거 계약은 채택, 호스트 경로·역할·RUN_ID는 Codex 방식으로 변환, FE 단계 및 모델/effort 변경은 제외했다. source의 최종 커밋은 [970f952](https://github.com/kangmomin/harness-plugins/commit/970f9529522b84190a2e68888d5463e14558bf81)이며 파일 해시는 UPSTREAM-SYNC.json의 이번 선택 기록을 따른다. 기존 전체 동기화 기준은 보존한다.
+- **공식 가이드**: [GPT-6 Astra 가이드](https://developers.openai.com/api/docs/guides/latest-model?model=gpt-6-astra), 확인 2026-09-16. 필수 검사 뒤 새 실패·수정 영향이 없는 반복은 추가하지 않는 원칙을 유지했다.
+
+### 3. Final Convention Review
+- **Layer Analysis**: 제품 레이어 변경 없음. 상태 수집·검증·표시의 기존 분리를 유지한다.
+- **Simplicity Check**: 새 범위 수집 엔진·리뷰 통계 시스템 없이 기존 helper와 상태를 확장했다.
+
+### 4. Status
+- **Verification**: scripts/verify.sh 통과(구조 검사, Python 125개, Node 5개). 플러그인 manifest·18개 스킬·shellcheck 모두 통과. 독립 최종 리뷰 APPROVE. 문서 후속 수정과 최종 source SHA 반영 뒤 구조 검사도 통과했다.
+- **Cleanup**: 원본 Codex 체크아웃의 진행 중인 다른 변경을 보존하고 별도 main 체크아웃에서 이번 소유 변경만 반영한다.
+
+---
+
 ## 📋 Task Report: 기본 high + 선택 advisor (0.6.3)
 
 ### 1. Pre-Review (Plan)

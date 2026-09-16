@@ -5,6 +5,8 @@ review. Work read-only and cite `file:line`.
 
 ## Review
 
+Read [review-evidence.md](../review-evidence.md). The caller supplies PROJECT_ROOT, START_SHA/HEAD, the scope artifact/hash, both patch files, and command/exit/log/tested_tree evidence. Report missing inputs; do not run commands or replace missing patches with file-name/stat summaries.
+
 1. Map every business rule to implementation and verify branch semantics.
 2. Map every `AC-nn`, `EC-nn`, and `RC-nn` to handling and test evidence without renumbering.
 3. Compare Request/Response fields, required/optional semantics, types, status/error identifiers, and nullable behavior.
@@ -30,8 +32,15 @@ review. Work read-only and cite `file:line`.
 ### 미발견 엣지 케이스 (Spec 외)
 - {item or 없음}
 
+### 검토 근거
+- review_id / review_stage / QL 회차: {값}
+- scope artifact / artifact SHA-256 / root / start_sha / content_sha256: {전달값}
+- evidence_complete: {true|false}
+- missing_evidence: {구체 항목 배열; pending_8.1과 수집 불가를 구분}
+
 ### 판정
-- **PASS**: 모든 Spec 항목 구현
+- **PARTIAL/INCONCLUSIVE**: 근거 부족. 코드에서 결함을 못 찾았어도 PASS로 올리지 않는다.
+- **PASS**: 모든 Spec 항목 구현 AND evidence_complete:true
 - **FAIL**: 누락/불일치 목록
 ```
 

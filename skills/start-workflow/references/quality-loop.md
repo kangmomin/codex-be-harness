@@ -37,13 +37,18 @@ Batch A는 같은 기준 작업 트리를 읽으며 파일을 수정하지 않�
 
 ## Phase 8.1: Build + test
 
+BUILD_LOG와 UNIT_LOG는 Batch A에서 새로 만든 `{RUN_DIR}/scope-{REVIEW_ATTEMPT}` 안의 `build.log`·`unit.log` 절대 경로다. REVIEW_ATTEMPT는 RUN 전체에서 증가하므로 QL 재진입의 iteration 초기화로 이전 로그를 덮지 않는다. 같은 명령을 재실행할 때도 새 미사용 로그 경로를 배정한다.
+
 `buildCommand`와 `testCommand` 중 존재하는 명령을 직접 실행하고 로그를 수집한다. TDD 활성 시
 [tdd.md](tdd.md)의 baseline 대조 순서로 실패를 분류한다.
 
 ```bash
-{testCommand} > {RUN_DIR}/test-output.log 2>&1; EXIT=$?
-python3 {SKILL_DIR}/assets/test_failures.py --runner auto --exit-code $EXIT --suite unit --command "{testCommand}" --baseline {STATE_FILE} {RUN_DIR}/test-output.log
+{buildCommand} > "{BUILD_LOG}" 2>&1; BUILD_EXIT=$?
+{testCommand} > "{UNIT_LOG}" 2>&1; TEST_EXIT=$?
+python3 {SKILL_DIR}/assets/test_failures.py --runner auto --exit-code "$TEST_EXIT" --suite unit --command "{testCommand}" --baseline {STATE_FILE} "{UNIT_LOG}"
 ```
+
+비어 있는 명령은 해당 검사의 SKIPPED:PROFILE_EMPTY로 기록하고 실행하지 않는다. 각 exit·완주·로그·tested_tree를 보존하며 자동 errexit이 실패 근거 수집을 생략하지 않게 실행한다.
 
 회귀 대조는 이 스크립트가 수행한다(Tombstone 매핑·`flaky` 재실행 `--rerun`·폴백은 [tdd.md](tdd.md) "Phase 8: 회귀 대조"). exit ≠ 0이면 Orchestrator가 tdd.md 규칙으로 직접 대조하고 진단 `script_fallback(test_failures:{사유})`를 남긴다.
 
@@ -85,8 +90,17 @@ convention 위반: M건
 
 ## Phase 8.4: Scope review
 
+[review-evidence.md](review-evidence.md)를 먼저 읽고 실제 scope.json·두 diff·검사 로그를 전달한다. Batch A 전 writer 종료 후 수집하며, 병렬 8.1 대기는 PARTIAL로 보존하고 합류 뒤 같은 독립 리뷰어가 보완한다. 근거 미완료는 PASS나 부모 대체 검토로 닫지 않는다.
+
 [agents/scope-reviewer.md](agents/scope-reviewer.md)를 읽고 `fork_turns:none`의 Readonly 역할에서 Technical Spec 기준의 누락/불일치만 받는다.
 코드 스타일은 보지 않으며 파일을 수정하지 않는다. `EC-nn` ID를 보존한다.
+
+위임 입력: PROJECT_ROOT={CWD}, START_SHA={START_SHA}, 수집 HEAD={SCOPE_HEAD},
+scope artifact={SCOPE_FILE}, artifact SHA-256={SCOPE_FILE_SHA256}, 범위 hash={SCOPE_HASH},
+변경 목록={SCOPE_PATHS}, 두 diff={PATCH_FILE}/{INDEX_PATCH_FILE},
+검사={명령·exit·완주·회차별 로그·tested_tree | pending_8.1 | 정당한 SKIPPED 사유},
+review ID/시도={REVIEW_ATTEMPT}, QL 회차={iteration}, 첫/보완={REVIEW_STAGE}, 이전 finding ID·처분={REVIEW_FINDINGS}.
+출력은 코드 판정과 evidence_complete·missing_evidence를 구분한다.
 
 ## Phase 8.5: Integrated fix — single writer
 
@@ -153,10 +167,12 @@ TDD 활성일 때 실행 로그를 `test_failures.py --runner auto --exit-code {
 
 | 종료 조건 | 결과 |
 |----------|------|
-| `modified == false` AND 테스트 `PASS` | 루프 종료 |
-| TDD 생략 AND `modified == false` AND (합산 테스트 `PASS` 또는 정당한 `SKIPPED`) | 루프 종료 |
+| `modified == false` AND 테스트 `PASS` AND scope 근거·판정 마감 통과 | 루프 종료 |
+| TDD 생략 AND `modified == false` AND (합산 테스트 `PASS` 또는 정당한 `SKIPPED`) AND scope 근거·판정 마감 통과 | 루프 종료 |
 | 그 외 | 변경 커밋 후 다음 iteration |
 | `{QL_MAX}`회 도달 및 미PASS | `BLOCKED:TEST_NOT_GREEN`, 이후 8.8 계속 |
+
+scope 마감은 [review-evidence.md](review-evidence.md)의 check-scope와 check-current --require scope다. scope만 미완료인 상한 종료는 BLOCKED:REVIEW_SCOPE로 기록하고 후속 보고는 계속하되 원격 반영은 보류한다.
 
 ③⑥⑦ 티어 전환은 이 표의 평가보다 **먼저** 적용한다(위 공통 규칙).
 

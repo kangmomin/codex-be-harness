@@ -224,9 +224,9 @@ Worker build-fix가 원인 범위만 수정하고 결과를 반환한 후 Orches
 ## Phase 8: 품질 루프
 
 [quality-loop.md](quality-loop.md)가 canonical이다. 최대 `{QL_MAX}`회(standard 3 / light 2) 동안 읽기 전용 병렬 스캔 → 단일 작성자
-통합 수정 → E2E/통합 테스트 순으로 수행한다. 종료 조건은 `modified == false`와 테스트 `PASS`다.
-TDD 생략 시에도 수정 0건이며 unit/integration 합산 결과가 PASS 또는 정당한 SKIPPED일 때만 종료한다. `{QL_MAX}`회 뒤에도 green이 아니면
-`BLOCKED:TEST_NOT_GREEN`을 기록하되 Phase 8.8 이후를 계속한다.
+통합 수정 → E2E/통합 테스트 순으로 수행한다. 종료 조건은 `modified == false`와 테스트 `PASS` 및 scope 마감 통과다.
+TDD 생략 시에도 수정 0건이며 unit/integration 합산 결과가 PASS 또는 정당한 SKIPPED이고 scope 마감도 통과했을 때만 종료한다. `{QL_MAX}`회 뒤에도 green이 아니면
+`BLOCKED:TEST_NOT_GREEN`을 기록하되 Phase 8.8 이후를 계속한다. scope만 미완료면 BLOCKED:REVIEW_SCOPE로 구분하고 원격 반영을 보류한다.
 
 **light**: 8.2 = `SKIPPED:TIER_LIGHT`(Readonly 통합 스캔을 convention만으로 실행), 8.6 = `e2e-test-loop --smoke`,
 8.8 = `SKIPPED:TIER_LIGHT`. 승격 ③(8.1 회귀·판정 불가)·⑥(8.6 BLOCKED 또는 `full(smoke 미적용)`)·⑦(iteration 종료 시 재집계)은
@@ -241,6 +241,8 @@ TDD 생략 시에도 수정 0건이며 unit/integration 합산 결과가 PASS �
 동기화하고 결과를 반환한다. Orchestrator는 상태만 기록한다. 외부 플랫폼으로 push하지 않는다. 아니면 구체적인 `SKIPPED:{사유}`를 기록한다.
 
 ## Phase 10: Assumption Gate와 PR/push
+
+[review-evidence.md](review-evidence.md)의 현재 scope 수집 → check-scope → check-current --require scope를 통과한다. scope 미수집·미보완·부모 대체 검토는 push 근거가 아니며 기존 필수 kind도 유지한다.
 
 [finalization.md](finalization.md)와 [result-contract.md](result-contract.md)를 적용한다. `workflow_results.py check-current "{RESULTS_FILE}" --run-id "{RUN_ID}" --cwd "{CWD}"`에 해당 실행의 필수 kind를 `--require`로 전달한다. 설정된 makeTestCommand가 있으면 integration도 필수로 요구한다. 내용 동일 commit의 v2 재사용은 result-contract의 same_tree 판정을 따르며 HEAD 의존 검증은 재실행한다. stale/실패/필수 검증 차단이 남으면 push/PR을 보류하고 Phase 11~12에서 해결한다.
 `PUBLISH_POLICY:local`이면 동봉 commit으로 소유 변경을 로컬 커밋한 뒤 원격 절차를 생략한다. push는 commit-hard-push, pr은 commit-pr을 사용한다. none은 Build 반영을 실행하지 않는다.

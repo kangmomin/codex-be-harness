@@ -8,9 +8,18 @@
 - 검증 개선 입력(2026-09-08): source `ae6900e4504a594bd6b9124043a59b7350ee33e8`에 커밋된 R1~R8. 해당 선택 기록은 `source_state:committed`와 실제 파일 해시를 사용한다. source plugin은 `be-harness@1.5.6`·`common@0.14.4`다.
 - 전체 동기화 source plugin: `be-harness@1.5.4`; inlined common `common@0.14.2`
 - 2026-09-08 선택 반영 source plugin: `be-harness@1.5.5`; `common@0.14.3`
-- target plugin: `codex-be-harness@0.6.3`
+- target plugin: `codex-be-harness@0.6.4`
 
 호환성은 문장 일치가 아니라 관찰 가능한 workflow 동작을 기준으로 한다. Phase 순서, 승인·차단 게이트, 상태 코드, 루프 상한, 보고서 머리글을 invariant로 본다.
+
+## Scope 리뷰 근거 보강 (0.6.4, 2026-09-16)
+
+선택 동기화 source: `970f9529522b84190a2e68888d5463e14558bf81` (be-harness 1.5.7 / common 0.14.5).
+
+- 실제 diff·검사 로그의 전달과 scope 근거 완료 게이트를 선택 반영했다. host-neutral scope/results/archive helper를 재사용하고 Readonly 역할·fork 격리·PLUGIN_ROOT 및 실행 ID는 Codex 계약으로 변환했다.
+- schema v1은 scope kind를 선택적으로 읽는다. 새 BE Build 마감은 scope가 필수이며 과거 결과를 재사용할 때도 보완한다. 기존 상태 코드·Phase·상한·모델/effort는 유지한다. check-current의 freshness 정책은 보존하고 index 포함 scope freshness·artifact 무결성은 별도 check-scope로 검사한다.
+- 병렬 8.1 대기는 별도 리뷰 시도로 보완하고 후행 8.6/8.7을 선행 요구하지 않는다. 지적 처분을 E2E fixes에 섞지 않으며 아카이브에 최초/보완 scope 이력을 보존한다. 추가 통계 시스템·모델 변경·읽기 전용 권한 확대는 제외했다.
+- [공식 모델 가이드](https://developers.openai.com/api/docs/guides/latest-model?model=gpt-6-astra)를 2026-09-16 확인했다. 필수 검증을 수행하고 새로운 실패나 변경 근거가 없는 반복은 늘리지 않는 원칙을 유지했다. 실제 모델 행동의 품질 동등성이나 토큰 절감률을 이 정적·회귀 검증으로 보장하지 않는다.
 
 ## 선택적 동기화 기준
 
