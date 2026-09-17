@@ -30,9 +30,15 @@ Fullstack으로 판정되면 BE로 조용히 진행하지 않고 `BLOCKED:FULLST
 
 일반 Codex task에 이 원칙을 한 번 적용하려면 유효한 전역 AGENTS 파일에 작업 영향·불확실성에 비례해 탐색과 검증을 넓히고, 필수 검증 통과 뒤 새 실패·미검증 가설·수정 영향이 없으면 반복을 멈춘다는 지침을 수동으로 둘 수 있다. 이 저장소의 `AGENTS.md`는 repository 범위 지침이며 전역 파일과 다르다. base와 plan effort 예시는 각각 `model_reasoning_effort = "high"`, `plan_mode_reasoning_effort = "high"`다. 이는 개인 `~/.codex` 설정이나 현재 실행 effort를 자동 변경하지 않는 1회 안내이며 새 task부터 적용된다.
 
+## 0.6.5 변경
+
+현재 버전: `codex-be-harness@0.6.5`.
+
+3/4 찬성도 소수 반론을 독립 Arbiter에 전달한다. 모든 승인은 반론 해소 여부와 코드·실행된 테스트 근거를 요구하며, 작은 [판정 검사기](skills/simplify-loop/assets/review_gate.py)가 누락·미해소 결과의 적용을 차단한다. 상태·재시도·루프 상한과 단일 writer는 기존 규약을 유지한다.
+
 ## 0.6.4 변경
 
-현재 버전: `codex-be-harness@0.6.4`.
+이전 버전: `codex-be-harness@0.6.4`.
 
 읽기 전용 scope 리뷰에 변경 목록·실제 diff·검사 로그를 전달하고 코드 판정과 근거 완료를 분리한다. 최종 반영 전에 index를 포함한 리뷰 범위와 보존 자료의 해시를 검사한다. 최초/보완 결과 및 지적 처분을 보존하며 모델·effort·Phase·루프 상한과 Read-back 격리는 유지한다. [리뷰 근거 계약](skills/start-workflow/references/review-evidence.md)을 따른다.
 

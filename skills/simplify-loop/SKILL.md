@@ -20,6 +20,8 @@ description: "변경 코드의 동작을 보존하는 단순화 후보를 네 �
 
 핵심 상태 `seen`, `pendingRetry`, `holds`, `noProgressStreak`는 한 실행 동안 유지하며 iteration 사이에 초기화하지 않는다. 전체 필드와 전이는 reference가 정의한다.
 
+3/4 찬성 후보도 소수 반론을 Arbiter가 검토해야 한다. 모든 승인에 반론 해소 근거와 [review_gate.py](assets/review_gate.py)의 `APPROVED`가 필요하며, 미해소·근거 누락·검사 실패는 writer에 넘기지 않는다.
+
 ## Flags
 
 | 플래그 | 효과 |
@@ -56,6 +58,7 @@ dry-run 출력:
 - `failed[]` 또는 `holds[]`가 비어 있지 않으면 status가 `DONE`이어도 경고 섹션을 포함한다.
 - `FAIL`이며 note에 `적용 내역 미확인`이 있으면 현재 `git diff`를 함께 보여 주고 수동 대조가 필요함을 알린다.
 - `holds[]`는 자동 적용하지 않는다. 대화형 실행에서만 현재 스니펫을 다시 확인한 뒤 개별 적용할지 물을 수 있으며, 응답이 없거나 비대화형이면 미적용 상태를 유지한다.
+- 3/4 중재의 판정·반론 해소 근거는 리뷰 표 뒤에 기록한다. 아래 DA/Arbiter 섹션은 기존대로 만장일치 후보만 사용한다.
 
 ## 종료 조건
 

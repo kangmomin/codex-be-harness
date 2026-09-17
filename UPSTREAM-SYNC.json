@@ -7,7 +7,7 @@
     "be-harness": "1.5.4",
     "common": "0.14.2"
   },
-  "target_plugin": "codex-be-harness@0.6.4",
+  "target_plugin": "codex-be-harness@0.6.5",
   "synced_on": "2026-09-07",
   "scope": "BE native port and its existing six common skill dependencies; topology and Codex host adapters preserved",
   "files": {
@@ -193,15 +193,19 @@
     },
     "skills/simplify-loop/SKILL.md": {
       "source": "be-harness/skills/simplify-loop/SKILL.md",
-      "source_sha256": "61f62744f7526b5bdd5b8a91f86d01a6197739357b642c3647f11128c7bcbc5b",
+      "source_sha256": "fd41c4dfcf532f2cb05b218aebcb4ed4d20a89fd1c714b3c88b211bb0329711e",
       "adaptation": "codex-native",
-      "target_sha256": "c4bfa85366a0327716ad8848c379d534f136aa96bcd11d3bd6eb17b1924f0ac9"
+      "target_sha256": "f49ccc4f776c047d72fd270a8ffa855958698a6295983143e6aca1fc23ac80f5",
+      "source_head": "e39c4a42bd0a4ef6fd8327e0e1777eff391abc90",
+      "source_state": "committed"
     },
     "skills/simplify-loop/references/workflow-script.md": {
       "source": "be-harness/skills/simplify-loop/references/workflow-script.md",
-      "source_sha256": "971d8390d0abcd8c160e59a9dc6eea67ee738cd124eca88f8b17803c233cfb48",
+      "source_sha256": "50d7808209749b969c852fe8ceee7c1383a422d6beb28205b967d92ec203b596",
       "adaptation": "codex-native",
-      "target_sha256": "987c045af0c3332890c53115db3d70890de1a91517990824d534ae0d31e56044"
+      "target_sha256": "d9b12574ed9917db9383d73886382c87ea4129052a7e546117d7254b26e3495a",
+      "source_head": "e39c4a42bd0a4ef6fd8327e0e1777eff391abc90",
+      "source_state": "committed"
     },
     "skills/start-workflow/SKILL.md": {
       "source": "be-harness/skills/start-workflow/SKILL.md",
@@ -566,6 +570,26 @@
       "source_sha256": "8600690dc364a76b21478511c7afbeb45f6e4bb279ebab11f47ba31ffabaf0bb",
       "source_head": "970f9529522b84190a2e68888d5463e14558bf81",
       "source_state": "committed"
+    },
+    "tests/fixtures/simplify-arbiter.json": {
+      "source": "tests/fixtures/simplify-arbiter.json",
+      "adaptation": "identical",
+      "source_sha256": "895817dc62e3b3b320b151922a1c805e394c576cf41a6994b04fe43a6f75344e",
+      "target_sha256": "895817dc62e3b3b320b151922a1c805e394c576cf41a6994b04fe43a6f75344e",
+      "source_head": "e39c4a42bd0a4ef6fd8327e0e1777eff391abc90",
+      "source_state": "committed"
+    },
+    "skills/simplify-loop/assets/review_gate.py": {
+      "source": null,
+      "adaptation": "codex-native",
+      "target_sha256": "b98913e2453811dc305ce36d6d89fb489770f76d10c3f265d7c1be62e152d055",
+      "note": "Native Arbiter response gate and tests; loop state stays with the orchestrator."
+    },
+    "tests/test_simplify_review_gate.py": {
+      "source": null,
+      "adaptation": "codex-native",
+      "target_sha256": "a028582874f7be7b96f207ee1a083dbb92653e5da9e57cdcd2983a7114ecd4c3",
+      "note": "Native Arbiter response gate and tests; loop state stays with the orchestrator."
     }
   },
   "selective_updates": [
@@ -717,6 +741,30 @@
       "source_plugins": {
         "be-harness": "1.5.7",
         "common": "0.14.5"
+      }
+    },
+    {
+      "date": "2026-09-17",
+      "source_head": "e39c4a42bd0a4ef6fd8327e0e1777eff391abc90",
+      "source_state": "committed",
+      "scope": "Minority objection arbitration and evidence-required approval; native per-candidate gate, existing loop and finalization retained",
+      "guide": "https://developers.openai.com/api/docs/guides/latest-model?model=gpt-6-astra",
+      "mapped_targets": [
+        "skills/simplify-loop/SKILL.md",
+        "skills/simplify-loop/references/workflow-script.md",
+        "tests/fixtures/simplify-arbiter.json"
+      ],
+      "local_only": [
+        "skills/simplify-loop/assets/review_gate.py",
+        "tests/test_simplify_review_gate.py",
+        ".codex-plugin/plugin.json",
+        "README.md",
+        "COMPATIBILITY.md",
+        "SYNC-REPORT.md"
+      ],
+      "target_plugin": "codex-be-harness@0.6.5",
+      "source_plugins": {
+        "be-harness": "1.5.8"
       }
     }
   ]

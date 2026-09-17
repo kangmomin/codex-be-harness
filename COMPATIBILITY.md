@@ -8,7 +8,7 @@
 - 검증 개선 입력(2026-09-08): source `ae6900e4504a594bd6b9124043a59b7350ee33e8`에 커밋된 R1~R8. 해당 선택 기록은 `source_state:committed`와 실제 파일 해시를 사용한다. source plugin은 `be-harness@1.5.6`·`common@0.14.4`다.
 - 전체 동기화 source plugin: `be-harness@1.5.4`; inlined common `common@0.14.2`
 - 2026-09-08 선택 반영 source plugin: `be-harness@1.5.5`; `common@0.14.3`
-- target plugin: `codex-be-harness@0.6.4`
+- target plugin: `codex-be-harness@0.6.5`
 
 호환성은 문장 일치가 아니라 관찰 가능한 workflow 동작을 기준으로 한다. Phase 순서, 승인·차단 게이트, 상태 코드, 루프 상한, 보고서 머리글을 invariant로 본다.
 
@@ -274,3 +274,10 @@ config의 default는 override 삭제다. 명시 model-only override는 기존 �
 원본 보존으로 종료한다. 누락된 추천표는 번들 표만 읽고 자동 파일 생성이나 온라인 갱신을 하지 않는다.
 진행 중·재개 실행은 저장된 하위 배정/concrete advisor를 재사용하고 최신 추천을 읽지 않는다.
 이 변경은 별도 reviewer 슬롯, 자동 모델 승격, 성능 벤치마크, 원격 게시를 추가하지 않는다.
+
+## 단순화 반론 검증 (0.6.5, 2026-09-17)
+
+- BE 1.5.8의 3/4 소수 반론 중재와 모든 PROCEED의 근거 검증을 채택한다. 네 리뷰의 risks도 전달하며 실제 동작 위험을 다수결이나 이점으로 상쇄하지 않는다. FE는 이 포트의 제품 범위 밖이다.
+- 원본의 결정적 JS 판정은 작은 `skills/simplify-loop/assets/review_gate.py`로 변환했다. 후보 하나의 응답 형식·해소 여부·근거 존재만 검사하고 상태/반복/재시도는 기존 네이티브 규약으로 유지한다. 근거의 진위·충분성은 독립 Arbiter 책임이며 새 그래프 엔진은 추가하지 않는다.
+- PROCEED라도 false/공백 근거는 HOLD, 누락·타입 오류는 ARBITER_FAILURE다. 공통 fixture로 두 호스트의 승인 경계를 검사한다. 실제 에이전트의 판단 품질을 실증한 테스트는 아니다.
+- Phase·루프 상한·상태 코드·기존 출력 머리글은 유지한다. 3/4 중재 근거는 기존 리뷰 표 뒤에 추가하고 DA 섹션은 만장일치 전용을 유지한다. 최신 main의 최종 tree·리뷰 근거 검증도 그대로 둔다.

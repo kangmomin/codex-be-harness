@@ -1,3 +1,28 @@
+## 📋 Task Report: 단순화 반론 검증 (0.6.5)
+
+### 1. Pre-Review (Plan)
+- **Orchestrator Feedback**: 기존 하네스를 유지하고 3/4 찬성이 정확성 반론을 무시하는 경로를 수정한다.
+- **독립 리뷰어 Feedback**: 네 관점의 risks 원문 전달, 근거가 없는 PROCEED 차단, DA 실패와 정상 소수 중재의 분리가 필요하다.
+- **Refinement**: 기존 Arbiter를 재사용하고 Codex에는 후보 판정 검사만 수행하는 작은 helper를 추가했다. 전체 상태 엔진은 기존 규약을 유지한다.
+
+### 2. Implementation Details
+- **Assumptions**: 없음. 사용자 승인 범위는 두 저장소 수정·main push·로컬 적용이다.
+- **Key Changes**: 3/4는 실제 반론으로 중재하고 4/4는 DA를 유지한다. 모든 PROCEED에 strict boolean 해소 여부와 비공백 근거가 필요하다. 원본 응답의 누락·형식 오류·후보 중복은 기존 재시도/보류 경로를 사용한다.
+- **동기화**: source [e39c4a4](https://github.com/kangmomin/harness-plugins/commit/e39c4a42bd0a4ef6fd8327e0e1777eff391abc90)의 BE 1.5.8 판정 계약과 공통 fixture를 채택했다. JS 실행 부분은 네이티브 규약과 Python 판정기로 변환했다. FE·새 그래프 엔진·모델 변경은 범위에서 제외했다. 기존 전체 동기화 출처를 보존하고 파일별 해시는 UPSTREAM-SYNC.json에 남긴다.
+- **공식 가이드**: [GPT-6 Astra 가이드](https://developers.openai.com/api/docs/guides/latest-model?model=gpt-6-astra), 확인 2026-09-17. 명시된 작업 범위·기존 승인과 변경에 맞는 검증을 유지하며 모델/effort는 바꾸지 않았다.
+
+### 3. Final Convention Review
+- **Layer Analysis**: 앱 레이어 변경 없음. reviewer는 판단, helper는 응답 형식과 근거 존재 확인, orchestrator는 상태, writer는 적용을 맡는다.
+- **Simplicity Check**: 새 그래프 런타임 없이 기존 단계·상한·종료 코드·출력 머리글을 유지했다.
+- **독립 최종 리뷰**: 첫 ruling만 채택해 뒤의 HOLD를 버리는 결함을 재현·수정했고, 중복 후보만 차단되는 회귀를 확인했다. 남은 correctness 지적 없이 승인했다.
+
+### 4. Status
+- **Verification**: 최종 `scripts/verify.sh` 통과(구조 검사, Python 130개, Node 문서 렌더링 5개). plugin validator·전체 18개 skill validator·shellcheck도 통과했다. 원본 BE/FE는 실제 JS 회귀 46개와 전체 검증을 통과했다. source SHA/파일 해시 반영 뒤 구조 검사도 통과했다.
+- **한계**: 테스트는 실제 JS와 Python 판정기의 분기·실패 처리를 검증한다. 실제 LLM 리뷰 품질 또는 evidence의 사실성을 자동으로 입증한 것은 아니다. 기존 최종 tree·scope 근거 검사도 유지했다.
+- **Cleanup**: 별도 체크아웃에서 이번 소유 변경만 커밋한다. 원래 Codex 체크아웃의 Orca 작업은 설치·게시 대상에서 제외하고 보존한다.
+
+---
+
 ## 📋 Task Report: Scope 리뷰 근거 보강 (0.6.4)
 
 ### 1. Pre-Review (Plan)

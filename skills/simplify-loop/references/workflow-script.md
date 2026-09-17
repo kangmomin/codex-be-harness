@@ -108,13 +108,29 @@ strength: Strong|Moderate|Weak
 
 ### Arbiter
 
-Devil's Advocate가 끝난 뒤 별도의 읽기 전용 서브에이전트가 찬성 근거와 반론을 함께 평가한다. 구체성, 재현 가능성, 비용 대비 이점으로 판정하고 `{ candidateId, verdict, reasoning, action }`을 반환한다.
+별도의 읽기 전용 서브에이전트가 네 관점의 `verdict/confidence/rationale/risks` 원문을 모두 받는다. 3/4 찬성 후보는 실제 KEEP/CONDITIONAL 소수 의견으로 바로 중재하고, 만장일치 후보만 Devil's Advocate 반론을 추가한다. 두 경로는 같은 Arbiter batch로 묶을 수 있다. DA가 실패한 만장일치 후보만 재시도로 보내고 3/4 후보의 중재는 계속한다.
 
-- `PROCEED`: 변경 진행
+구체적 코드 경로, 재현 가능성, 실제 해소 근거로 판정한다. CHANGE 리뷰의 `risks`도 검토한다. 동작 변경·정확성 위험을 가독성/성능 이점이나 찬성표 수로 상쇄할 수 없다. 취향 차이는 동작 위험과 구분한다.
+
+반환 형식: `{ rulings: [{ candidateId, verdict, reasoning, action, objectionsResolved: boolean, evidence: string }] }`.
+
+- `PROCEED`: 모든 구체적 반론을 근거로 해소한 경우에만 변경 진행
 - `RECONSIDER`: 수정 제안만 다음 Scan에서 한 번 재제안 가능
 - `HOLD`: 자동 적용하지 않고 사용자 판단에 맡김
 
-DA 또는 Arbiter 결과가 누락되면 `ARBITER_FAILURE`로 `pendingRetry`에 보낸다.
+`objectionsResolved`는 모든 반론을 검토하고 동작 위험을 해소했을 때만 true다. `evidence`에는 직접 확인한 파일:라인·코드 경로/호출 계약 또는 실제 테스트 명령·결과와 반론별 해소 이유를 적는다. 단순한 "안전함", 다수결, 앞으로 테스트하겠다는 약속은 근거가 아니다. 부족하면 HOLD/RECONSIDER다.
+
+오케스트레이터는 원본 Arbiter 응답 `{ rulings: [...] }` 전체를 실행 임시 디렉터리의 JSON 파일로 저장하고 후보별로 **writer 위임 전에** [review_gate.py](../assets/review_gate.py)를 실행한다. `candidate-id`는 현재 후보 ID이며 경로와 값은 shell quote한다.
+
+```bash
+python3 -I -B "{PLUGIN_ROOT}/skills/simplify-loop/assets/review_gate.py" \
+  --candidate-id "{CANDIDATE_ID}" --input "{RULING_FILE}"
+```
+
+- exit 0이며 `decision=APPROVED`일 때만 승인한다. `PROCEED`와 strict boolean true, 비공백 evidence가 모두 필요하다.
+- `decision=HOLD`/`RECONSIDER`는 해당 disposition으로 기록한다. PROCEED라도 false/공백 근거는 `UNRESOLVED_OBJECTION` HOLD다.
+- 필드 누락·타입 오류·ID 불일치·동일 후보 중복 ruling·알 수 없는 verdict, JSON/helper 실패는 `ARBITER_FAILURE`로 기존 `pendingRetry`에 보낸다. 원본 PROCEED로 우회하지 않는다.
+- DA 또는 Arbiter 결과 누락도 `ARBITER_FAILURE`다. helper는 근거의 존재를 검사하며 의미적 정당성을 검증하는 역할은 독립 Arbiter에 남는다. 상태·반복·재시도는 기존 오케스트레이터가 소유한다.
 
 ### 단일 writer와 화해
 
@@ -156,12 +172,12 @@ writer가 결과 없이 종료하면 새 읽기 전용 화해 에이전트가 �
 | CHANGE 수 | 결정 |
 |-----------|------|
 | 4 | DA 후 Arbiter 판정 |
-| 3 | 승인. minority rationale을 경고로 기록 |
+| 3 | 소수 의견을 포함한 네 원본 리뷰로 Arbiter 판정 (DA 없음, 자동 승인 금지) |
 | 2 | `holds`에 `SPLIT_2_2 — 사용자 판단 위임`, disposition `HOLD` |
 | 1 | `rejected`에 `SUGGESTION`, disposition `SUGGESTION` |
 | 0 | `rejected`에 `REJECTED`, disposition `REJECTED` |
 
-Arbiter `PROCEED`는 승인, `RECONSIDER`는 rejected 기록과 disposition `RECONSIDER`, `HOLD`는 holds 기록과 disposition `HOLD`다.
+Arbiter 결과는 위 helper로 검사한다. `APPROVED`만 승인하며, `RECONSIDER`는 rejected 기록과 disposition `RECONSIDER`, `HOLD`는 holds 기록과 disposition `HOLD`다. 원본 `verdict/reasoning/action/objectionsResolved/evidence`와 최종 gate 결정을 `iterLog`에 보존한다.
 
 ### 3. 적용과 진전 판정
 
