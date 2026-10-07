@@ -190,7 +190,7 @@ for markdown in ROOT.rglob("*.md"):
 workflow = (skills_dir / "start-workflow" / "SKILL.md").read_text(encoding="utf-8")
 for phase in range(1, 13):
     require(re.search(rf"\bPhase {phase}\b", workflow) is not None, f"start-workflow: missing Phase {phase}")
-for flag in ["--resume", "--hard", "--no-tdd", "--tier standard", "--topology-models", "--reflect", "--analyze", "--verify"]:
+for flag in ["--resume", "--hard", "--no-tdd", "--tier quick\\|light\\|standard", "--topology-models", "--reflect", "--analyze", "--verify"]:
     require(flag in workflow, f"start-workflow: missing flag {flag}")
 for contract in [
     "BLOCKED:FULLSTACK_HANDOFF_REQUIRED",
@@ -362,7 +362,11 @@ for contract in ["--emit-baseline", "script_fallback(test_failures:", "BLOCKED:S
     require(contract in tdd_doc, f"tdd: missing baseline contract {contract}")
 
 tier_doc = (skills_dir / "start-workflow" / "references" / "verification-tier.md").read_text(encoding="utf-8")
-require("`--no-tdd` 미지정" in tier_doc, "verification-tier: missing --no-tdd light-tier gate")
+require("TDD SKIP 예정(`--no-tdd`" in tier_doc, "verification-tier: missing TDD-skip automatic standard rule")
+for contract in ["**P = min(T, P_calc)**", "SKIPPED:PLAN_QUICK", "## 4.1 quick 테스트 동반", "활성 Quick 의무", "R0", "정확 ID", "INCONCLUSIVE", "새 D_tier"]:
+    require(contract in tier_doc, f"verification-tier: missing contract {contract}")
+for contract in ["## Quick Test Evidence", "- 선언:", "- 승인 기준 R0", "- Plan 깊이:", "SKIPPED:PLAN_QUICK"]:
+    require(contract in state_template, f"templates: missing quick/Plan contract {contract}")
 require("`## Flags`의 `TDD`가 `true`" not in tier_doc, "verification-tier: Phase 2 must not read Phase 5 flags")
 
 request_doc = (skills_dir / "request" / "SKILL.md").read_text(encoding="utf-8")
@@ -582,7 +586,7 @@ for contract in [
     "D>=9` 또는 동시성 제어·데이터 정합성/이관·8개 이상 파일 설계·3개 레이어 전체 변경·공유 구조 변경 중 하나라도",
     "fixed advisor effort는 이 선택보다 우선한다",
     "Phase 4.4 직전에 최종 Plan·사용자 정정·승인 범위를 포함한 A/B·UNKNOWN·max 신호를 항상 재평가",
-    "Phase 4.3과 같은 light→standard 승격 순서를 적용해 그 결과의 유효 `{PLAN_MAX}`를 조회",
+    "Phase 4.3과 같은 P light→standard 승격 순서를 적용해 그 결과의 유효 `{PLAN_MAX}`를 조회",
     "BLOCKED:MAX_ITERATIONS",
 ]:
     require(contract in build_phases, f"build-phases: missing advisor selection contract {contract}")

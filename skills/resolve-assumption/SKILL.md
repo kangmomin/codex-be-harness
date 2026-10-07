@@ -47,7 +47,7 @@ python3 -I -B "{PLUGIN_ROOT}/skills/commit/assets/git_checks.py" worktree --cwd 
 helper/명령 오류는 0건이 아니며 재검증 전 종료한다. symlink 대상은 자동으로 읽거나 수정하지 않는다. root-relative 파일 목록과 NUL 구분을 유지한다.
 
 - diff 출력의 `+` 라인만 대상이다 — **브랜치가 만들지 않은 레거시 태그는 건드리지 않는다**(surgical 원칙).
-- ①과 ③은 겹칠 수 있다. 같은 `파일:라인`은 **1건으로 합쳐** 중복 제시하지 않는다.
+- 작업 트리 스캔(`worktree`)과 브랜치 diff 스캔(`code_tags`)은 겹칠 수 있다. 같은 `파일:라인`은 **1건으로 합쳐** 중복 제시하지 않는다.
 - 이미 push된 커밋 메시지의 태그는 재작성 불가(force-push 금지)이므로 **WARN으로 보고만** 하고 처리 대상에서 제외한다.
 - **0건이면** "해소할 `[Assumption]`이 없습니다"만 보고하고 종료한다(`DONE`).
 

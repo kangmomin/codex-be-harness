@@ -97,6 +97,27 @@ FAIL example.test/a 0.001s
         self.assertEqual([r['id'] for r in result['records']], ['example.test/a::TestParent/child'])
         self.assertFalse(result['unparsed'])
 
+    def test_quick_test_evidence_is_not_test_map_so_new_failure_is_regression(self):
+        log = '''=== RUN   TestQuickFilter
+=== RUN   TestQuickFilter/default_unchanged
+    filter_test.go:9: expected 3 items, got 2
+--- FAIL: TestQuickFilter (0.00s)
+    --- FAIL: TestQuickFilter/default_unchanged (0.00s)
+FAIL
+FAIL example.test/a 0.001s
+'''
+        evidence = ('## Quick Test Evidence\n| Spec ID | suite | 테스트 ID | 파일 |\n|---|---|---|---|\n'
+                    '| EC-09 | unit | `example.test/a::TestQuickFilter` | filter_test.go |\n'
+                    '| EC-09 | unit | `example.test/a::TestQuickFilter/default_unchanged` | filter_test.go |\n')
+        baseline = '## Test Baseline\n| unit | go test -v ./... | Y | 5 | 0 | 없음 |\n'
+        test_map = '## TDD Test Map\n| Spec ID | 테스트 | 파일 | Red | Green |\n|---|---|---|---|---|\n'
+        for state in (baseline + evidence, baseline + test_map + evidence, baseline + evidence + test_map):
+            parsed = parser.parse_baseline(state)
+            self.assertEqual(parsed['testmap'], set())
+            records = parser.classify(self.analyze(log)['records'], 'unit', parsed)
+            self.assertEqual([(r['id'], r['cls']) for r in records],
+                             [('example.test/a::TestQuickFilter/default_unchanged', 'regression')])
+
     def test_nonverbose_go_failure_keeps_message_after_header(self):
         result = self.analyze('--- FAIL: TestCreate (0.00s)\n    user_test.go:3: bad user\nFAIL\nFAIL example.test/a 0.001s\n')
         self.assertEqual(result['records'][0]['raw'], 'user_test.go:3: bad user')
@@ -164,6 +185,27 @@ FAIL example.test/a 0.001s
         result = self.analyze(package_log("example.test/a"), "panic: runtime failure\n")
         self.assertFalse(result["completed"])
         self.assertTrue(result["unparsed"])
+
+    def test_cover_no_test_package_lines_do_not_hide_completion(self):
+        # Go 1.22+ `go test -v -cover ./...` 실제 출력 — 테스트 없는 패키지는 coverage 한 줄만 낸다(마지막 패키지일 수 있다).
+        log = ("\texample.test/m/cmd\t\tcoverage: 0.0% of statements\n"
+               "=== RUN   TestA\n--- PASS: TestA (0.00s)\nPASS\ncoverage: 100.0% of statements\n"
+               "ok  \texample.test/m\t0.004s\tcoverage: 100.0% of statements\n"
+               "\texample.test/m/types\t\tcoverage: 0.0% of statements\n")
+        result = self.analyze(log, exit_code=0)
+        self.assertTrue(result["completed"])
+        self.assertEqual(result["unparsed"], [])
+        self.assertEqual(result["passed"], 1)
+
+    def test_cover_no_test_line_does_not_close_an_unfinished_package(self):
+        log = "=== RUN   TestA\n--- PASS: TestA (0.00s)\n\texample.test/m/types\t\tcoverage: 0.0% of statements\n"
+        result = self.analyze(log, exit_code=0)
+        self.assertFalse(result["completed"])
+        self.assertTrue(result["unparsed"])
+
+    def test_cover_only_no_test_packages_is_zero_tests(self):
+        result = self.analyze("\texample.test/m/types\t\tcoverage: 0.0% of statements\n", exit_code=0)
+        self.assertIn("테스트 0건", result["unparsed"])
 
     def test_unparsed_baseline_cannot_become_flaky_on_rerun(self):
         records = [{"id": "example.test/a::TestCreate", "cls": "unparsed"}]

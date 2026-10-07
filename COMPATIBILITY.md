@@ -8,9 +8,25 @@
 - 검증 개선 입력(2026-09-08): source `ae6900e4504a594bd6b9124043a59b7350ee33e8`에 커밋된 R1~R8. 해당 선택 기록은 `source_state:committed`와 실제 파일 해시를 사용한다. source plugin은 `be-harness@1.5.6`·`common@0.14.4`다.
 - 전체 동기화 source plugin: `be-harness@1.5.4`; inlined common `common@0.14.2`
 - 2026-09-08 선택 반영 source plugin: `be-harness@1.5.5`; `common@0.14.3`
-- target plugin: `codex-be-harness@0.6.5`
+- target plugin: `codex-be-harness@0.7.0`
 
 호환성은 문장 일치가 아니라 관찰 가능한 workflow 동작을 기준으로 한다. Phase 순서, 승인·차단 게이트, 상태 코드, 루프 상한, 보고서 머리글을 invariant로 본다.
+
+## BE 1.7.1/common 0.15.2 동기화 (0.7.0, 2026-10-07)
+
+선택 동기화 source는 clean committed HEAD `5e3414e99f402a7d559e0433293b0a36733db02a`다. 이전 전체 baseline·선택 이력은 보존한다. 기존 미커밋 Orca 변경은 작업 트리에 보존하고 이번 게시에서 제외한다. [공식 모델 가이드](https://developers.openai.com/api/docs/guides/latest-model?model=gpt-6-astra)를 2026-10-07 다시 읽었으며 기존 Codex 모델·effort 배정은 유지했다. 자율 완료·기존 승인 재사용·구체적인 완료 근거 원칙을 필요한 계약에 적용하고 API 전용 기능이나 모델 자동 전환은 추가하지 않았다.
+
+| 변경 | Codex 적용과 경계 |
+|---|---|
+| quick/light/standard와 선언 | `--tier`·사용자 `작업 난이도: 하/중/상`·착수 질문, Plan 초안 A/B와 C0/R0 판정, 명시 예외·단조 승격을 이식했다. native route는 기존 BE-only·literal 인자·재개 정책을 유지한다. |
+| Plan 깊이 P | T와 별도 설계 사실로 P=min(T,P_calc)를 계산한다. P quick은 fixed advisor도 생략하며 신규 advisor=N/A·SKIPPED:PLAN_QUICK이다. P light/standard는 기존 자동/고정 advisor 배정과 카운터를 유지한다. T만 오르면 Plan 리뷰를 복원하지 않는다. executor legacy tiered 확정은 4.1 동결 난이도로 옮겼다. |
+| Quick 테스트 증거 | 6.2 Worker가 구현+신규 테스트를 작성하고 부모가 Evidence를 기록한다. 8.1/8.7 정확 ID PASS, 8.4 단언 대응, 8.5 신규 테스트 보완, finalization/재개까지 의무를 연결했다. 헤더 존재·해당 없음만으로 의무를 활성화하지 않는다. 기존 테스트 변경은 TestConflict 부모 판정 뒤 Worker가 한다. |
+| schema 4 | Flags·23키 Snapshot·계산/최종 티어 헤더를 유지하고 선언/R0/P·수용 예외·승격 의무를 확장한다. 필드 없는 구 light/standard는 P=기존 T로 읽고 완료 리뷰·advisor·baseline을 보존한다. 일부만 있는 새 확장은 STATE_SCHEMA_MISMATCH다. run helper 검증과 부모의 티어 본문 검증을 구분한다. |
+| 결과/helper | 호스트 중립 record·Go 무테스트 coverage 파싱·risk 문구·archive 경로 제외를 재사용했다. 결과 schema 1과 기록 성공/실제 PASS 구분을 유지한다. |
+| 공통·감사 | VERSION local>base 재범프 생략, E2E 실행 소유 락 해제, init config 편집, Node 분석/검증 범주·확신도, doc-gen 관련성 문구를 반영했다. |
+| 유지/제외 | Claude CLI/panel·provider 폴백·host effort 상속 문구·추가 FE/fullstack/overlay·submit-feedback·sync-base 스킬은 기존 BE-native 범위 밖이다. 단순화 native Arbiter는 이미 반영되어 있으며 Workflow tool 경로를 복제하지 않는다. 중복 실행 정책은 기존 파일을 읽는다. |
+
+검증 티어 선언 D_tier와 advisor 숫자 위험 D를 구분한다. phase 순서·보고 머리글·원격 승인·단일 Worker writer·Read-back 격리는 유지하며 quick/P quick의 명시 SKIP와 축소는 새 기능 계약이다. 호스트 중립 실행 자산 검증과 지침 대조는 실제 모델의 전체 workflow·시간/비용·Orca PC SSH 실행 증거가 아니다. 현재 파일별 원본·대상 해시는 UPSTREAM-SYNC.json, 판정과 검증 결과는 SYNC-REPORT.md를 따른다.
 
 ## Scope 리뷰 근거 보강 (0.6.4, 2026-09-16)
 

@@ -146,6 +146,36 @@ class NativeEntryTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.route(['--topology-models'])
 
+    def test_tier_values_preserve_native_routing(self):
+        for tier in ('quick', 'light', 'standard'):
+            with self.subTest(tier=tier):
+                args = ['--tier', tier]
+                result = self.route(args)
+                self.assertEqual('READY', result['status'])
+                self.assertEqual('pr', result['publish_policy'])
+                self.assertEqual(args, result['arguments'])
+        self.assertEqual('READY', self.route(['--tier', 'quick', '--tier', 'quick'])['status'])
+
+    def test_invalid_tier_values_fail_before_dispatch_and_cli_reports_exit_two(self):
+        for args in (['--tier'], ['--tier', 'low'], ['--tier', '--verify'],
+                     ['--tier', 'quick', '--tier', 'standard']):
+            with self.subTest(args=args), self.assertRaises(ValueError):
+                self.route(args)
+        proc = subprocess.run([sys.executable, '-B', str(ROOT / 'skills/start-workflow/assets/workflow_policy.py'), 'route', '-'],
+                              input=json.dumps({'entry': 'be', 'arguments': ['--tier', '--verify']}),
+                              text=True, capture_output=True)
+        self.assertEqual(2, proc.returncode)
+        self.assertEqual('BLOCKED:INVALID_INPUT', json.loads(proc.stdout)['status'])
+
+    def test_tier_tokens_follow_existing_literal_and_mode_boundaries(self):
+        self.assertEqual('READY', self.route(['--', '--tier', 'invalid'])['status'])
+        self.assertEqual('build', self.route(['--topology-models', '--tier'])['mode'])
+        self.assertEqual('verify', self.route(['--verify', '--tier', 'quick'])['mode'])
+        saved = dict(resume_mode='be', resume_hard=True, resume_publish_policy='local',
+                     resume_route_target='be')
+        result = self.route(['--resume', '/tmp/state', '--tier', 'quick'], **saved)
+        self.assertEqual('local', result['publish_policy'])
+
     def test_resume_preserves_local_and_rejects_mode_collision(self):
         saved = dict(resume_mode='be', resume_hard=True, resume_publish_policy='local', resume_route_target='be')
         self.assertEqual('local', self.route(['--resume', '/tmp/state'], **saved)['publish_policy'])

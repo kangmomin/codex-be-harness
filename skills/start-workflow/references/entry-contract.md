@@ -16,3 +16,5 @@ ROUTE_JSON
 - `--resume`은 명시된 상태의 MODE/HARD_MODE/PUBLISH_POLICY/ROUTE_TARGET을 `resume_mode`, boolean `resume_hard`, `resume_publish_policy`, `resume_route_target`으로 전달한다. 충돌하면 `BLOCKED:RUN_MISMATCH`이며 무시하지 않는다. READY 뒤에도 run-lifecycle의 절대 경로·저장소·미완료 검사를 통과해야 한다.
 - `PUBLISH_POLICY:pr|push|local|none`과 `ROUTE_TARGET:be`를 상태에 기록한다. 재개·최종 수정의 정책 상한이며 저장된 local을 --hard 때문에 push로 확대하지 않는다. 이미 승인된 효과는 재승인을 요구하지 않는다.
 - Phase 3에서 실제 FE+BE 범위를 발견하면 `BLOCKED:FULLSTACK_HANDOFF_REQUIRED`로 보고한다. 이 플러그인은 fullstack을 자체 실행하지 않는다.
+
+--tier는 quick/light/standard만 받는다. 값 누락·플래그형 값·허용 밖 값·서로 다른 중복은 exit 2 + BLOCKED:INVALID_INPUT이다. 같은 값 중복과 -- 뒤의 리터럴은 기존 인자 격리 규칙을 따른다. Analyze/Verify에서는 유효 선언을 실행 티어로 사용하지 않는다.

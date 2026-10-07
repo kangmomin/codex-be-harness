@@ -74,7 +74,7 @@ config의 `{슬롯}=default`는 profile 슬롯 삭제로 같은 추천으로 돌
 
 확정 문자열 `{TOPOLOGY_MODELS}`는
 `orchestrator={model}@{effort},executor={model}@{effort},readonly={model}@{effort},advisor={model}@{effort}`
-형식과 4슬롯 고정 순서를 쓴다. executor의 명시적 `tiered`는 Phase 2 난이도 확정 시 `high|max`로 치환한다.
+형식과 4슬롯 고정 순서를 쓴다. executor의 명시적 `tiered`는 Phase 4.1 난이도 동결 시 `high|max`로 치환한다.
 advisor의 `tiered`(기본 및 model-only 포함)는 Phase 4.2 완료 뒤 첫 4.3 직전에 `N/A|xhigh|max`로 치환한다.
 Analyze/Verify 신규 실행은 executor와 advisor를 쓰지 않으므로 `executor=N/A,advisor=N/A`로 기록한다.
 spawn 인자로는 확정된 concrete model/effort만 전달한다. `tiered`·`N/A`·`-`는 절대 전달하지 않으며
@@ -97,14 +97,14 @@ executor 슬롯은 기본 `high`다. 추천표 또는 profile/플래그가 `tier
 
 ### Advisor effort 선택
 
-advisor 슬롯의 fixed effort(`minimal|low|medium|high|xhigh|max|ultra`)는 항상 실행하며 자동 선택보다 우선한다.
+P quick이면 fixed 설정도 advisor=N/A·SKIPPED:PLAN_QUICK으로 기록하고 가용성 검사·spawn하지 않는다. P light/standard에서 advisor 슬롯의 fixed effort(`minimal|low|medium|high|xhigh|max|ultra`)는 항상 실행하며 자동 선택보다 우선한다.
 model만 지정하거나 effort가 `tiered`면 자동이다. Phase 4.2의 Plan 반영 뒤 `D=max(A,B)`를 다시 계산한다.
 어느 축의 근거라도 `UNKNOWN`이면 `D=max(D,7)`이다. 다음 신호 중 하나라도 있으면 `max`다: `D>=9`, 동시성 제어,
 데이터 정합성 또는 이관, 설계 대상 파일 8개 이상, Presentation/Service/Repository 3개 레이어 전체 변경, 공유 구조 변경.
 그 외 D 4~8은 `xhigh`, D 1~3이며 UNKNOWN·max 신호가 없으면 `N/A`와
 `SKIPPED:ADVISOR_NOT_REQUIRED`다. advisor에는 현재 리뷰 관점과 Spec/Plan의 가장 중요한 결정 질문 1개만 전달한다.
 
-Phase 4.4 직전에 최종 Plan·사용자 정정·승인 범위를 포함한 A/B·UNKNOWN·max 신호를 항상 다시 평가한다. required minimum이
+P light/standard일 때 Phase 4.4 직전에 최종 Plan·사용자 정정·승인 범위를 포함한 A/B·UNKNOWN·max 신호를 항상 다시 평가한다. T만 상승하면 Plan 리뷰를 복원하지 않는다. P가 quick에서 올라갔으면 건너뛴 4.2·4.3을 실행한 뒤 재평가한다. required minimum이
 `N/A→xhigh|max` 또는 `xhigh→max`로 상승한 경우에만 기존 `{PLAN_MAX}`의 다음 iteration 하나를 소비해 fresh advisor를
 실행한다. 남은 slot이 없으면 `BLOCKED:MAX_ITERATIONS`; 이미 실행한 effort가 required minimum 이상이면 재실행·downshift하지 않는다.
 fixed advisor는 자동 승격 대상이 아니다.
@@ -142,7 +142,7 @@ Phase 8.5의 단일 writer, Phase 6 barrier, Phase 8.8의 isolation은 이 경�
 |------|------|-----------|
 | Build 1~5, 6/8 barrier·commit, 7/8 명령·판정, 10 Assumption Gate, 12 상태·사용자 결정·보고 | Orchestrator | 승인과 상태를 소유하며 worktree를 직접 편집하지 않음 |
 | 1 edge-case 보강, 4.2, 8.2, 8.3, 8.4, 8.8, 11 | Readonly | 읽기 전용; 8.8에는 Spec/Plan/state/Test Map을 전달하지 않음 |
-| 4.3 | Advisor | auto면 N/A·xhigh·max 중 하나, fixed면 명시 effort; 실행 시 매 iteration 새 fresh context로 spawn, 최대 `{PLAN_MAX}`회(standard 5 / light 2) |
+| 4.3 | Advisor | auto면 N/A·xhigh·max 중 하나, fixed면 명시 effort; 실행 시 매 iteration 새 fresh context로 spawn, 최대 `{PLAN_MAX}`회(P standard 5 / P light 2 / P quick 0) |
 | 6.1 Red, 6.2 Green, 7 build-fix, 8.5, 8.6, 8.7, 9, 10 승인된 push/PR, 12 승인된 remediation | Worker | Orchestrator가 명령/승인/상태를 조정하고 Worker가 수정 또는 외부 효과를 수행 |
 | Analyze A1/A2/A4, Verify V1/V2/V5 | Orchestrator | 읽기/명령/보고 소유 |
 | Analyze A3, Verify V3/V4 | Readonly | 읽기 전용 구조화 결과 반환 |

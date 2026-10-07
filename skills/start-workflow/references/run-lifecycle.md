@@ -75,3 +75,14 @@ python3 "{PLUGIN_ROOT}/skills/start-workflow/assets/workflow_run.py" save-verify
 품질·리뷰·Read-back의 범위는 `scope-contract.md`를 따른다. `OWNED_FILES`는 create가 만든 실행별 JSON 배열이며 오케스트레이터가 소유 파일만 합친다. resume에서 초기화하지 않는다. 오래된 실행에서 파일이 없으면 기존 구현 기록으로 복구한 뒤 범위 수집을 진행한다.
 
 모델 추천표가 갱신되어도 재개에서는 다시 읽거나 resolve하지 않는다. 하위 슬롯과 이미 결정한 effort는 저장값을 유지한다. legacy concrete orchestrator 값은 과거 기록으로 보존하고 현재 세션이 역할을 맡는다고 보고한다. 새 Phase 기록에는 `session@inherit`를 사용한다. 별도 orchestrator spawn은 하지 않는다.
+
+## schema 4의 티어 확장 읽기
+
+기존 Flags·23키 Snapshot·계산 티어/최종 티어 이름은 유지한다. 선언·승인 기준 R0·Plan 깊이·수용 예외·승격 의무는 Verification Tier의 확장 필드다. 새 실행은 이 필드를 모두 기록하며 재개 인자보다 저장값이 우선한다.
+
+- 선언/R0/P가 모두 없는 구 light/standard 실행은 선언 없음, P=기존 T를 읽기 호환으로 사용한다. R0 수용 예외를 생성하지 않는다. 기존 Plan 리뷰/카운터/모델·advisor·baseline·Test Map은 보존한다.
+- 확장 필드가 하나라도 있으면 선언/R0/P/수용 예외가 모두 정확히 1개여야 한다. 값·R0 사실·승격 의무를 복원할 수 없거나 일부만 있는 경우 BLOCKED:STATE_SCHEMA_MISMATCH로 보존한다. 새로운 quick 상태는 확장 필드가 필수다.
+- Quick Test Evidence는 별도 최상위 섹션으로 보존한다. 6.2 전 미실행 표기는 허용한다. 활성 Quick 의무 실행이 6.2를 수행했는데 섹션이 사라졌거나 의무 복원이 불가능하면 차단한다. 구 standard/light에는 이 섹션이 없어도 허용하며 템플릿 헤더·해당 없음만으로 의무를 활성화하지 않는다. 빈/누락 ID·PASS 증거 부족은 schema 성공으로 검증 성공이 되지 않으며 §4.1 INCONCLUSIVE/보완 게이트를 적용한다. Evidence를 Test Map으로 옮기거나 baseline을 다시 수집하지 않는다.
+- 승격 이력의 의무·완료를 복원하고 미완료 새 티어 iteration을 먼저 수행한다. 이미 끝난 Plan 리뷰·6.1 Red를 재실행하거나 advisor를 새로 resolve하지 않는다. 구 실행에 실제 기록된 완료 단계는 그대로 유지한다.
+
+위 확장 판정은 Orchestrator가 수행한다. workflow_run.py는 기존 RUN/CWD/미완료 검증의 정본이며 티어 본문까지 검증했다고 해석하지 않는다.

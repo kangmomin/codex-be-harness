@@ -105,3 +105,5 @@ including in a worktree, and base every finding on observed code or command outp
 
 Every finding must include `file:line`. If something is absent, list the searched paths/patterns that support the
 absence claim. Avoid generic advice and do not modify the repository.
+
+언어별 파일·명령 예시는 Go 기준이다. Node 등 다른 preset이면 같은 분석 항목을 package.json·엔트리·라우터 등 대응물로 확인하고 대응물이 없으면 해당 없음을 기록한다.

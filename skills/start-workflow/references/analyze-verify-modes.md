@@ -7,7 +7,7 @@
 # Analyze / Verify
 
 신규 실행은 profile과 프로젝트 오버라이드를 먼저 읽고, Verify 재개는 run-lifecycle의 저장된 명령을 먼저 복원한다. 지정된 범위를 검증된 `{CWD}` 기준으로
-해결한다. 경로가 없으면 `sourceDirs`를 제안하고 사용자의 범위 결정을 받는다.
+해결한다. 경로가 없으면 `sourceDirs`를 기본으로 사용하고 알린다. 없거나 비었을 때만 범위를 결정받는다.
 
 ## Analyze (`--analyze`, Phase A1~A4)
 
@@ -15,7 +15,7 @@
 
 ### Phase A1: 범위와 초점
 
-플래그 뒤 경로가 있으면 범위로 사용한다. 없으면 전체/디렉터리/파일 중 범위를 확인한다. 초점은
+플래그 뒤 경로가 있으면 범위로 사용한다. 없으면 profile sourceDirs를 범위로 사용하고 사용자에게 알린다. sourceDirs가 없거나 비었을 때만 전체/디렉터리/파일 중 범위를 확인한다. 초점은
 복수 선택할 수 있다.
 
 1. 아키텍처: 레이어, 모듈 결합, 인터페이스
@@ -67,7 +67,7 @@
 
 ### Phase V1: 범위와 초점
 
-플래그 뒤 경로를 사용하고 없으면 범위를 확인한다. 초점은 복수 선택할 수 있다.
+플래그 뒤 경로를 사용하고 없으면 profile sourceDirs를 기본 범위로 사용하고 알린다. sourceDirs가 없거나 비었을 때만 범위를 확인한다. 초점은 복수 선택할 수 있다.
 
 1. 보안: injection, 인증/인가, 데이터 노출
 2. 성능: N+1, 리소스/메모리, 네트워크
@@ -90,8 +90,7 @@
 ### Phase V3: 코드 검증
 
 [agents/code-verifier.md](agents/code-verifier.md)를 읽고 `fork_turns:none`의 Readonly 읽기 전용 검증 역할에 scope/focus, 정적 분석
-결과, `{CWD}`, `{STATE_FILE}`, Phase V3/V4/V5를 전달한다. 이론적 가능성이 아니라 실제 도달 경로와
-`file:line` 근거가 있는 이슈만 받는다.
+결과, `{CWD}`, `{STATE_FILE}`, Phase V3/V4/V5를 전달한다. 확정 이슈는 실제 도달 경로와 `file:line` 근거를 요구한다. 코드 위치·발생 조건·미확인 근거가 있는 Low 가설은 별도로 보고하며 확정 Critical/High 합계에서 제외한다.
 
 ### Phase V4: 컨벤션 검사
 

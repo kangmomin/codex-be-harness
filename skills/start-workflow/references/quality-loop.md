@@ -1,8 +1,8 @@
 > 최종 수정으로 검증 트리가 바뀌면 [최종 트리와 검증 재사용](finalization.md#최종-트리와-검증-재사용)의 재검증 예외를 적용한다. Read-back 격리와 기존 반복 상한은 유지한다.
 
-> Phase 8의 상세 계약이다. 8.1~8.7은 최대 `{QL_MAX}`회(standard 3 / light 2), 8.8은 루프 밖에서 정확히 1회 실행한다.
+> Phase 8의 상세 계약이다. 8.1~8.7은 최대 `{QL_MAX}`회(standard 3 / light 2 / quick 2), 8.8은 루프 밖에서 정확히 1회 실행한다.
 > 상태·노트 경로는 상위 스킬이 전달한 실행별 절대 경로만 사용한다.
-> 티어별 축소·승격 규칙은 [verification-tier.md](verification-tier.md)가 canonical이다 — light에서 달라지는 단계는 각 절에 **light:** 로 표기한다.
+> 티어별 축소·승격 규칙은 [verification-tier.md](verification-tier.md)가 canonical이다 — light·quick의 차이는 각 절에 명시한다.
 
 # Phase 8 — Quality loop
 
@@ -22,7 +22,7 @@ after loop: Phase 8.8 isolated read-back exactly once
 Batch A는 같은 기준 작업 트리를 읽으며 파일을 수정하지 않는다. 수정이 생겼다면 채택하지 않고 이슈
 목록만 사용한다. Phase 8.5만 그 iteration의 작성자다.
 
-카운터는 티어와 무관한 단조 증가값이며 승격으로 초기화하지 않는다. 순서는 항상 `iteration 카운터 증가 → 승격 판정(latch) → 새 상한 {QL_MAX} 조회 → 종료 조건·상한 판정`이며, 승격 후 상한은 현재 iteration 번호를 유지한 채 적용된다(예: light 2회차에서 ③ → `{QL_MAX}` = 3이므로 3회차까지). 유일한 초기화는 Phase 8 재진입(Phase 10 직전 ⑦ / Phase 10 Gate 락 재시도 후 `수정: Y`)이다 — 새 루프는 카운터 0부터·`{QL_MAX}` = 3·미PASS면 `BLOCKED:TEST_NOT_GREEN`.
+카운터는 티어와 무관한 단조 증가값이며 승격으로 초기화하지 않는다. 순서는 항상 `iteration 카운터 증가 → 승격 판정(latch) → 새 상한 {QL_MAX} 조회 → 종료 조건·상한 판정`이며, 승격 후 상한은 현재 iteration 번호를 유지한 채 적용된다(예: light 2회차에서 ③ → `{QL_MAX}` = 3이므로 3회차까지). 유일한 초기화는 Phase 8 재진입(Phase 10 직전 ⑦ / Phase 10 Gate 락 재시도 후 `수정: Y`)이다 — 새 루프는 카운터 0부터·`{QL_MAX}` = 새 티어 상한·미PASS면 `BLOCKED:TEST_NOT_GREEN`.
 
 ## light 티어 동작표
 
@@ -32,8 +32,12 @@ Batch A는 같은 기준 작업 트리를 읽으며 파일을 수정하지 않�
 | 8.2 simplify dry-run + 8.3 convention (Readonly 통합 스캔) | 스캔 1회는 실행하되 simplify 계약을 전달하지 않음(convention만) | 8.2 행 `SKIPPED:TIER_LIGHT`, 8.3 행 `DONE`(보고 "convention 위반: M건") | — |
 | 8.4 scope-review · 8.5 통합 수정 · 8.7 통합 테스트 | 동일(축소 금지) | 동일 | — |
 | 8.6 E2E | Worker에 `--smoke` 전달(`{MAX_ITER}`=3) | 동일 | **⑥**: 8.6 결과 수신 직후 — 종료 상태 `BLOCKED:MAX_ITERATIONS`·`BLOCKED:NO_PROGRESS` 또는 실행 수준 `full(smoke 미적용: …)` → standard + 현재 iteration 종료 후 standard iteration 1회 추가(그 뒤 종료 조건 평가) |
-| iteration 종료 | ⑦ 재집계(`START_SHA` 기준 변경 소스 파일 > 3 또는 금지 조건) | 승격 이력 표 행 | **⑦**: 종료 조건·`{QL_MAX}` 상한 평가 **전**, latch 1회 |
+| iteration 종료 | ⑦ 재판정(현재 사실·START_SHA 집계·R0 수용 원인 제외) | 승격 이력 표 행 | **⑦**: 종료 조건·`{QL_MAX}` 상한 평가 **전**, 티어 단조 증가 |
 | 8.8 Read-back | 실행 안 함 | `SKIPPED:TIER_LIGHT` (승격됐다면 실행·`DONE`) | — |
+
+## quick 티어 동작
+
+8.2·8.3 통합 스캐너, 8.6 E2E, 8.8 Read-back을 호출하지 않고 SKIPPED:TIER_QUICK으로 기록한다. Batch A는 8.1 명령과 8.4 Readonly만 병렬이다. 8.4는 필수 Spec ID ↔ Quick Evidence 입력·단언 대응도 확인하고 8.5는 이 대응 누락에 한해 신규 테스트 추가만 허용한다. unit/integration의 정확 ID PASS 증거 게이트는 [verification-tier.md](verification-tier.md) §4.1이며 승격 이후에도 유지된다. 생략 상태는 단계 도달 시점에 기록한다. 새 결과 event iteration은 kind별 기존 최대 + 1을 사용해 재진입이 과거 결과를 덮지 않는다.
 
 ## Phase 8.1: Build + test
 
@@ -60,9 +64,13 @@ python3 {SKILL_DIR}/assets/test_failures.py --runner auto --exit-code "$TEST_EXI
 수정 큐에는 `regression`, `new_red` 순서로 넣는다. `pre_existing`은 범위 밖으로 보고만 한다. TDD가
 생략됐으면 분류 없이 전체 실패 로그를 전달한다.
 
-**light 승격 ③**: `regression` ≥ 1, 또는 판정 불가(러너 완주 N / `unparsed` 잔존을 Orchestrator도 분류하지 못함) → 종료 조건 평가 전에 standard 전환(`{QL_MAX}` = 3 복원), 이 iteration의 8.6부터 full E2E, 루프 후 8.8 실행([verification-tier.md](verification-tier.md) §4). `## Verification Tier` 승격 이력과 `Phase Results` 진단 `tier_escalated(③)`에 기록한다.
+**승격 ③** (T < standard): `regression` ≥ 1, 또는 판정 불가(러너 완주 N / `unparsed` 잔존을 Orchestrator도 분류하지 못함) → 종료 조건 평가 전에 standard 전환(`{QL_MAX}` = 3 복원), 이 iteration의 8.6부터 full E2E, 루프 후 8.8 실행([verification-tier.md](verification-tier.md) §5). `## Verification Tier` 승격 이력과 `Phase Results` 진단 `tier_escalated(③)`에 기록한다.
+
+Quick Test Evidence가 있으면 UNIT_LOG의 suite=unit 각 정확 ID PASS 줄을 확인한다. 실패 후 같은 트리 재실행에서 정확 PASS가 확인된 flaky만 WARN 증거로 인정한다. 미출력·SKIP/pending/todo·시작만 출력·중복 ID 선언·PASS/SKIP 혼재 또는 필수 ID Evidence 누락은 unit INCONCLUSIVE다. 이 증거 미완료 자체는 승격 ③의 러너 판정 불가가 아니며, 실제 실패는 regression 분류를 따른다.
 
 ## Phase 8.2 + 8.3: Simplify + Convention
+
+**quick**: 8.2·8.3 = SKIPPED:TIER_QUICK이며 스캐너를 호출하지 않는다.
 
 `fork_turns:none`의 Readonly 읽기 전용 스캐너가 두 절차를 순서대로 실행하되 결과와 상태를 분리한다.
 
@@ -102,6 +110,8 @@ scope artifact={SCOPE_FILE}, artifact SHA-256={SCOPE_FILE_SHA256}, 범위 hash={
 review ID/시도={REVIEW_ATTEMPT}, QL 회차={iteration}, 첫/보완={REVIEW_STAGE}, 이전 finding ID·처분={REVIEW_FINDINGS}.
 출력은 코드 판정과 evidence_complete·missing_evidence를 구분한다.
 
+Quick Test Evidence가 있으면 같은 8.4 리뷰어에게 표를 전달하고 필수 ID 전체(AC/EC/RC + 기본 동작 EC − R0 수용 deferred_e2e)와 각 테스트의 입력·단언(file:line) 대응을 확인하게 한다. 누락·틀린 대응은 scope 이슈이며 새로운 독립 dispatch는 추가하지 않는다. 8.7은 후행 단계이므로 8.4에 선행 필수 근거로 요구하지 않는다.
+
 ## Phase 8.5: Integrated fix — single writer
 
 Batch A 이슈가 하나라도 있으면 `fork_turns:none`의 Worker 한 수정 역할에 아래 순서로 전달한다.
@@ -116,7 +126,11 @@ TDD 활성 시 테스트 파일과 `pre_existing` 실패는 수정하지 않는�
 을 구조화 결과로 반환하고, Orchestrator만 Implementation Notes에 append한다.
 `buildCommand`가 있으면 수정 후 확인한다. 변경이 있으면 `modified = true`다.
 
+Quick Evidence 누락·잘못된 대응 이슈에 한해 8.5 Worker가 신규 테스트를 추가·실행할 수 있다. 기존 테스트 수정 금지는 유지한다. 반환 표는 Orchestrator가 Evidence에 append하고 다음 iteration에서 정확 PASS와 scope 대응을 다시 확인한다. 그 밖의 동결 테스트 수정은 TestConflict 판정 후 Worker에 배정한다.
+
 ## Phase 8.6: E2E test loop
+
+**quick**: 8.6은 SKIPPED:TIER_QUICK으로 기록하고 호출하지 않는다. 승격됐다면 현재 티어대로 실행한다.
 
 profile의 `e2eEnabled`, `runServerCommand`, `serverUrl`이 모두 유효할 때만 Worker가 수행하고
 PID/세션 핸들과 정리 결과를 Orchestrator에 반환한다. Orchestrator만 그 handle을 `{STATE_FILE}`에 기록한다. 그렇지 않으면
@@ -140,7 +154,7 @@ E2E와 실패 수정까지 같은 배정 안에서 수행하고 구조화 결과
 - Orchestrator가 실행 수준·종료 상태를 `Phase Results` 8.6 행에, 리포트 경로를 `## Artifacts` `e2e-report:`에 기록한다 — 렌더러 stdout `경로:`/`상태:` 2줄을 그대로(`-2`/`-3` 접미 경로·`DEGRADED({사유})`·`(원시 기록, 렌더링 실패: …)` 포함; exit code가 아니라 출력 줄이 기준).
 - **하위 `BLOCKED:LOCK_UNAVAILABLE`** → `Phase Results` 8.6 행 `BLOCKED:LOCK_UNAVAILABLE`, `## Artifacts` `e2e-report: 없음 (BLOCKED:LOCK_UNAVAILABLE)`, light면 승격 ⑥(E2E 미완)과 동일 취급, 루프는 다른 단계로 계속(테스트 판정 불변), Workflow Report §4 `- **E2E**:`에 그대로 표기, Phase 10 Gate 보류 3택은 [build-phases.md](build-phases.md) Phase 10.
 
-**light 승격 ⑥**: 8.6 결과 수신 직후 — 종료 상태가 `BLOCKED:MAX_ITERATIONS`·`BLOCKED:NO_PROGRESS`이거나 실행 수준이 `full(smoke 미적용: …)`이면 standard 전환 + 현재 iteration 종료 후 standard iteration 1회 추가(그 뒤 종료 조건 평가; [verification-tier.md](verification-tier.md) §4). 진단 `tier_escalated(⑥)`.
+**light 승격 ⑥**: 8.6 결과 수신 직후 — 종료 상태가 `BLOCKED:MAX_ITERATIONS`·`BLOCKED:NO_PROGRESS`이거나 실행 수준이 `full(smoke 미적용: …)`이면 standard 전환 + 현재 iteration 종료 후 standard iteration 1회 추가(그 뒤 종료 조건 평가; [verification-tier.md](verification-tier.md) §5). 진단 `tier_escalated(⑥)`.
 
 ## Phase 8.7: Integration test
 
@@ -149,9 +163,11 @@ single-writer 수정 계약으로 실패 로그만 전달하고 Orchestrator가 
 
 TDD 활성일 때 실행 로그를 `test_failures.py --runner auto --exit-code {EXIT} --suite integration --baseline "{STATE_FILE}" "{INTEGRATION_LOG}"`로 대조하며 unit과 같은 regression/new_red/flaky/unparsed 기준을 적용한다. TDD SKIP이면 실제 exit·완주 상태로 판정한다. Orchestrator가 `kind:integration`과 regression_count를 기록하고, 명령 부재도 해당 kind의 `SKIPPED:PROFILE_EMPTY`로 남긴다. integration의 regression/판정 불가도 기존 light 승격 ③의 근거다.
 
-## iteration 종료 시 (light만): 승격 ⑦ 재평가
+Quick Evidence의 suite=integration 행도 INTEGRATION_LOG에서 8.1과 같은 정확 ID PASS 게이트를 통과해야 한다. 실행/재실행마다 새 미사용 로그 경로를 쓰고 Orchestrator가 결과를 integration의 새 event로 기록한다.
 
-종료 조건을 평가하기 **전에** [verification-tier.md](verification-tier.md) §4의 집계 규칙(`START_SHA` 기준 변경 소스 파일 > 3 또는 금지 조건 발견)을 재평가한다. 발화 시 standard 전환 + standard iteration 1회 추가. 승격은 1회뿐이다(latch) — standard가 된 뒤에는 평가하지 않는다. 진단 `tier_escalated(⑦)`.
+## iteration 종료 시 (T < standard): 승격 ⑦ 재판정
+
+종료 조건 평가 전에 [verification-tier.md](verification-tier.md) §5의 현재 사실·START_SHA 집계·R0 수용 원인 제외로 C′를 구한다. C′ > T면 상향하고 새 티어 iteration을 최소 1회 추가한다. standard 이후에는 평가하지 않는다. 미완료 의무·완료 증거를 승격 이력에 기록한다.
 
 ## Iteration 판정
 
@@ -180,7 +196,7 @@ Orchestrator가 조정하는 수정 커밋은 `Fix: 품질 루프 수정 (반복
 
 # Phase 8.8 — Isolated Spec read-back
 
-**light: `SKIPPED:TIER_LIGHT`** — 승격으로 standard가 됐다면 실행한다.
+**light: `SKIPPED:TIER_LIGHT` · quick: `SKIPPED:TIER_QUICK`** — 승격으로 standard가 됐다면 실행한다.
 
 루프가 끝난 뒤 1회만 한다. 목적은 Spec을 모르는 역할이 구현/테스트가 실제로 보장하는 동작을 복원하게
 한 뒤 오케스트레이터가 Spec과 대조하는 것이다.
@@ -200,7 +216,7 @@ Orchestrator가 조정하는 수정 커밋은 `Fix: 품질 루프 수정 (반복
 
 - `{STATE_FILE}` 경로
 - Spec, Plan, Edge Cases
-- TDD Test Map
+- TDD Test Map, Quick Test Evidence
 - 다른 Phase의 상태 갱신 지시
 
 프롬프트에는 선정 소스의 절대 경로만 전달하고 그 파일과 직접 참조 코드만 읽게 한다. 파일을 수정하지
@@ -245,7 +261,7 @@ Phase 12에서 사용자 결정을 받는다.
 
 ## 검증 결과와 현재 변경 범위
 
-검증 전후 `workflow_results.py tree --cwd "{CWD}"`가 같을 때만 tested_tree로 기록한다. Orchestrator만 RESULTS_FILE에 새 iteration의 unit/integration/build/lint/typecheck/e2e/readback 결과 객체를 기록한다. unit/integration에는 regression_count를 포함한다. 하위 역할은 결과만 반환한다.
+검증 전후 `workflow_results.py tree --cwd "{CWD}"`가 같을 때만 tested_tree로 기록한다. [result-contract.md](result-contract.md)의 record 명령으로 Orchestrator만 RESULTS_FILE에 새 iteration의 unit/integration/build/lint/typecheck/e2e/readback 결과 객체를 기록한다. unit/integration에는 regression_count를 포함한다. 하위 역할은 결과만 반환한다.
 JSON의 최종 판정·회귀 수가 Gate/리포트의 정본이며 Markdown 요약은 표시용이다. 수정 뒤 과거 PASS를 재사용하지 않는다. TDD SKIP도 실제 검증 실패를 PASS로 바꾸는 조건이 아니다.
 품질·리뷰·E2E·Read-back 범위는 START_SHA부터 현재 작업 트리까지 workflow_scope.py가 수집한 명시 목록이다. committed/staged/unstaged/소유 untracked·삭제·symlink를 보존한다. Read-back 자식은 이 목록으로만 복원하고 Spec/Plan/상태 경로를 받지 않는다.
 

@@ -30,12 +30,12 @@ READY 이후 [run-lifecycle.md](references/run-lifecycle.md)의 생성/재개 �
 | `--verify`, `-v` | Verify: Phase V1~V5 실행 후 `PASS/WARN/FAIL` 판정 |
 | `--resume {STATE_FILE}` | 모든 모드: 절대 상태 경로로 같은 저장소·모드의 미완료 실행을 검증해 계속한다 |
 | `--hard`, `-h` | Build에서 브랜치 생성 없이 현재 브랜치에 일반 push; PR 생략 |
-| `--no-tdd` | Build의 Red 및 baseline 수집 생략. 검증 티어는 standard 강제. |
-| `--tier standard` | Build: Phase 2 판정과 무관하게 검증 티어를 standard로 강제한다(light 축소 비활성). light 강제 플래그는 없다 |
+| `--no-tdd` | Build의 Red 및 baseline 생략. 미선언이면 standard; 선언이 있으면 티어 충돌 계약을 따른다 |
+| `--tier quick\|light\|standard` | Build 검증 티어 선언. 자연어 `작업 난이도: 하\|중\|상`도 같은 선언이며 승인 전 변경 가능. 판정·충돌·Plan 깊이는 verification-tier.md를 따른다 |
 | `--topology-models {슬롯}={model}[@{effort}],…` | 모든 모드: 이번 실행에 한해 토폴로지 슬롯의 model/effort를 교체한다(`{슬롯}=default` 허용). profile에는 기록하지 않는다 — 영구 변경은 `$codex-be-harness:config topologyModels=…`. 규칙: [agent-topology.md](references/agent-topology.md) "슬롯 설정" |
 | `--reflect` | Build의 Phase 11 실행; 기본은 `SKIPPED:REFLECT_NOT_REQUESTED` |
 
-`--analyze`와 `--verify`는 상호 배타적이다. 둘 다 있으면 진입 gate에서 `BLOCKED:MODE_CONFLICT`로 종료한다. `--hard`·`--no-tdd`·`--tier standard`·`--reflect`는
+`--analyze`와 `--verify`는 상호 배타적이다. 둘 다 있으면 진입 gate에서 `BLOCKED:MODE_CONFLICT`로 종료한다. `--hard`·`--no-tdd`·`--tier`·`--reflect`는
 Build 전용이며 다른 모드에서는 무시한다. `--topology-models`는 모든 모드에 적용된다. 모드 플래그 뒤 경로는 범위이고, 없으면 profile의
 `sourceDirs`를 기본 후보로 사용한다.
 
@@ -59,10 +59,12 @@ Analyze 또는 Verify라면 [analyze-verify-modes.md](references/analyze-verify-
 `apiDocsPath`, `makeTestCommand`을 검사한다. Analyze/Verify의 명령 누락은 해당 단계에
 `SKIPPED:PROFILE_EMPTY`로 기록한다.
 
-Build에 누락이 있으면 영향 Phase를 구체적으로 나열하고, 해당 Phase를 `SKIPPED:{사유}`로 기록한 채
+Build 신규 실행은 [verification-tier.md](references/verification-tier.md) §1·§1.1로 선언과 착수 질문을 한 번 처리한다. 이미 선언됐거나 재개·비대화형이면 질문하지 않는다. 선언 quick의 E2E 전용 설정 누락은 실행 승인에 "승격 시 SKIPPED:{사유}" 한 줄로 고지하고, 다른 누락은 기존 절차를 따른다.
+
+위 quick E2E 전용 예외 밖의 Build 누락은 영향 Phase를 구체적으로 나열하고, 해당 Phase를 `SKIPPED:{사유}`로 기록한 채
 진행할지 profile을 보완한 뒤(또는 `$codex-be-harness:config {키}={값}`으로 누락 값만 추가한 뒤) 재시작할지 결정받는다. 누락을 Phase 내부 실패로 뒤늦게 판정하지 않는다.
 
-**토폴로지 슬롯 resolve**(신규 실행, 모든 모드, 1회): [agent-topology.md](references/agent-topology.md)의 오프라인 `models.py resolve`로 슬롯 레코드 단위 `--topology-models` > profile `topologyModels` > 저장된 추천표 > 번들 기본값 순으로 `{TOPOLOGY_MODELS}`를 확정한다. orchestrator는 항상 `session@inherit`다. 일반 실행에서 온라인 조사나 `refresh-models`를 호출하지 않는다. profile 무효 슬롯은 경고 후 추천값으로, 무효 플래그는 대화형 재입력 1회 후에도 무효면 무시하고 경고한다(비대화형은 즉시 무시). 추천표가 손상되면 원본을 보존하고 중단한다. 기본 executor는 `high`이고 명시적 legacy `tiered`만 Phase 2 난이도로 확정한다. advisor `tiered` 또는 model-only는 Build Phase 4.2 뒤 자동 `N/A|xhigh|max`로 resolve한다. Analyze/Verify 신규는 `executor=N/A,advisor=N/A`이며 advisor availability 검사·spawn을 하지 않는다. Pre-flight 보고에 `토폴로지 모델: 기본 | {변경 슬롯 요약 — 슬롯=model@effort, …}` 1줄과 추천표 출처를 넣는다. 하위 spawn 인자로는 concrete 값만 전달한다(`session`·`inherit`·`tiered`·`N/A`·`-` 금지). 재개는 저장된 배정을 재사용한다.
+**토폴로지 슬롯 resolve**(신규 실행, 모든 모드, 1회): [agent-topology.md](references/agent-topology.md)의 오프라인 `models.py resolve`로 슬롯 레코드 단위 `--topology-models` > profile `topologyModels` > 저장된 추천표 > 번들 기본값 순으로 `{TOPOLOGY_MODELS}`를 확정한다. orchestrator는 항상 `session@inherit`다. 일반 실행에서 온라인 조사나 `refresh-models`를 호출하지 않는다. profile 무효 슬롯은 경고 후 추천값으로, 무효 플래그는 대화형 재입력 1회 후에도 무효면 무시하고 경고한다(비대화형은 즉시 무시). 추천표가 손상되면 원본을 보존하고 중단한다. 기본 executor는 `high`이고 명시적 legacy `tiered`만 Phase 4.1의 동결 난이도로 확정한다. P quick이면 fixed 설정도 advisor=N/A로 기록하고 실행하지 않는다. P light/standard에서 advisor `tiered` 또는 model-only는 Build Phase 4.2 뒤 자동 `N/A|xhigh|max`로 resolve한다. Analyze/Verify 신규는 `executor=N/A,advisor=N/A`이며 advisor availability 검사·spawn을 하지 않는다. Pre-flight 보고에 `토폴로지 모델: 기본 | {변경 슬롯 요약 — 슬롯=model@effort, …}` 1줄과 추천표 출처를 넣는다. 하위 spawn 인자로는 concrete 값만 전달한다(`session`·`inherit`·`tiered`·`N/A`·`-` 금지). 재개는 저장된 배정을 재사용한다.
 
 ## 실행별 상태
 
@@ -76,8 +78,9 @@ Build에 누락이 있으면 영향 Phase를 구체적으로 나열하고, 해�
 {CWD}=검증된 프로젝트 루트 절대 경로
 {PROFILE_PATH}=PROFILE.md의 profile 해석 결과
 {SKILL_DIR}=이 SKILL.md의 절대 디렉터리
-{PLAN_MAX}=standard 5 / light 2
-{QL_MAX}=standard 3 / light 2
+{PLAN_MAX}=Plan 깊이 P 기준 standard 5 / light 2 / quick 0
+{QL_MAX}=검증 티어 T 기준 standard 3 / light 2 / quick 2
+{TIER_DECLARED}=quick|light|standard|none (CLI·대화·착수 질문 출처)
 {TOPOLOGY_MODELS}=Pre-flight 확정값, Phase 5 이후 Flags의 기록값
 ```
 
@@ -94,7 +97,7 @@ Build에 누락이 있으면 영향 Phase를 구체적으로 나열하고, 해�
 
 - 명시적 `--resume` 또는 현재 실행의 보관한 절대 경로로만 재개한다. 새 요청을 재개로 해석하거나 임시 디렉터리를 스캔하지 않는다.
 - `workflow_run.py resume`의 run.json/Run/CWD/MODE/RUN_ID/RUN_DIR/미완료 검사가 먼저다. 없는 구 실행 메타데이터를 추측해서 만들지 않는다. 실패하면 `BLOCKED:RUN_MISMATCH`이며 새 실행을 안내한다.
-- **Build 상태 파일**은 `## Flags` 정확히 1개, `SCHEMA: 4`, MODE/HARD_MODE/TDD/REFLECT/TIER/TOPOLOGY_MODELS/RUN_ID/START_SHA/PUBLISH_POLICY/ROUTE_TARGET 각 1회, `## Profile Snapshot` 정확히 1개를 요구한다. Snapshot은 profile 23키와 profile_path/profile_sha256/resolved_report_dir/resolved_e2e_lock_dir를 각각 1회 포함한다. 해시는 64 hex, resolved 경로는 절대 경로다. `## Verification Tier`의 계산/최종 티어 각 1회, Test Baseline 헤더 0~1개도 검사한다. 불일치는 `BLOCKED:STATE_SCHEMA_MISMATCH`; schema 2/3를 자동 변환하지 않는다.
+- **Build 상태 파일**은 `## Flags` 정확히 1개, `SCHEMA: 4`, MODE/HARD_MODE/TDD/REFLECT/TIER/TOPOLOGY_MODELS/RUN_ID/START_SHA/PUBLISH_POLICY/ROUTE_TARGET 각 1회, `## Profile Snapshot` 정확히 1개를 요구한다. Snapshot은 profile 23키와 profile_path/profile_sha256/resolved_report_dir/resolved_e2e_lock_dir를 각각 1회 포함한다. 해시는 64 hex, resolved 경로는 절대 경로다. `## Verification Tier`의 계산/최종 티어 각 1회, Test Baseline 헤더 0~1개도 검사한다. 새 선언·R0·Plan 깊이·승격 의무와 Quick Evidence는 run-lifecycle의 확장 판정을 따른다. 구 schema 4는 기존 계산/최종 티어 이름·완료 리뷰·advisor 기록을 유지한다. 불일치는 `BLOCKED:STATE_SCHEMA_MISMATCH`; schema 2/3를 자동 변환하지 않는다.
 - Flags의 기록값이 재개 인자보다 우선이며 명시적 모드 충돌은 entry gate에서 차단한다. TIER의 단방향 승격 외에는 실행 도중 Flags를 재결정하지 않는다.
 - baseline 미완은 [tdd.md](references/tdd.md)의 Phase 5 미완 재개로 처리한다. 기존 상태·노트·OWNED_FILES·결과 events를 초기화하지 않는다.
 - 형제 스킬/서브에이전트는 `## Profile Snapshot`만 쓰고 frontmatter를 다시 읽지 않는다. profile_sha256은 출처 기록이며 live 파일과 비교하지 않는다. Project Notes 본문만 읽기 전용 참조할 수 있다.
@@ -117,7 +120,7 @@ Build 상태 템플릿과 최종 보고는 [templates.md](references/templates.m
   결정받는다.
 - TDD baseline은 불변이다. Red/Green, Test Map, TestConflict, 회귀 분류 계약은
   [tdd.md](references/tdd.md)를 따른다.
-- 검증 티어(`light`/`standard`)는 Phase 2에서 판정하고 Phase 4.4에서 함께 승인받는다. 티어 승격(light → standard, 단방향 latch)은 항상 해당 루프의 종료 조건·상한 평가보다 **먼저** 적용한다. 규칙은 [verification-tier.md](references/verification-tier.md)가 canonical이다.
+- 검증 티어(`quick`/`light`/`standard`)와 별도 Plan 깊이는 Phase 4.1 초안으로 판정하고 4.4에서 R0와 함께 확정한다. 티어 승격(quick → light → standard, 단방향 latch)은 항상 해당 루프의 종료 조건·상한 평가보다 **먼저** 적용한다. 규칙은 [verification-tier.md](references/verification-tier.md)가 canonical이다.
 - Phase 8은 최대 `{QL_MAX}`회이며 single-writer 수정과 격리 Read-back을 보장한다.
   [quality-loop.md](references/quality-loop.md)를 따른다.
 - 외부 상태를 바꾸는 commit/push/PR 절차는 승인된 Phase 5 이후에만 실행한다. Phase 10 직전
@@ -130,7 +133,7 @@ Build 상태 템플릿과 최종 보고는 [templates.md](references/templates.m
   bootstrap 금지). 자율 구간 Phase 6~11에서는 질문하지 않고 `[Assumption]` 또는 `SKIPPED:{사유}`로 기록한다.
 - Phase 진입 체크: Phase 5는 `{STATE_FILE}`·`{IMPL_NOTES}` 생성과 baseline 수집(또는 명시적 `SKIPPED:*`
   기록) 없이 Phase 6으로 가지 않는다(`## Test Baseline` 완전성은 [tdd.md](references/tdd.md) Phase 5 정의). Phase 8은 [quality-loop.md](references/quality-loop.md)를 읽은 뒤
-  시작하며 8.4와 8.8은 생략하지 않는다. Phase 12는 슬림 Workflow Report를 `{WORK_REPORT}`에 쓴 뒤 결정 마감 후
+  시작하며 8.4는 항상 수행하고 8.8은 standard에서 수행한다. Phase 12는 슬림 Workflow Report를 `{WORK_REPORT}`에 쓴 뒤 결정 마감 후
   md 아카이브(`*-workflow-report.md`)를 `{REPORT_DIR}`에 1회 남긴다.
 - Phase 1의 중복 작업 스캔에서 강 신호가 나오면 `BLOCKED:DUPLICATE_IN_PROGRESS`로 종료한다. 사용자가
   계속을 지시하면 Phase 1부터 재개한다.
@@ -139,7 +142,7 @@ Build 상태 템플릿과 최종 보고는 [templates.md](references/templates.m
 
 확정 모델·effort·`fork_turns:none`·재시도/대체 금지 규칙은
 [agent-topology.md](references/agent-topology.md)를 따른다. executor 기본 effort는 `high`이며 명시적 legacy `tiered`만 난이도 1~8 `high`(Worker High), 9~10 `max`(Worker Max)로 확정한다.
-advisor auto는 Phase 4.2 뒤 concrete `N/A|xhigh|max`로 resolve하고 fixed effort는 그대로 쓴다. Phase 2의 리스크 산정에는 보안, 데이터 이관, 복잡한 API/계약 변경을 반드시
+P quick이면 advisor=N/A·SKIPPED:PLAN_QUICK이며 P light/standard에서 advisor auto는 Phase 4.2 뒤 concrete `N/A|xhigh|max`로 resolve하고 fixed effort는 그대로 쓴다. Phase 4.1의 리스크 산정에는 보안, 데이터 이관, 복잡한 API/계약 변경을 반드시
 반영한다. 각 프롬프트에는 `{CWD}`, `{STATE_FILE}`, `{IMPL_NOTES}`, 현재/남은 Phase, 파일 소유권,
 읽기/쓰기 허용 범위를 넣는다. 공통 프롬프트와 사망 처리는 [agent-prompts.md](references/agent-prompts.md)를,
 역할별 판정 계약은 [references/agents/](references/agents/) 문서를 사용한다.
@@ -162,13 +165,13 @@ advisor auto는 Phase 4.2 뒤 concrete `N/A|xhigh|max`로 resolve하고 fixed ef
 ## Phase 요약
 
 1. Phase 1: 범위 수집 및 Technical Spec 사용자 확인
-2. Phase 2: 코드 복잡도와 영향 리스크 난이도 산정 + 검증 티어(light/standard) 판정 + executor effort 확정
+2. Phase 2: 티어 선언 확인; 난이도·T·P와 executor effort는 4.1 Plan 초안 뒤 확정
 3. Phase 3: `sequential` / `parallel-slices` / fullstack handoff 판정
 4. Phase 4: Plan 작성 → 다관점 보강 → 최대 `{PLAN_MAX}`회 독립 검증 → 4.4 실행 승인
 5. Phase 5: 브랜치, 상태/노트, TDD baseline 생성
-6. Phase 6: Red 테스트 후 Green 구현
+6. Phase 6: Red → Green; quick은 Red 생략 후 구현·신규 테스트를 같은 Worker에 배정
 7. Phase 7: 강제 빌드, 실패 수정 최대 3회
-8. Phase 8: 품질 루프 최대 `{QL_MAX}`회 후 격리 Read-back 1회(light: 8.2·8.8 SKIP, 8.6 smoke)
+8. Phase 8: 품질 루프 최대 `{QL_MAX}`회; light는 8.2·8.8 SKIP/8.6 smoke, quick은 8.2·8.3·8.6·8.8 SKIP, standard는 격리 Read-back 1회
 9. Phase 9: API 변경일 때 파일 기반 API 문서 동기화
 10. Phase 10: Assumption Gate 후 PR 또는 hard push
 11. Phase 11: `--reflect`일 때만 성찰
@@ -186,7 +189,7 @@ Phase 상태는 `DONE`, `IN_PROGRESS`, `PENDING`, `SKIPPED:{사유}`, `BLOCKED:{
 - `BLOCKED:DUPLICATE_IN_PROGRESS`
 - `BLOCKED:NO_VALID_RED`, `BLOCKED:REGRESSION_AT_RED`, `BLOCKED:TEST_NOT_GREEN`
 - `BLOCKED:AGENT_DIED`, `BLOCKED:ASSUMPTION_UNRESOLVED`, `BLOCKED:STATE_SCHEMA_MISMATCH`
-- `SKIPPED:PROFILE_EMPTY`, `SKIPPED:TIER_LIGHT`, `SKIPPED:USER_OPT_OUT`, `SKIPPED:NO_TEST_BASIS`
+- `SKIPPED:PROFILE_EMPTY`, `SKIPPED:TIER_LIGHT`, `SKIPPED:TIER_QUICK`, `SKIPPED:PLAN_QUICK`, `SKIPPED:USER_OPT_OUT`, `SKIPPED:NO_TEST_BASIS`
 - `SKIPPED:REFLECT_NOT_REQUESTED`, `SKIPPED:BUDGET_PRESERVED`, `SKIPPED:AGENT_DIED`
 - Phase 12 feedback: `SKIPPED:NO_FEEDBACK_UPSTREAM` when `feedbackUpstreamRepo` is absent
 

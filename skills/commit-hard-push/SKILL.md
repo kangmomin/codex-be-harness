@@ -40,3 +40,5 @@ git push -u origin {현재 브랜치}
 `{PLUGIN_ROOT}`는 현재 설치된 이 플러그인의 절대 루트다. 형제 스킬은 해당 `SKILL.md`를 읽고 절차를 수행한다.
 profile은 `../../PROFILE.md`의 `{PROFILE_PATH}` 해석을 따르고 workflow에서는 전달받은 `## Profile Snapshot`을 사용한다.
 사용자가 요청한 commit/push/PR 범위와 기존 승인을 재사용한다. 원격 작업은 그 효과가 승인된 경우에만 수행한다.
+
+Workflow 필수 kind는 승인된 유효 티어 T와 Profile Snapshot 명령으로 정한다. quick은 scope·unit 및 설정된 integration이며 light/standard는 기존 활성 검증이다. Quick Evidence가 있으면 정확 ID PASS·필수 Spec 대응·scope 대응 마감까지 Orchestrator가 확인한 HEAD만 원격 반영한다. 기록 성공(record exit 0)과 freshness(check-current)는 검증 성공을 대신하지 않는다.

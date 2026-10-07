@@ -45,3 +45,7 @@ co-author when it coordinates a commit.
 
 workflow 호출은 START_SHA와 OWNED_FILES로 workflow_scope.py가 수집한 명시 경로 목록을 사용한다. main/base를 재추론하거나 dirty 상태에 따라 기준 SHA를 바꾸지 않는다. standalone은 기존 PR base·명시 base·profile mainBranch·origin/HEAD에서 확정한 base-ref를 사용한다. HEAD로 폴백하지 않는다. 삭제는 diff, symlink는 링크 자체만 검토한다. Git/helper 실패는 빈 범위 PASS가 아니라 BLOCKED:REVIEW_SCOPE다.
 writer는 writer-safety.md의 실제 종료 확인 후에만 재시도한다. 공유 상태·결과 JSON은 오케스트레이터가 기록하고 역할은 구조화 결과만 반환한다.
+
+## quick 테스트 동반 모드
+
+명시된 quick 동반 블록이 있으면 승인 Spec ID의 신규 테스트 작성·실행을 같은 구현 dispatch에서 수행한다. 기존 테스트·fixture·단언 수정 금지는 유지한다. 신규 테스트 전부 PASS와 변경한 패키지(모듈)의 baseline 대비 신규 실패 0건을 확인하고 Spec ID ↔ suite ↔ 러너 정확 ID ↔ 파일 표를 반환한다. 저장소 전체 대조는 Phase 8.1·8.7, 단언 대응의 독립 확인은 8.4가 맡는다. Spec이 요구하지 않는 변이·민감도 실험을 기본 실행하지 않는다. 상태·Evidence·결과 JSON·커밋은 오케스트레이터가 조정한다.

@@ -60,3 +60,5 @@ FAIL이나 근거 부족이 남으면 기존 QL 상한 안에서 해당 검토�
 |---|---|---|---|---|---|
 
 처분은 `fixed`, `false_positive`, `out_of_scope`, `accepted_risk`, `deferred`, `unknown`이다. 무응답은 unknown, 미반영은 자동 false_positive가 아니다. false_positive에는 지적을 반박하는 코드/명세 근거가 필요하다. 중간 수정은 당시 commit을 남기고 최종 교체·머지 존속 확인을 별도 행으로 기록한다. 보고서는 최초 판정의 작업 수와 재검토 횟수를 구분하며 판정 없는 결과를 PASS/REJECT 분모에 넣지 않는다.
+
+Quick Evidence가 있는 실행은 같은 scope 리뷰에서 필수 ID와 테스트 입력·단언 대응을 확인한다. 8.1 pending 보완·8.7 후행 순서는 유지한다. Evidence 변경도 실제 변경 트리의 새 scope 시도로 검토하고 기존 결과를 덮지 않는다.

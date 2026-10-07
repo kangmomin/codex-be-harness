@@ -35,7 +35,7 @@
 | 상태 writer 경계 | Orchestrator만 `{STATE_FILE}`과 Phase Results를 쓰고 다른 역할은 구조화 결과만 반환 |
 | Phase 4.3 advisor auto | UNKNOWN은 D floor 7; D 1~3은 `SKIPPED:ADVISOR_NOT_REQUIRED`, D 4~8은 xhigh, D≥9·동시성·데이터 정합성/이관·8+ 파일 설계·3 레이어·공유 구조는 각각 독립적으로 max; spawn에는 concrete effort만 전달 |
 | Phase 4.3 경계 | D=3은 skip, D=4와 D=8은 xhigh, D=9는 max; UNKNOWN은 적어도 D=7이고 각 max 신호는 단독으로 max를 만든다 |
-| Phase 4.3 fixed/rescore | fixed effort는 항상 실행하고 auto보다 우선; Phase 4.4 직전에는 최종 Plan·사용자 정정·승인 범위를 포함해 항상 재평가하고 minimum이 상승할 때만 Phase 4.3과 같은 light→standard 승격 순서와 유효 `{PLAN_MAX}`를 적용해 남은 다음 iteration을 소비하며, slot이 없으면 `BLOCKED:MAX_ITERATIONS`, 이미 높은 prior review는 재실행하지 않음 |
+| Phase 4.3 fixed/rescore | P quick은 fixed 설정도 SKIPPED:PLAN_QUICK·advisor=N/A; P light/standard의 fixed effort는 auto보다 우선; Phase 4.4 직전에는 최종 Plan·사용자 정정·승인 범위를 포함해 항상 재평가하고 minimum이 상승할 때만 Phase 4.3과 같은 P light→standard 승격 순서와 유효 `{PLAN_MAX}`를 적용해 남은 다음 iteration을 소비하며, slot이 없으면 `BLOCKED:MAX_ITERATIONS`, 이미 높은 prior review는 재실행하지 않음 |
 | Phase 4.3 advisor 사망 | Advisor가 두 번 사망하면 대체 모델 없이 `agent_died(...)` 진단과 `CODEX-UNAVAILABLE` 결과를 남기고 Phase 4.4로 진행 |
 | Phase 12 remediation | 사용자 승인 remediation으로 diff가 바뀌면 Phase 10 Assumption Gate와 Phase 4.4 외부 효과 범위를 다시 확인 |
 | E2E lifecycle | 같은 Worker가 중첩 spawn·직접 commit 없이 E2E와 실패 수정을 수행하고 PID/정리 결과를 반환하며 Orchestrator만 상태·commit을 조정 |
@@ -47,7 +47,7 @@
 | 락 acquire exit 1 (락 디렉토리 mkdir 비-EEXIST 실패 포함 — 대기 없음) | e2e-test는 `BLOCKED:LOCK_UNAVAILABLE`·서버 미기동 → e2e-test-loop는 즉시 종료·렌더링 생략·`E2E 리포트: 없음 (BLOCKED:LOCK_UNAVAILABLE)` → quality-loop 8.6 행 기록·루프 계속 → Phase 10 Gate 보류·3택(락 재시도 / E2E 없이 진행 / 중단) |
 | `## Test Baseline` 완전성 | 헤더 1개 + (`수집 실패 — regression 판정 불가` 줄 1개(있으면 행 유무 무관 완료·우선; SKIP 줄과 공존은 불완전) 또는 SKIP 줄 1개 또는 스위트별 6셀 baseline 행 1개), 불완전하면 Implementation Notes 템플릿 헤더 확인 후 재수집·교체 |
 | Phase 10 Gate 락 재시도 | 승격 ⑥ 미적용, `수정: N` ∧ DONE/WARN만 즉시 복귀, `수정: Y`이면 Phase 7 → 새 standard Phase 8 루프 → Phase 9 재판정 → Phase 10 |
-| light 판정과 축소 | A ≤ 3 ∧ B ≤ 3 ∧ 금지 조건 0 ∧ TDD 활성 ∧ ≠ parallel-slices ∧ `--tier standard` 없음 → 4.2 Readonly 1역할·`{PLAN_MAX}` 2·`{QL_MAX}` 2·8.2 `SKIPPED:TIER_LIGHT`·8.6 `--smoke`·8.8 `SKIPPED:TIER_LIGHT` |
+| light 판정과 축소 | Plan 초안 A/B에 높음·UNKNOWN 없음, quick 조건 미충족, 금지 조건 0, TDD 활성, sequential이면 계산 light. P는 독립 설계 판정; T light는 QL_MAX 2·8.2 SKIP·8.6 smoke·8.8 SKIP |
 | 승격 latch | 루프 종료·상한 평가보다 먼저 적용, 단방향, 카운터 단조 증가; Phase 8 재진입(⑦·락 재시도 후 수정)만 새 루프 |
 | `--smoke` 무효화 | 실효 full latch·`{MAX_ITER}` 5·`실행 수준: full(smoke 미적용)` |
 | 렌더러·아카이버 exit ≠ 0 | 실제 stdout·원문·JSON 경로와 오류를 보존. 아카이버 실패 시 cp/cat/replace 폴백 금지 |
@@ -100,3 +100,20 @@
 | 모델 추천 default | 플래그 default는 profile을 무시하고 추천, config default는 profile 슬롯 삭제 |
 | 추천표 갱신 후 재개 | 기존 하위 배정과 advisor 결정을 재사용, 새 추천표 미조회 |
 | 모델 최신 근거 부족 | 공식 근거·호스트 모델/effort 미확인 시 기존 파일 보존 |
+
+## Quick와 Plan 깊이 동기화 시나리오
+
+| 입력 | 기대 동작 |
+|---|---|
+| 선택 쿼리 인자 + EC 7개 + DB 의미 E2E 필요 | T standard, P quick; Plan 리뷰 생략, 전체 테스트 유지 |
+| quick + TDD 활성 + 신규 입력 없음 EC | 6.1 SKIP, 6.2 신규 테스트 동반, baseline 불변, Evidence 정확 PASS + 8.4 단언 대응 필수 |
+| standard/light 상태의 Evidence 헤더 + 해당 없음 | Quick 의무 비활성; 필수 ID 누락 INCONCLUSIVE를 만들지 않음 |
+| quick + 승인한 TDD SKIP | 신규 테스트 동반/Evidence 게이트 비활성; 실제 검증 실패는 유지 |
+| 활성 Quick 이후 승격 | Evidence 의무 유지, 이미 완료한 6.1/6.2/Plan 리뷰 재실행 없음 |
+| quick 증거에 SKIP·pending·중복 ID·PASS 미출력 | suite INCONCLUSIVE, 원격 반영 보류; 증거 미완료만으로 승격 ③하지 않음 |
+| 구 schema 4에 선언/R0/P 없음 | P=기존 T 읽기 호환, 완료 리뷰·advisor·baseline 보존, 수용 예외 추측 금지 |
+| 새 확장 상태에 P/R0 일부 누락 또는 Quick 의무 복원 불가 | STATE_SCHEMA_MISMATCH, 원본 보존 |
+| --tier quick + native 재개 + 저장 local 정책 | tier 파싱은 유효, publish=local 유지; 명시 mode 충돌은 차단 |
+| 동일 VERSION이 이미 base보다 앞선 PR 재개 | ALREADY_AHEAD, 이중 patch bump 없이 Gate·push 수행 |
+
+이 표는 지침 대조 시나리오이며 모델을 사용한 전체 workflow 실행 증거가 아니다.

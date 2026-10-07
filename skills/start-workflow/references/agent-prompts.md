@@ -46,6 +46,8 @@ Orchestrator가 Worker의 구조화 결과를 받은 뒤 기록할 때만 사용
 해당 섹션에 append한다. 은 반드시 ## 편차에도 같은 항목으로 기록한다.
 ```
 
+구현 프롬프트에 상태 파일의 Spec·Plan 코드·테스트 설계를 옮겨 적지 않는다. 필요한 섹션 이름을 가리키되 위 envelope의 식별자·승인·미결·소유권·반환 계약은 유지한다.
+
 ## 대기 규약
 
 서브에이전트 결과는 단일 `wait_agent`로 기다린다. 역할별 1회 타임아웃은 Readonly 리뷰/스캔 10분, Worker Red 10분,
@@ -88,7 +90,7 @@ Suggestions:
 - {최소 수정 제안}
 ```
 
-Phase 4.3 fresh-context architect는 resolved concrete advisor effort일 때만 Advisor로 iteration마다 새 `fork_turns:none` context로 만든다.
+P quick이면 4.2·4.3 dispatch를 생략한다. P light/standard에서 Phase 4.3 fresh-context architect는 resolved concrete advisor effort일 때만 Advisor로 iteration마다 새 `fork_turns:none` context로 만든다.
 `tiered`·`N/A`는 spawn하지 않는다. 이전 결론을 답으로 주입하지 않고, 정해진 리뷰 관점과 Spec/Plan의 가장 중요한 결정 질문 1개만 전달해 독립 평가한다.
 
 ## Phase 6.2 Green
@@ -100,7 +102,7 @@ Phase 4.3 fresh-context architect는 resolved concrete advisor effort일 때만 
 변경하지 않는다. 변경 파일, 커밋 수, Plan diff, [Assumption], [TestConflict]를 반환한다.
 ```
 
-TDD 활성 시 추가한다.
+TDD 활성·standard/light는 아래 블록을 추가한다. quick은 [tdd.md](tdd.md)의 quick 테스트 동반 블록으로 교체하고 반환 표를 Orchestrator가 Quick Test Evidence에 기록한다.
 
 ```text
 테스트 파일을 수정하지 않는다. 테스트가 Spec과 충돌한다고 판단하면 코드와 테스트 모두 유지하고

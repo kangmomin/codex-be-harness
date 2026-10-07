@@ -50,3 +50,5 @@ Do not request features absent from the Spec and do not modify files.
 
 workflow 호출은 START_SHA와 OWNED_FILES로 workflow_scope.py가 수집한 명시 경로 목록을 사용한다. main/base를 재추론하거나 dirty 상태에 따라 기준 SHA를 바꾸지 않는다. standalone은 기존 PR base·명시 base·profile mainBranch·origin/HEAD에서 확정한 base-ref를 사용한다. HEAD로 폴백하지 않는다. 삭제는 diff, symlink는 링크 자체만 검토한다. Git/helper 실패는 빈 범위 PASS가 아니라 BLOCKED:REVIEW_SCOPE다.
 writer는 writer-safety.md의 실제 종료 확인 후에만 재시도한다. 공유 상태·결과 JSON은 오케스트레이터가 기록하고 역할은 구조화 결과만 반환한다.
+
+Quick Test Evidence가 전달되면 필수 Spec ID 전체 대응과 각 테스트 입력·단언(file:line)의 의미를 함께 확인한다. R0 수용 deferred_e2e만 미검증으로 구분한다. Evidence 누락·틀린 대응은 scope 이슈로 반환한다. 8.7의 실행 로그는 후행 자료이며 8.4 선행 필수로 요구하지 않는다.

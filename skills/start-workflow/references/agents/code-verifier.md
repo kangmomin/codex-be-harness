@@ -91,5 +91,8 @@ or 3+ High. The overall verdict is the worst category verdict.
 |---|----------|------|------|----------|
 ```
 
-Do not report a theoretical issue without showing the reachable source/sink or failing invariant. Note the static or
-runtime evidence used, and do not modify files.
+Report confirmed issues with reachable source/sink or failing invariant evidence. A code-located hypothesis with
+conditions and explicit missing evidence may be reported as Low confidence; do not count it as confirmed Critical/High.
+Note the static or runtime evidence used, and do not modify files.
+
+언어별 예시는 Go 기준이다. Node 등 다른 preset이면 SQL 문자열·child_process·Promise rejection·이벤트 루프 등 대응 패턴을 검토한다. 코드 위치가 있는 잠재 이슈에는 `[확신도:High|Medium|Low]`와 발생 조건·호출 경로·미확인 근거를 기록한다. Low는 가설로 보고하고 Critical/High 확정 건수에는 High·Medium만 센다. 정적/실행 증거 없이 이슈를 확정하지 않는다.

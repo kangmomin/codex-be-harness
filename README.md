@@ -4,6 +4,19 @@
 
 작업 계약에 대상·현재 기준·완료 증거·승인 범위를 기록하고 다음 에이전트까지 전달한다. 동일 승인 재사용, 근거가 있는 추가 검증, 역할별 권한 검증은 기존 [공통 실행 원칙](skills/start-workflow/references/execution-policy.md)을 통해 적용한다. Astra용 변환과 유지하는 호환성 경계는 [선택적 동기화 기준](COMPATIBILITY.md#선택적-동기화-기준)에 기록한다.
 
+## codex-be-harness@0.7.0 — Claude BE/common 최신 변경 동기화 (2026-10-07)
+
+현재 버전: `codex-be-harness@0.7.0`.
+
+source `harness-plugins` HEAD `5e3414e`의 BE 1.7.1/common 0.15.2를 기존 Codex-native 범위에 동기화했다. quick/light/standard 선언·착수 난이도, 테스트 티어 T와 별도 Plan 깊이 P, 승인 기준 R0와 단조 승격, quick 신규 테스트 증거 게이트를 제공한다. P quick은 fixed advisor도 생략하며 모델 기본값은 유지한다. schema 4 구 실행은 기존 티어·리뷰·baseline을 보존해 재개하고, 기존 미커밋 Orca 변경은 작업 트리에 보존하고 이번 게시에서 제외했다.
+
+`workflow_results.py record`는 이벤트·현재 트리·마감 상태를 원자 기록한다. Go 1.22+ 무테스트 coverage 로그를 정상 판정하고 VERSION이 base보다 앞선 PR은 다시 범프하지 않는다. Codex 도구·경로·단일 Worker writer로 변환한 세부 내용과 검증 결과는 [SYNC-REPORT.md](SYNC-REPORT.md), 출처 해시는 [UPSTREAM-SYNC.json](UPSTREAM-SYNC.json)에 있다.
+
+```text
+$codex-be-harness:start-workflow --tier quick 목록에 선택 필터를 추가해줘
+$codex-be-harness:start-workflow 작업 난이도: 중 — 주문 API를 수정해줘
+```
+
 ## 호환 범위
 
 - Build mode: Phase 1~12
@@ -26,13 +39,13 @@ Fullstack으로 판정되면 BE로 조용히 진행하지 않고 `BLOCKED:FULLST
 
 기본 executor effort는 `high`다. advisor의 기존 `tiered` 정책은 D 1~3의 낮고 명확한 작업을
 `SKIPPED:ADVISOR_NOT_REQUIRED`로 넘기고 D 4~8은 xhigh, D≥9 또는 기존 고위험 신호는 max로 검증한다.
-명시 fixed effort가 이 선택보다 우선하며 새 모델명으로 역할이나 Phase 계약을 바꾸지 않는다.
+P quick은 fixed advisor도 생략한다. P light/standard에서는 명시 fixed effort가 자동 선택보다 우선하며 모델 기본값은 유지한다.
 
 일반 Codex task에 이 원칙을 한 번 적용하려면 유효한 전역 AGENTS 파일에 작업 영향·불확실성에 비례해 탐색과 검증을 넓히고, 필수 검증 통과 뒤 새 실패·미검증 가설·수정 영향이 없으면 반복을 멈춘다는 지침을 수동으로 둘 수 있다. 이 저장소의 `AGENTS.md`는 repository 범위 지침이며 전역 파일과 다르다. base와 plan effort 예시는 각각 `model_reasoning_effort = "high"`, `plan_mode_reasoning_effort = "high"`다. 이는 개인 `~/.codex` 설정이나 현재 실행 effort를 자동 변경하지 않는 1회 안내이며 새 task부터 적용된다.
 
 ## 0.6.5 변경
 
-현재 버전: `codex-be-harness@0.6.5`.
+이전 버전: `codex-be-harness@0.6.5`.
 
 3/4 찬성도 소수 반론을 독립 Arbiter에 전달한다. 모든 승인은 반론 해소 여부와 코드·실행된 테스트 근거를 요구하며, 작은 [판정 검사기](skills/simplify-loop/assets/review_gate.py)가 누락·미해소 결과의 적용을 차단한다. 상태·재시도·루프 상한과 단일 writer는 기존 규약을 유지한다.
 
@@ -100,7 +113,7 @@ upstream 동기화는 [선택적 동기화 기준](COMPATIBILITY.md#선택적-�
 
 관찰 가능한 동작 차이는 [COMPATIBILITY.md](./COMPATIBILITY.md)의 "0.4.0 deviations"에 있다.
 
-- 검증 티어(`light`/`standard`)와 `--tier standard`: 코드 복잡도·영향 리스크에 따라 저위험 작업의 검증 범위를 축소하고 승격 조건 충족 시 `standard`로 전환한다.
+- 검증 티어(`quick`/`light`/`standard`)와 `--tier`: Plan 초안으로 위험·테스트 깊이를 판정한다. Plan 깊이 P는 설계 사실로 따로 정하고 T만 올랐을 때 리뷰를 복원하지 않는다. 자연어 `작업 난이도: 하/중/상`도 선언이며 승격은 단방향이다.
 - 결정적 단계 스크립트 4개를 당시 upstream `2d7a01c`와 바이트 동일하게 도입했다. 이후 변경된 파일의 현재 해시와 출처는 `UPSTREAM-SYNC.json`에 기록한다.
 - 상태 파일 스키마 2: Flags·Profile Snapshot·Verification Tier·Final Decisions·Artifacts를 고정하고 스키마 불일치 재개를 fail-closed 처리한다.
 - Phase 12는 슬림 Workflow Report 1회 작성과 md 아카이브 1회 생성으로 단일화하고 HTML 노트를 폐지한다.
@@ -126,7 +139,7 @@ upstream 동기화는 [선택적 동기화 기준](COMPATIBILITY.md#선택적-�
 
 | skill | 설명 |
 |---|---|
-| `start-workflow` | Build/Analyze/Verify 전체 workflow — 검증 티어(light/standard, `--tier standard`), md 아카이브, 토폴로지 슬롯(`--topology-models`) |
+| `start-workflow` | Build/Analyze/Verify 전체 workflow — 검증 티어(quick/light/standard, `--tier`)와 독립 Plan 깊이, md 아카이브, 토폴로지 슬롯(`--topology-models`) |
 | `request` | 단계적 질문과 코드 분석으로 Technical Spec 생성 |
 | `unit-test` | Spec 추적 ID 기반 단위 테스트 및 Red 단계 |
 | `simplify-loop` | 네 관점 검토와 단일 writer 기반 bounded 단순화 |

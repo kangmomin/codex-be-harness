@@ -26,7 +26,7 @@ Write tool로 `{STATE_FILE}`을 생성한다:
 - ROUTE_TARGET: be
 - TDD: {true|false}
 - REFLECT: {true|false}
-- TIER: {light|standard}
+- TIER: {quick|light|standard}
 - TOPOLOGY_MODELS: {TOPOLOGY_MODELS}
 - RUN_ID: {RUN_ID}
 - START_SHA: {START_SHA}
@@ -75,18 +75,23 @@ Write tool로 `{STATE_FILE}`을 생성한다:
 [생성/수정/검토/디버깅]
 
 ## Difficulty
-[N]/10
+[N]/10 — Phase 4.1 동결 (executor legacy `tiered` 입력)
 
 ## Verification Tier
-- 계산 티어: {light|standard} — A [a]/10, B [b]/10
-- 최종 티어: {light|standard} ({사유: 해당 없음 | 금지 조건 {항목} | TDD off | parallel-slices | --tier standard})
+- 선언: {quick|light|standard ({CLI|대화|착수 질문}) | 없음}
+- 계산 티어: {quick|light|standard} — C0 (4.1), 판정 #{n}, A [a]/10, B [b]/10
+- 승인 기준 R0 (4.4): 판정 #{n} / A·B 요소값 / 소스 {N}개 ({목록}) / 금지 조건 {해당 없음|{항목}} / 계약 {변경 없음|{요약}} / TDD {적용|SKIP:{사유}} / deferred_e2e {없음|{ID}} / 전략 {sequential|parallel-slices} / 선언 유지 사유 {없음|{원인}}
+- 최종 티어: {quick|light|standard}
+- Plan 깊이: {quick|light|standard} — P#{n}{, 선언 상한} / 4.2 {3×2|1에이전트|SKIPPED:PLAN_QUICK} / PLAN_MAX {5|2|0} {/ 변경: {4.1 값} → {최종} ({4.4 재판정|선언 변경|①})}
+- 수용 예외: {없음 | {금지 항목} · {정규화 경로} · {행위·대상} · Plan v{N}, …}
 - 근거: {요소별 밴드 요약 + risk_facts.py 출력 요약}
 - 시작 커밋: {START_SHA}
-- 축소 항목: {4.2 1역할 / PLAN_MAX 2 / QL_MAX 2 / 8.2 SKIP / 8.6 smoke / 8.8 SKIP | 없음}
+- 축소 항목 (T 기준 — 4.2·4.3·PLAN_MAX는 `Plan 깊이` 줄): {light: QL_MAX 2 / 8.2 SKIP / 8.6 smoke / 8.8 SKIP | quick: 6.1·8.2·8.3·8.6·8.8 SKIP / QL_MAX 2 | 없음}
 
-| 시점 | 트리거 | 근거 | 조치 |
-|------|--------|------|------|
-[승격 발생 시 append — 예: `6.2 완료 직후` | `② 변경 소스 파일 5 > 3` | `a.go, b.go, …` | `standard 전환, 미재실행: 4.2`]
+| 시점 | 트리거 | 근거 | 조치 | 의무 | 완료 |
+|------|--------|------|------|------|------|
+[승격 발생 시 append (`## Flags` `TIER`와 같은 Edit) — 예: `6.2 완료 직후` | `② C′ light (소스 5 > 3)` | `a.go, b.go, …` | `quick → light 전환` | `-` | `-`
+/ `Phase 10 직전` | `⑦ C′ standard (금지 조건: DI wiring)` | `wire.go` | `standard 전환, 미재실행: 4.2` | `Phase 8 재진입` | `N`]
 
 ## Current Phase
 Phase 5 - 자율 실행 시작 (agent: Orchestrator, model: {orchestrator.model}, effort: {orchestrator.effort})
@@ -97,7 +102,7 @@ Phase 5 - 자율 실행 시작 (agent: Orchestrator, model: {orchestrator.model}
 | 1 | Orchestrator + Readonly edge-case | {orchestrator.model} / {readonly.model} | {orchestrator.effort} / {readonly.effort} | DONE |
 | 2 | Orchestrator | {orchestrator.model} | {orchestrator.effort} | DONE |
 | 3 | Orchestrator | {orchestrator.model} | {orchestrator.effort} | DONE |
-| 4.2 | Readonly reviewers + Orchestrator | {readonly.model} / {orchestrator.model} | {readonly.effort} / {orchestrator.effort} | DONE |
+| 4.2 | Readonly reviewers + Orchestrator | {readonly.model} / {orchestrator.model} | {readonly.effort} / {orchestrator.effort} | {DONE|SKIPPED:PLAN_QUICK} |
 | 4.3 | fresh Advisor | {advisor.model 또는 N/A} | {advisor.effort 또는 N/A} | {advisor.status} |
 | 4.4 | Orchestrator approval | {orchestrator.model} | {orchestrator.effort} | DONE |
 | 5 | Orchestrator | {orchestrator.model} | {orchestrator.effort} | IN_PROGRESS |
@@ -139,6 +144,13 @@ Phase 5 - 자율 실행 시작 (agent: Orchestrator, model: {orchestrator.model}
 | EC-01 | Test_Create_중복이메일 | user_test.go:42 | already_satisfied | PASS |
 | EC-02 | — | — | deferred_e2e | - |
 
+## Quick Test Evidence
+[quick + TDD 활성일 때만 Phase 6.2 직후 기록하고, 8.5 보완 테스트는 append. `## TDD Test Map`과 별개의 최상위 섹션이며 회귀 분류에 쓰지 않는다 (`verification-tier.md` §4.1). 재개 시 보존한다. 6.2 전은 `미실행`, 그 외 티어는 `해당 없음`]
+
+| Spec ID | suite | 테스트 ID | 파일 |
+|---------|-------|-----------|------|
+[Phase 5에는 테스트 행을 생성하지 않는다. 활성 Quick 의무 실행의 6.2 반환 표를 이후 기록한다.]
+
 ## Plan
 [확정된 Plan 전문 그대로 복사]
 
@@ -146,10 +158,10 @@ Phase 5 - 자율 실행 시작 (agent: Orchestrator, model: {orchestrator.model}
 [Phase 4.3 검증 루프의 Iteration Diff Log. raw `CODEX-UNAVAILABLE`/`USER-INTERRUPTED`와 진단은 여기에 보존하며 Phase Assignment status로 쓰지 않는다.]
 
 Phase 4.3의 `{advisor.status}`는 `DONE`, `SKIPPED:ADVISOR_NOT_REQUIRED`, `SKIPPED:CODEX_UNAVAILABLE`,
-`SKIPPED:USER_INTERRUPTED` 중 하나다.
+`SKIPPED:USER_INTERRUPTED`, `SKIPPED:PLAN_QUICK` 중 하나다. P quick은 신규 advisor=N/A이며 fixed 설정도 생략한다. 수행 후 선언 하향이면 raw USER-INTERRUPTED와 리뷰 이력은 보존한다.
 
 ## Readback Diff
-[Phase 8.8 결과. Phase 8.8 실행 전에는 `미실행`, light면 `SKIPPED:TIER_LIGHT`]
+[Phase 8.8 결과. Phase 8.8 실행 전에는 `미실행`, light면 `SKIPPED:TIER_LIGHT`, quick이면 `SKIPPED:TIER_QUICK`]
 
 ## Final Decisions
 [Phase 10 Gate·Phase 12 ②~④에서 받은 유저 결정을 받는 즉시 append. 재개 시 기록된 항목은 다시 묻지 않는다]
@@ -185,7 +197,7 @@ Phase 4.3의 `{advisor.status}`는 `DONE`, `SKIPPED:ADVISOR_NOT_REQUIRED`, `SKIP
 ```
 
 `--reflect` 미지정 시(기본): 생성 시점에 Phase 11 행의 Status를 `SKIPPED:REFLECT_NOT_REQUESTED`로 기록하고, `Remaining Phases`에서 "Phase 11: 성찰"을 제외한다.
-light 티어: `Phase Results`에 8.2·8.8 행을 `SKIPPED:TIER_LIGHT`로 미리 기록하지 않는다 — 승격으로 실행될 수 있으므로 해당 단계 도달 시점에 기록한다.
+light·quick 티어: 생략 단계(`SKIPPED:TIER_LIGHT`·`SKIPPED:TIER_QUICK`)를 `Phase Results`·Phase Assignments에 미리 기록하지 않는다 — 승격으로 실행될 수 있으므로 해당 단계 도달 시점에 기록한다. 4.2·4.3의 `SKIPPED:PLAN_QUICK`은 4.4 확정 뒤 이 상태 파일을 만들 때 기록한다.
 
 ### `## Test Baseline` append 블록 (수집 후 정확히 1회)
 
@@ -275,7 +287,7 @@ python3 "{SKILL_DIR}/assets/workflow_archive.py" report --src "{WORK_REPORT}" --
 ### 1. 작업 요약
 - **작업 유형**: [생성/수정/검토/디버깅]
 - **난이도**: [N]/10 (산정) → [M]/10 (체감)
-- **검증 티어**: [light | standard | light → standard ({트리거}, 미재실행: 4.2)]
+- **검증 티어**: [{T} (선언 {D_tier|없음}, 계산 {C0}) | {이전} → {최종} ({트리거}, 미재실행: {목록})] · Plan 깊이 {P | 구 상태면 `-`}
 - **토폴로지 모델**: [기본 | {변경 슬롯 요약 — 슬롯=model@effort, …}]
 - **PR**: [PR URL]
 
@@ -290,7 +302,7 @@ python3 "{SKILL_DIR}/assets/workflow_archive.py" report --src "{WORK_REPORT}" --
 | EC-01 | [케이스] | [대응] | PASS | PASS | 일치 |
 | EC-02 | [케이스] | [대응] | deferred_e2e | `UNCOVERED:{사유}` | A 검증 누락 |
 
-- `Unit` 열: Phase 6.1 TDD Test Map의 Green 결과 또는 진단 분류. TDD SKIP이면 `-`
+- `Unit` 열: Phase 6.1 TDD Test Map의 Green 결과 또는 진단 분류. quick이면 `## Quick Test Evidence`의 테스트와 최신 suite 결과(PASS 증거 확인), R0가 수용한 deferred_e2e는 `미검증(E2E 이연)`. TDD SKIP이면 `-`
 - `E2E` 열: Phase 8.6 리포트의 해당 ID 판정. 미실행이면 `-`
 - `Read-back` 열: Phase 8.8 Diff 유형(A~E) 또는 `일치`. Phase 8.8이 SKIP이면 `-`
 
@@ -313,7 +325,7 @@ python3 "{SKILL_DIR}/assets/workflow_archive.py" report --src "{WORK_REPORT}" --
 | `[Breaking]` | 기존 테스트의 기대 동작을 변경함 | [테스트명, 변경 내용] | 호환성 검토 |
 | `cannot_compile` | 3회 시도 후 되돌린 테스트 | [Spec ID] | 수동 작성 / 범위 제외 |
 
-**Read-back 판정**: [PASS/WARN/FAIL | SKIPPED:TIER_LIGHT] — A [n]건 / C [n]건 / E [n]건 (소스: 테스트 파일 / E2E 리포트 / 구현 코드)
+**Read-back 판정**: [PASS/WARN/FAIL | SKIPPED:TIER_*] — A [n]건 / C [n]건 / E [n]건 (소스: 테스트 파일 / E2E 리포트 / 구현 코드)
 
 ### 5. 문서 동기화
 - API 문서 동기화: [Y/N/SKIPPED, 요약]
@@ -349,7 +361,7 @@ python3 "{SKILL_DIR}/assets/workflow_archive.py" report --src "{WORK_REPORT}" --
 |-------|--------|------|---------------|------------|
 | 8.4 | DONE | `degraded_fallback` | 세션 한계 사망 ×2 — 오케스트레이터 직접 scope 검토 (독립성 상실) | Y — `start-workflow --verify` |
 | 9 | SKIPPED:BUDGET_PRESERVED | - | 검증 예산 보존 | Y — 문서 동기화 별도 실행 |
-| 8 | DONE | `tier_escalated(②)` | 변경 소스 파일 5 > 3 — light → standard, 4.2는 light로 실행 | N |
+| 8 | DONE | `tier_escalated(②)` | 재판정 C′ standard (A 파일 수 9 = 높음) — light → standard, 4.2는 light로 실행 | N |
 ```
 
 ## Phase 12: 보완점 적용 상세

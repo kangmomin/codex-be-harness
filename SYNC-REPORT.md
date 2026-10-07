@@ -206,3 +206,49 @@
 - **한계**: 실제 로컬 helper·Git·브라우저와 지정된 독립 행동을 검증했다. 원격 CI, 실제 서비스의 전체 Build→PR, Verify V3~V5, 모델별 시간·비용은 이번에 실행하지 않았다. ignored 파일·저장소 밖 입력은 내용 지문의 범위 밖이며 HEAD 의존성이 불명확한 검증은 include-head로 보수적으로 기록한다.
 - **Integrity**: 전체 target 해시 78개·선택 source 해시 21개와 공유 helper 사본이 일치한다. 최종 구조 검사와 git diff --check가 통과했고, 두 저장소 HEAD·index는 시작 시점 그대로다.
 - **Cleanup**: 검증 로그·독립 행동 결과를 보존하고 소유 프로세스가 없음을 확인한 뒤 임시 venv·fixture·패키지 캐시를 삭제했다. Git에서 제외된 기존 개발 의존성은 유지했다. 후속 commit-hard-push 요청에 따라 0.6.2 게시 내용을 확정했다. 독립 게시 검토에서 커밋 분할·리터럴 분류·원본 출처를 확인했으며 설치 갱신은 이번 요청 범위에 포함하지 않는다.
+
+## 📋 Task Report: Codex BE/common 최신 동기화 (0.7.0, 2026-10-07)
+
+### 1. Pre-Review (Plan)
+
+- **Orchestrator Feedback**: 기존 Codex BE 포트와 공통 의존 스킬에 source clean HEAD `5e3414e99f402a7d559e0433293b0a36733db02a`의 BE 1.7.1/common 0.15.2를 동기화한다. 현재 target에 있던 미커밋 Orca 변경을 보존한다. 태스크 난이도: 입력 대조 중, 티어·Plan·재개 변환 상, helper·문서·검증 중.
+- **독립 리뷰어 Feedback**: 스킬 외 작업에 대한 fresh-context 서브에이전트 1명이 P quick/fixed advisor, 구 schema 4, Evidence 소비 경로, native writer, Orca 보존, 난이도/선언 기호를 사전 검토했다. 구현 후 같은 리뷰어가 Evidence 헤더만으로 의무가 켜지는 오류, 구 상태 재개 차단, Verify 범위·Low 가설 문구 충돌을 지적했다. 외부 CLI 리뷰어는 호출하지 않았다.
+- **Refinement**: P quick의 dispatch 생략 우선순위, schema 4 필드 이름·legacy fallback, 활성 Quick 의무의 지속·복원, Worker만 테스트 편집, numeric D와 D_tier 구분을 반영했다. 지적된 실제 계약 충돌을 수정하고 추가 검증 단계는 만들지 않았다.
+- **Guide**: [공식 GPT-6 Astra 가이드](https://developers.openai.com/api/docs/guides/latest-model?model=gpt-6-astra)를 2026-10-07 본문 확인했다. 완료·기존 승인 재사용·구체적 증거 기준을 유지하며 모델·effort 기본값은 교체하지 않았다.
+
+### 2. Implementation Details
+
+- **Assumptions**: 없음. 기존 `/workspace/codex-be-harness`의 BE 포트 및 공통 6개 의존 스킬 동기화 결과를 후속 `ㄱㄱ` 요청으로 승인받았다. 사용자는 게시 범위를 동기화 변경으로 한정했다. 기존 Orca 변경은 작업 트리에 보존하며 FE/fullstack·overlay 확장과 설치 캐시 갱신은 포함하지 않는다.
+- **Key Changes**: 버전 0.7.0. quick/light/standard·난이도 선언, Plan 깊이 P, R0·명시 예외·단조 승격, Quick Evidence, 원자 결과 record, Go 무테스트 coverage 파싱, VERSION 재범프 생략과 감사 수정.
+
+| 판정 | 적용 내용과 파일 | 근거/경계 |
+|---|---|---|
+| 채택 | risk_facts.py·test_failures.py·workflow_results.py·workflow_archive.py, 원본 parser/results 회귀 테스트 | 호스트 중립 개선을 재사용. record 성공과 실제 검증 성공을 구분한다. |
+| 변환 | start-workflow, build-phases, verification-tier, templates, tdd, quality-loop, scope/PR/finalization 소비자 | Codex `.codex` 경로·topology·부모 상태 소유·Worker writer·격리 Read-back으로 변환. quick의 명시 SKIP 계약을 제공한다. |
+| 변환 | native workflow_policy.py와 test_native_adapters.py | --tier 검증만 기존 native adapter에 병합. literal 인자·BE-only·저장 local 재개 정책 유지. Orca 미커밋 변경은 게시에서 제외. |
+| 채택/변환 | commit-pr, E2E 락 해제, init/PROFILE, analyze/verify 범위·언어·확신도, doc-gen 관련성 문구 | 반복 범프·질문·오판을 줄이는 최신 기능·감사 변경. |
+| 유지 | workflow_run.py, writer-safety.md, 기존 workflow_run 테스트, model/profile 자산 | 게시 스냅샷에는 기존 committed native 계약을 유지. Orca 변경과 agent-runtime.md는 원래 작업 트리에 보존. 기본 모델·고정 역할 보존. |
+| 제외 | commit-push의 common root 설명, convention-check의 중복 정책 읽기, request의 중복 문구, simplify의 Claude Workflow/레거시 실행 경로 | native 동작에 이미 반영되었거나 호스트 전용이다. 기존 단순화 Arbiter와 bounded loop를 유지한다. |
+| 범위 제외 | FE/fullstack·프로젝트 overlay·외부 CLI/panel/provider 폴백·submit-feedback/sync-base 신규 스킬 | 기존 BE 포트 범위를 유지한다. 존재하지 않는 Codex 기능으로 표시하지 않는다. |
+
+- **Provenance**: 전체 baseline과 기존 선택 이력은 보존했다. 새 입력을 반영한 33개 매핑의 committed source HEAD·source/target SHA-256을 갱신했고 로컬 작업 트리의 86개 target hash를 대조했다. 게시용 스냅샷은 Orca 파일을 제외한 85개 target hash로 별도 대조한다. 제외한 4개 원본 변화는 별도 `excluded`에 실제 source 해시와 사유를 기록했다. native 로컬 계약은 `local_only`로 구분하고 새 upstream 출처를 만들지 않는다.
+- **Compatibility**: schema 4 Flags·23키 Snapshot·계산/최종 티어 이름은 유지한다. 새 선언/R0/P·수용 예외가 일부만 있으면 차단한다. 필드 없는 구 light/standard는 P=기존 T로 읽고 완료 리뷰·advisor·baseline을 보존한다. 활성 Quick 의무는 승격·재개·최종 수정 뒤에도 유지한다. 세부 내용은 COMPATIBILITY.md의 0.7.0 표를 따른다.
+
+### 3. Final Convention Review
+
+- **Layer Analysis**: 애플리케이션 Presentation/Service/Repository 변경 없음. 스킬은 실행 계약, helper는 인자·상태·결과 검증, provenance는 출처를 담당한다. 부모는 상태·판정·커밋을 조정하고 Worker가 업무 소스를 편집한다.
+- **Simplicity Check**: 기존 18개 스킬·모델·profile·루프를 유지했다. 순수 helper를 재사용하고 변환은 기존 native 소비 경로에 적용했다. 새 실행 엔진이나 source 레포 변경은 없다.
+- **Style Match**: 기존 한국어 설명, Markdown 계약, Python helper, Codex 상대 경로·상태 어휘를 유지했다.
+
+### 4. Status
+
+- **Verification**: `HARNESS_DOCGEN_NO_SANDBOX=1 bash scripts/verify.sh` exit 0 — 구조/manifest/port 검사(18 skills, 26 resources), Python unittest 148개, 실제 Chromium doc-gen 5개 PASS. 전체 18개 skill quick_validate PASS. `git diff --check`, 86 target hash·33 adopted source hash 대조 PASS. 원본 source working tree는 clean이고 HEAD가 변하지 않았다.
+- **검증 한계**: AGENTS.md가 지정한 `/home/dev/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py`는 현재 환경에 없다. 저장소의 manifest/port validator는 통과했지만 이 별도 외부 validator를 실행했다고 보고하지 않는다. shellcheck도 설치되지 않아 조건부 검사를 실행하지 않았다. 실제 외부 모델의 전체 업무 workflow·원격 push/PR·PC SSH Orca 실행은 수행하지 않았다. 시나리오 표는 지침 대조이며 모델 행동 실측이 아니다.
+- **Cleanup**: 검증 세션 종료와 테스트 fixture·브라우저 정리를 확인했다. 작업용 사전 사본·병합 후보·스크립트·로그를 정리했다. 기존 미커밋 변경은 보존했고 변경은 Codex target 작업 트리에 남긴다. commit/push/설치 캐시 변경은 수행하지 않았다.
+
+### 5. 후속 게시 준비 (동기화 변경만)
+
+- **승인·범위**: 후속 `ㄱㄱ` 요청으로 commit/push를 진행한다. 사용자가 동기화 변경만 게시하도록 명시했으며 `feat/sync-upstream-harness` 브랜치를 사용한다. 원래 작업 트리의 기존 Orca 변경은 보존하고 게시 대상에서 제외한다.
+- **독립 리뷰**: 게시용 native 스냅샷을 추가 대조했다. Quick/P/legacy schema 계약 누락이나 runtime Orca 의존성을 발견하지 못했으며 최신 source 33개 매핑의 committed 출처와 SHA-256이 일치한다.
+- **게시용 검증**: `HARNESS_DOCGEN_NO_SANDBOX=1 bash scripts/verify.sh` exit 0 — 구조/manifest/port, Python 140개, Chromium 5개 PASS. 18개 skill validator와 git diff --check PASS. Orca 회귀 8개는 게시 스냅샷의 범위 밖이며, 위 로컬 동기화 검증 148개와 구분한다. target hash 85개와 adopted source hash 33개를 대조했다. 외부 plugin-creator validator·shellcheck 부재는 앞 절과 같다.
+- **최종 검토·정리**: 실행 계약/helper/provenance 경계를 유지하고 기존 native 계약에 필요한 변경만 게시한다. 별도 worktree로 기존 working bytes와 index를 보존한다. 원격 반영 결과는 최종 응답에 보고하고 소유 임시 worktree·파일을 정리한다. PR·설치 캐시 변경은 요청 범위에 포함하지 않는다.

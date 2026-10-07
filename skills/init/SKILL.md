@@ -16,13 +16,13 @@ description: "be-harness 플러그인의 project profile(.codex/be-harness.local
 
 ## Language Rule
 
-유저와의 모든 대화는 **한국어**로 진행한다 (profile에서 변경 가능).
+유저와의 모든 대화는 profile의 `language` 값(기본 `ko`, 한국어)을 따른다.
 
 ---
 
 ## Step 1: 현재 상태 스캔
 
-아래 항목을 조용히 점검한다.
+아래 항목을 점검하고, 결과는 Step 2 표로 요약한다.
 
 - `.codex/be-harness.local.md` 존재 여부
 - 프로젝트 언어 자동 탐지
@@ -206,7 +206,7 @@ mkdir -p .codex/be-harness/skills .codex/be-harness/agents
 
 ## 주의사항
 
-- 기존 `.codex/be-harness.local.md`가 있으면 덮어쓰지 않고, 변경된 필드만 수정한다.
+- 기존 `.codex/be-harness.local.md`가 있고 재생성을 원하지 않으면 overwrite하지 않는다. 바뀐 키는 config 스킬의 배치 수정 절차(typed JSON preview → 같은 입력과 `sha256_before`로 apply — `skills/config/SKILL.md`)로 반영한다.
 - `.codex/` 디렉토리가 없으면 먼저 생성한다.
 - Git이 초기화되지 않은 프로젝트도 profile은 생성한다 (Git 관련 필드는 빈 값 허용).
 

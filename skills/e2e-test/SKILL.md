@@ -25,7 +25,7 @@ description: "기능 추가/수정 후 연관 HTTP API를 실제 요청으로 E2
 
 ## Language Rule
 
-유저와의 모든 대화는 **한국어** (profile의 `language` 기준).
+유저와의 모든 대화는 profile의 `language` 값(기본 `ko`, 한국어)을 따른다.
 
 ---
 
@@ -119,7 +119,8 @@ Spec에 엣지 케이스 표가 없거나 ID가 없으면(구버전 Spec) `EC-*`
    > 2. 토큰 직접 입력 → 그대로 사용
    > 3. 모름/제공 불가 → `SKIPPED:NO_AUTH` 반환 후 종료"
 
-입력받은 방법은 `projectNotes` 업데이트를 제안한다 (사용자 승인 시에만).
+입력받은 발급 방법(토큰 값 제외)은 profile 본문의 `# Project Notes`에 기록하도록 제안한다 (사용자 승인 시에만).
+확보한 계정의 실제 역할·소유 자원을 시나리오와 대조한다. 관리자 토큰으로 일반 사용자나 타 소유자 검증을 대신하지 않는다. 특정 역할 토큰·자원이 없으면 해당 케이스를 `UNCOVERED:{사유}`로 남기고 가능한 케이스는 진행한다. 필요한 인증 자체를 확보하지 못한 경우의 `SKIPPED:NO_AUTH`는 유지한다. 발급 방법만 기록하며 토큰 값은 Spec·위임·리포트에 복제하지 않는다.
 
 ## Step 3.5: 실행 락 획득
 
@@ -293,8 +294,8 @@ HARNESS_E2E_LOCK_DIR="{resolved_e2e_lock_dir}" bash "{LOCK_SCRIPT}" release "{E2
 
 SKIP은 오케스트레이터의 루프 재시작 트리거가 아니다.
 
-**SKIP 경로의 락 해제**: Step 3.5 이후에 발생하는 `SERVER_START_FAIL`은 종료 전에 반드시 Step 6.5를 수행한다.
-Step 3.5 이전의 SKIP(`NO_PROFILE`, `DISABLED`, `NO_SERVER_URL`, `NO_SERVER`, `NO_AUTH`, `NO_CHANGED_API`)과 `LOCK_TIMEOUT`은 락을 잡지 않았으므로 해제할 것이 없다. `LOCK_UNAVAILABLE`도 락을 잡지 않았으므로 해제할 것이 없다.
+**SKIP 경로의 락 해제**: Step 3.5 이후에 발생하는 SKIP/BLOCKED(`NO_AUTH`(락 획득 후 발생 시), `SERVER_BUILD_FAIL`, `SERVER_START_FAIL`, `SERVER_CODE_UNVERIFIED`)은 종료 전에 반드시 Step 6.5를 수행한다.
+Step 3.5 이전의 SKIP(`NO_PROFILE`, `DISABLED`, `NO_SERVER_URL`, `NO_SERVER`, `NO_CHANGED_API`, `NO_AUTH`(Step 3에서 발생 시))과 `LOCK_TIMEOUT`, `LOCK_UNAVAILABLE`은 애초에 락을 잡지 않았으므로 해제할 것이 없다. 해제 여부는 상태 코드가 아니라 이번 실행이 락을 획득했는지(`E2E_RESOURCE_KEY` 보유)로 판정한다.
 
 하위 호출은 상위 loop의 E2E_RUN_DIR/JSON을 삭제하지 않는다. standalone도 결과 인계·서버 종료·락 해제를 확인한 뒤 자기 E2E_RUN_DIR만 정리한다. 서버 또는 락 cleanup이 실패하면 원래 테스트 판정을 덮어쓰지 말고 리포트에 cleanup 경고를 추가한다.
 

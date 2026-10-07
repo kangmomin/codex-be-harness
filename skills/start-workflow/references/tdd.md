@@ -9,7 +9,7 @@ Spec이 요구하는 동작을 먼저 실패하는 테스트로 고정해 두면
 
 ## TDD 적용 판정
 
-Phase 5에서 아래를 순서대로 확인하고, 하나라도 걸리면 TDD를 SKIP한다. SKIP 시 워크플로우는 **기존과 완전히 동일하게** 동작한다.
+Phase 5에서 아래를 순서대로 확인하고, 하나라도 걸리면 TDD를 SKIP한다. SKIP 시 TDD 단계(baseline 수집·Phase 6.1 Red·구현 프롬프트의 TDD 규칙 블록·Phase 8 회귀 분류)만 빠지고 나머지 절차는 그대로 진행한다.
 
 | # | 조건 | 상태 코드 |
 |---|------|----------|
@@ -22,7 +22,7 @@ Phase 5에서 아래를 순서대로 확인하고, 하나라도 걸리면 TDD를
 - 작업 유형 `디버깅`은 **SKIP하지 않는다.** 재현 테스트를 먼저 고정하는 것이 TDD가 가장 강한 지점이며, Debug Spec의 `RC-nn` 표를 근거로 사용한다.
 - Analyze / Verify 모드는 구현 Phase를 경유하지 않으므로 **해당 없음**이다.
 
-SKIP 판정을 `{STATE_FILE}`의 `## Test Baseline`에 `SKIPPED:{코드} — {사유}` 1줄로 기록하고(블록 형식: [templates.md](templates.md) append 블록) Phase 6으로 진행한다.
+SKIP 판정을 `{STATE_FILE}`의 `## Test Baseline`에 `SKIPPED:{코드} — {사유}` 1줄로 기록하고(블록 형식: [templates.md](templates.md) append 블록) Phase 6으로 진행한다. R0에 없던 SKIP이고 T < standard면 승격 ④도 기록한다([verification-tier.md](verification-tier.md) §5).
 
 ---
 
@@ -43,7 +43,7 @@ python3 {SKILL_DIR}/assets/test_failures.py --runner auto --exit-code $EXIT --su
 |------|------|
 | `러너 완주` | 러너가 전체 스위트를 발견·실행 완료했는지. `N`이면 실패 목록을 신뢰할 수 없다. 판정 매트릭스: 종료 마커(go `ok/FAIL {pkg}` 요약 줄, jest `Tests:`, vitest `Test Files`) 있음 → `Y` (exit ≠ 0은 "실패 있음"으로만 해석) / 마커 없음 → `N` (중단·크래시·설정 오류) / 마커 있음 ∧ 실패 0 ∧ exit ≠ 0 → `Y` + `unparsed` 1건(실패 없는 비정상 종료) / 테스트 0건 → `Y` + `unparsed`(테스트 0건) |
 | `실패 목록` | 항목 = `` `{식별자}` :: `{정규화 시그니처}` ``, 항목 구분은 닫는 백틱과 여는 백틱 사이의 ` / `만. 식별자는 러너 네이티브 전체 ID(go `{package}::TestX/sub`, jest·vitest `{runner}::{file}::{describe › it}` 전체 경로), 키 = suite + 식별자. 내부 백틱은 `'`로, `\|`는 escape |
-| `정규화 시그니처` | Go는 기존 첫 오류 정규화 규칙을 따른다. JS는 JSON `failureMessages` 또는 텍스트 오류 본문의 matcher·Expected/Received·diff 전체에서 stack/source frame만 제거한다. 실제 오류 값의 경로·숫자는 보존한다. 비교는 전체 문자열, 표시만 120자 + 해시 8자 |
+| `정규화 시그니처` | Go는 실패 메시지 첫 줄에서 경로·라인 번호·타임스탬프·메모리 주소(`0x…`)·goroutine id·소요 시간을 제거하고 공백을 축약한다. JS는 JSON `failureMessages` 또는 텍스트 오류 본문의 matcher·Expected/Received·diff 전체에서 stack/source frame만 제거한다. 실제 오류 값의 경로·숫자는 보존한다. 비교는 전체 문자열, 표시만 120자 + 해시 8자 |
 | `unparsed` | 지원 러너(go · jest · vitest) 밖이거나 파싱이 불확실한 항목. 대조 불가 데이터 — 잔존 시 테스트 판정 `PASS` 불가 |
 
 **시그니처가 이 설계의 핵심이다.** 식별자만 기록하면 "원래 깨져 있던 테스트가 이번 변경으로 **다른 이유로** 깨진 것"을 놓친다.
@@ -63,7 +63,7 @@ Go는 패키지 요약 줄의 import path를 포함한 `{package}::TestX/sub`를
 > 2. **중단** — 기존 테스트를 먼저 고치고 워크플로우를 다시 시작합니다
 > 3. **`--no-tdd`로 전환** — TDD 없이 기존 워크플로우로 진행합니다"
 
-1번 선택 시 `## Test Baseline`에 `수집 실패 — regression 판정 불가`를 명시 기록한다. 검증 티어가 light면 승격 ④로 standard 전환을 함께 기록한다([verification-tier.md](verification-tier.md) §4).
+1번 선택 시 `## Test Baseline`에 `수집 실패 — regression 판정 불가`를 명시 기록한다. 검증 티어가 standard가 아니면 승격 ④로 standard 전환을 함께 기록한다 (`verification-tier.md` §5). 이 경우 선택지에 "1·3번은 검증 티어를 standard로 올립니다"를 함께 표시한다.
 
 ## `## Test Baseline` 완전성 (canonical)
 
@@ -172,13 +172,31 @@ Phase 6의 Worker 구현 프롬프트(`agent-prompts.md`)를 사용하되, TDD�
     - Phase 6.1이 만든 스텁을 실제 구현으로 채우세요.
 ```
 
+## quick 테스트 동반 모드 (quick + TDD 활성)
+
+Phase 6.1이 `SKIPPED:TIER_QUICK`이면 위 블록 대신 아래 규칙을 전달한다. 필수 ID 목록은 오케스트레이터가 승인 Spec에서 만든다 (`verification-tier.md` §4.1).
+
+```
+    ## quick 테스트 동반 모드 (Phase 6.1 Red가 생략되었습니다)
+    - 필수 ID마다 그 요구를 검증하는 **신규** 테스트를 작성하세요: {필수 ID 목록}
+      근거 표 밖의 테스트는 작성하지 마세요.
+    - 기존 테스트(케이스·단언·fixture)는 수정하지 마세요. 충돌하면 `[TestConflict]` 태그로 보고하세요.
+    - 작성한 테스트를 verbose로 직접 실행해 green을 확인하세요 (go `-v`, jest `--verbose`, vitest `--reporter=verbose`).
+    - 통과 기준: 작성한 신규 테스트 전부 PASS AND 변경한 패키지(모듈) 테스트에서 `## Test Baseline` 대비 신규 실패 0건.
+      저장소 전체 실행·baseline 통과 수 재집계는 하지 마세요(전체 대조는 Phase 8.1·8.7). Spec이 요구하지 않는 변이·민감도 실험도 하지 마세요.
+    - 보고: Spec ID | suite(`unit`, `{makeTestCommand}`가 설정된 경우만 `integration`) | 러너 네이티브 정확 ID | 파일 표.
+      식별자는 baseline 규칙과 같습니다(go `{package}::TestX/sub`, jest·vitest `{runner}::{file}::{describe › it}`). 같은 ID를 두 번 선언하지 마세요.
+```
+
+오케스트레이터는 보고 표를 `## Quick Test Evidence`에 기록하고 `## TDD Test Map`에는 등재하지 않는다.
+
 ## `[TestConflict]` 판정 (오케스트레이터)
 
 자율 실행 구간이므로 Orchestrator가 유저에게 묻지 않고 판정한다. **기준은 Spec 원문이다.**
 
 | 상황 | 판정 | 행동 |
 |------|------|------|
-| 테스트 단언이 Spec 조항과 다름 | 테스트 오류 | Orchestrator가 Worker에 테스트 수정을 지시하고 Test Map 갱신·사유 기록을 조정 |
+| 테스트 단언이 Spec 조항과 다름 | 테스트 오류 | Orchestrator가 Worker에 테스트 수정을 지시하고 Test Map(quick이면 Quick Test Evidence) 갱신·사유 기록을 조정 |
 | Spec 조항이 모호하거나 부재 | Spec 문제 | 코드·테스트 **양쪽 다 유지**, `[Assumption]` 기록, 해당 ID를 미해결로 표시하고 진행 → Phase 12에서 유저 결정 |
 
 두 번째 경우 코드를 고치지 않는 이유는 `Spec 외 변경 금지 원칙`과 같다 — 유저가 승인한 Spec을 조용히 바꾸지 않는다.
@@ -203,10 +221,11 @@ Tombstone 매핑(`## Test Baseline`)은 분류 **전에** 식별자에 적용한
 | 4 | baseline에 없는 식별자의 실패 | `regression` |
 | 5 | 3·4 판정 전 **1회 재실행**, 결과가 뒤집히면 | `flaky` |
 
+- `## Quick Test Evidence`의 테스트는 Test Map에 등재하지 않으므로, 실패하면 4행(`regression`)으로 분류된다 (quick — `verification-tier.md` §4.1).
 - `flaky`는 regression 집계에서 제외하고 보고만 한다. 유령을 쫓는 수정을 막기 위한 장치다.
   재실행은 러너별 verbose 옵션 필수(go `-v`, jest `--verbose`, vitest `--reporter=verbose`) — `--rerun FILE2 --rerun-exit-code M`으로 전달한다. `flaky` ⇔ 재실행에 unparsed가 없고 완주했으며 **그 식별자가 PASS로 명시**됨(go는 같은 패키지 요약과 PASS로 구성한 전체 ID, jest/vitest는 같은 파일의 전체 ID). 그 외(미완주·PASS 줄 부재)는 원 분류 유지 + `rerun_incomplete` 표기 — 필터 문자열·테스트 수는 증거로 인정하지 않는다.
 - 재실행의 unparsed와 최초 로그에 없던 추가 실패도 최종 대조 결과에 포함한다.
-- `unparsed`·러너 완주 `N`이 남아 있으면 `PASS` 판정을 내릴 수 없다. 오케스트레이터가 로그를 직접 읽어 분류하고, 그래도 분류하지 못하면 **판정 불가** = 테스트 판정 `FAIL`로 취급한다(light: 승격 ③).
+- `unparsed`·러너 완주 `N`이 남아 있으면 `PASS` 판정을 내릴 수 없다. 오케스트레이터가 로그를 직접 읽어 분류하고, 그래도 분류하지 못하면 **판정 불가** = 테스트 판정 `FAIL`로 취급한다(T < standard: 승격 ③).
 - **이름 변경·삭제**: Spec이 승인한 경우에만 허용하고 `## Test Baseline`에 tombstone(`{구 식별자} → {신 식별자}` 또는 `{식별자} → 삭제(근거)`)을 append한다. 승인 없는 소멸은 `regression`으로 취급한다.
   tombstone은 baseline의 **판정 데이터를 바꾸지 않는다** — 대조 시 매핑에만 쓰인다.
 
@@ -223,13 +242,13 @@ Phase 8.5 통합 수정 에이전트에는 이 순서대로 이슈를 전달하�
 | `WARN` | `flaky`만 존재 |
 | `FAIL` | `regression` 1건+ 또는 `new_red` 1건+ 또는 판정 불가(`unparsed`·완주 `N` 잔존을 분류하지 못함) |
 
-이 판정이 Phase 8 루프의 종료 조건에 들어간다 (SKILL.md 본문 참조).
+이 판정이 Phase 8 루프의 종료 조건에 들어간다 (SKILL.md 본문 참조). quick 종료 증거 게이트 미충족으로 기록한 `INCONCLUSIVE`도 test-summary에서 FAIL로 집계된다.
 
 ---
 
 # read-back 격리 (Phase 8.8 보강)
 
-기존 격리 3규칙에 **네 번째 조항**을 추가한다:
+`quality-loop.md`의 Phase 8.8 격리 규칙 ④가 이 조항이다:
 
 > ④ `## TDD Test Map`을 Readonly read-back 에이전트에 **전달하지 않는다.**
 > Test Map은 Spec ID ↔ 테스트 매핑이므로, 이를 본 에이전트는 Spec을 역추론하게 되어 격리가 무너진다.

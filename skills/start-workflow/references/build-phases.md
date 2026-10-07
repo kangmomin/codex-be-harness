@@ -25,6 +25,8 @@ request의 즉시 실행 규칙은 사용하지 않는다.
 
 request를 생략해도 권한·소유권 변경의 일반 사용자 성공·미인증·권한 없음·다른 소유자 조건을 별도 AC/EC로 정리한다.
 
+선언 quick이면 request·추가 edge-case 위임을 생략하고 위 직접 Spec 계약을 사용한다. Q-e가 성립하면 신규 입력 없음(디버깅은 RC 조건 밖)의 기존 결과 동일 EC를 포함한다. 관측 가능한 AC/EC/RC는 모두 보존한다.
+
 엣지 케이스 보강이 필요하면 [agents/edge-case-analyzer.md](agents/edge-case-analyzer.md)를 읽고 API당 한
 Readonly 읽기 전용 역할에 `incremental` 모드로 전달한다. 고정 spawn은 `fork_turns:none`이며 질문은 역할이 사용자에게 직접 보내지 않고
 오케스트레이터에게 반환한다.
@@ -48,22 +50,9 @@ Spec 확인 전에 같은 기능이 이미 진행 중인지 확인한다. 먼저
 - **약 신호**: 브랜치/PR 제목의 키워드만 겹친다 → Phase 1 질문 1개(계속/중단)로 결정받는다.
 - 신호 없음 → 진행. 스캔은 읽기 전용이며 어떤 mutation도 하지 않는다.
 
-## Phase 2: 난이도와 검증 티어
+## Phase 2: 티어 선언 확인
 
-> Phase 2 진입 시 MUST: 같은 폴더의 [verification-tier.md](verification-tier.md)를 읽고 A/B 점수표·게이트·금지 조건·light 축소 항목·승격 규칙을 따른다.
-
-코드 복잡도 A와 영향 범위 리스크 B를 각각 1~10으로 산정하고 `max(A,B)`를 종합 난이도로 사용한다.
-각 축 = 요소별 밴드 최댓값(평균 금지), 근거 없는 요소는 `UNKNOWN`(= 높음). B축 근거는 Spec `참조 구현`
-경로로 `python3 {SKILL_DIR}/assets/risk_facts.py --paths {경로들} --report-dir {REPORT_DIR}`를 실행한
-사실(존재·최근 변경 커밋 수·동반 테스트·과거 워크플로우 이력)로 뒷받침한다(스크립트 exit ≠ 0이면 해당 행 `UNKNOWN`).
-
-**검증 티어**: A ≤ 3 ∧ B ≤ 3 ∧ 금지 조건 0건 ∧ TDD 활성(`--no-tdd` 미지정) ∧ 전략 ≠ parallel-slices ∧
-`--tier standard` 미지정 → `light`(추가 리뷰 레이어·루프 상한·E2E 범위만 축소). 그 외 `standard`(기존 절차
-무변경). 풀스택은 Phase 3에서 종료되므로 판정 대상이 아니다.
-
-**executor effort 확정**: 기본 executor는 `high`다. `{TOPOLOGY_MODELS}`의 executor effort가 명시적 legacy `tiered`이면 종합 난이도 1~8 → `high`, 9~10 → `max`로 치환해 확정한다(고정 effort면 그대로). 이후 모든 executor spawn은 이 값을 쓴다.
-
-출력: `난이도: 코드 [A]/10 + 리스크 [B]/10 — [근거]` / `검증 티어: light|standard — A [a]/B [b], 금지 조건 [해당 없음|{항목}], [사유]` / `executor effort: {executor.effort} ({tiered 확정: 난이도 → high|max | 고정})`
+[verification-tier.md](verification-tier.md) §1을 읽고 TIER_DECLARED와 출처를 확인한다. 선언 없음도 Spec 작업 계약에 보존한다. 산정·판정·executor legacy effort 확정은 Phase 4.1의 Plan 초안 뒤 수행한다. 출력: `티어 선언: {quick|light|standard|없음} ({출처})`.
 
 ## Phase 3: 실행 전략
 
@@ -75,6 +64,8 @@ Spec 확인 전에 같은 기능이 이미 진행 중인지 확인한다. 먼저
 4. 슬라이스별로 빌드와 테스트가 가능하다.
 5. 순서 의존이 없다.
 6. writer-safety.md대로 별도 checkout의 실제 cwd/writable root를 호스트가 강제할 수 있다. 아니면 순차 writer로 실행한다.
+
+선언 quick/light의 parallel-slices 충돌은 verification-tier §3에 따라 sequential로 축소한다. 전략만 보고 티어를 확정하지 않는다.
 
 FE와 BE 변경이 모두 필요하면 더 진행하지 않는다. 상태/보고에 다음을 포함하고 종료한다.
 
@@ -101,25 +92,29 @@ Spec+Plan 산출물로 만든다. 중복 로직이 예상되면 최종 단순 �
 `parallel-slices`면 `## Slices`에 제목·파일 범위·설명을 최대 3개로 적는다. 파일 범위가 겹치면
 `sequential`로 되돌린다.
 
+Plan 초안 직후 [verification-tier.md](verification-tier.md) §2·§2.1·§3으로 A/B·계산 티어 C0·선언 충돌·유효 T·Plan 깊이 P를 판정한다. 숫자 난이도 `D=max(A,B)`는 여기서 동결한다(티어 선언 D_tier와 구분). `{TOPOLOGY_MODELS}`의 executor 기본은 high, 명시적 legacy tiered만 동결 D 1~8 high / 9~10 max로 확정한다. advisor는 최종 Plan의 별도 현재 위험을 평가한다. P가 Plan 단계·PLAN_MAX를, T가 테스트 단계·QL_MAX를 정한다.
+
 ### Phase 4.2: 다관점 보강 1회
 
-최대 3개 Readonly 독립 리뷰어를 두 배치로 실행한다(standard). 모든 고정 spawn은 `fork_turns:none`이고,
+P standard는 최대 3개 Readonly 독립 리뷰어를 두 배치로 실행한다. 모든 고정 spawn은 `fork_turns:none`이고,
 모두 읽기 전용이며 Spec+Plan 전문을 받는다.
 
 - Batch 1: 유지보수성, 성능, 엣지 케이스
 - Batch 2: 데이터 정합성, 보안, 기존 코드 영향
-- **light**: 배치 없이 Readonly 읽기 전용 1역할(`fork_turns:none`)이 3관점(엣지 케이스 · 기존 코드 영향 · 더 단순한 경로)을 한 번에 리뷰한다.
+- **P light**: 배치 없이 Readonly 읽기 전용 1역할(`fork_turns:none`)이 3관점(엣지 케이스 · 기존 코드 영향 · 더 단순한 경로)을 한 번에 리뷰한다.
+
+P quick은 4.2·4.3을 SKIPPED:PLAN_QUICK으로 생략하고 신규 advisor=N/A다. fixed advisor 설정도 실행하지 않는다. 기록은 4.4 재판정 후 Phase 5에서 확정한다.
 
 반환 형식은 `Verdict: APPROVE|CONCERN|REJECT`, `Issues`, `Suggestions`다. REJECT는 Plan에 반영하고,
 CONCERN은 근거가 타당한 항목만 반영한다. 결과를 Plan v1으로 고정한다.
 
 ### Phase 4.3: 독립 Plan 검증 루프
 
-Phase 4.2의 반영을 마친 뒤 첫 4.3 직전에 advisor를 concrete `N/A|xhigh|max`로 resolve한다. auto(`tiered` 또는 model-only)는
-`D=max(A,B)`에서 UNKNOWN이면 D floor 7을 적용한다. `D>=9` 또는 동시성 제어·데이터 정합성/이관·8개 이상 파일 설계·3개 레이어 전체 변경·공유 구조 변경 중 하나라도 있으면 `max`; 나머지 D 4~8은 `xhigh`; D 1~3은 `N/A`다. fixed advisor effort는 이 선택보다 우선한다.
+P light/standard에서 Phase 4.2의 반영을 마친 뒤 첫 4.3 직전에 advisor를 concrete `N/A|xhigh|max`로 resolve한다. auto(`tiered` 또는 model-only)는
+`D=max(A,B)`에서 UNKNOWN이면 D floor 7을 적용한다. `D>=9` 또는 동시성 제어·데이터 정합성/이관·8개 이상 파일 설계·3개 레이어 전체 변경·공유 구조 변경 중 하나라도 있으면 `max`; 나머지 D 4~8은 `xhigh`; D 1~3은 `N/A`다. fixed advisor effort는 이 선택보다 우선한다(P quick dispatch 생략은 우선 유지).
 
 `N/A`면 Phase 4.3은 `SKIPPED:ADVISOR_NOT_REQUIRED`이며 availability 검사·spawn을 하지 않는다. concrete effort면 매 iteration
-`fork_turns:none`의 새 Advisor fresh-context advisor로 최대 `{PLAN_MAX}`회(standard 5 / light 2) 검증한다. 매회 Spec, Plan vN, 전략,
+`fork_turns:none`의 새 Advisor fresh-context advisor로 최대 `{PLAN_MAX}`회(P standard 5 / P light 2 / P quick 0) 검증한다. 매회 Spec, Plan vN, 전략,
 난이도 근거, 정해진 리뷰 관점과 가장 중요한 결정 질문 1개만 전달한다. 2회차부터 이전 diff와 기각 피드백/사유도 전달한다.
 
 매회 verdict, 반영, 기각 사유, Plan 변경 요약을 `Plan Verification Log` 초안에 누적한다.
@@ -128,8 +123,8 @@ Phase 4.2의 반영을 마친 뒤 첫 4.3 직전에 advisor를 concrete `N/A|xhi
 |------|------|
 | `APPROVE` | `PROCEED` 후 4.4 |
 | 사용자 명시 중단 | Phase Assignment에는 `SKIPPED:USER_INTERRUPTED`; raw `USER-INTERRUPTED`와 잔존 이슈는 Plan Verification Log에 기록 후 4.4 가능 |
-| 독립 리뷰 실행 불가 | Phase Assignment에는 `SKIPPED:CODEX_UNAVAILABLE`; raw `CODEX-UNAVAILABLE`와 사유는 Plan Verification Log에 기록 후 4.4 가능(light면 승격 ⑤ → standard 기록 후 진행) |
-| `{PLAN_MAX}`회 미승인 (light는 상한 평가 **전에** 승격 ① → `{PLAN_MAX}` = 5로 계속, iteration·동일 이슈 카운터 승계) | `BLOCKED:MAX_ITERATIONS`; 현재 Plan 진행/카운터·동일 이슈 횟수를 유지한 채 유효 상한만 `현재 iteration + 5`로 확장(`{PLAN_MAX}` 값 불변)/종료 결정 |
+| 독립 리뷰 실행 불가 | Phase Assignment에는 `SKIPPED:CODEX_UNAVAILABLE`; raw `CODEX-UNAVAILABLE`와 사유는 Plan Verification Log에 기록 후 4.4 가능(P light면 승격 ⑤ → T standard 기록 후 기존 미수행 상태 보존) |
+| `{PLAN_MAX}`회 미승인 (P light는 상한 평가 **전에** 승격 ① → P·T standard, `{PLAN_MAX}` = 5로 계속, iteration·동일 이슈 카운터 승계) | `BLOCKED:MAX_ITERATIONS`; 현재 Plan 진행/카운터·동일 이슈 횟수를 유지한 채 유효 상한만 `현재 iteration + 5`로 확장(`{PLAN_MAX}` 값 불변)/종료 결정 |
 
 카운터는 티어와 무관한 단조 증가값이며 승격으로 초기화하지 않는다. 순서는 항상 `iteration 카운터 증가 → 승격 판정(latch) → 새 상한 조회 → 종료 조건·상한 판정`이다(Phase 8 루프도 동일 — [quality-loop.md](quality-loop.md)).
 
@@ -138,7 +133,7 @@ Phase 4.2의 반영을 마친 뒤 첫 4.3 직전에 advisor를 concrete `N/A|xhi
 
 ### Phase 4.4: 명시적 실행 승인
 
-Plan 모드 전환 명령에 의존하지 않는다. Plan의 파일 목록으로 금지 조건을 재점검한다(발견 시 즉시 standard).
+Plan 모드 전환 명령에 의존하지 않는다. 최종 Plan으로 T·P·선언 충돌을 상향만 재판정하고 승인 기준 R0를 확정한다(verification-tier §2·§2.1·§3). P quick에서 올랐으면 건너뛴 Plan 단계를 실행하고 다시 돌아온다. T만 오르면 Plan 리뷰를 재실행하지 않는다.
 작업 계약의 완료 조건·검증 티어·대상·효과를 확정 Plan과 함께 공유한다. 같은 Spec·Plan·대상·효과에 대한 기존 사용자 승인 근거가 있으면 이를 재사용하고 아래 질문은 생략한다. 승인이 없거나 중대한 동작·범위·외부 효과가 달라졌을 때만 미승인 차이를 아래 블록으로 제시해 명시적 승인을 받는다. 리뷰어 APPROVE는 사용자 승인이 아니다.
 
 ```markdown
@@ -146,7 +141,8 @@ Plan 모드 전환 명령에 의존하지 않는다. Plan의 파일 목록으로
 - 확정 Spec/Plan: [요약과 잔존 이슈]
 - 미해소 [Assumption]: [Spec의 [Assumption] 목록 또는 없음 — Phase 5에서 구현 노트 `## 편차`로 이월되고 Phase 10 Gate가 검사한다]
 - 예상 변경 파일: [목록]
-- 검증 티어: [light|standard] — 금지 조건 재점검 [해당 없음|{항목}]
+- 검증 티어: [quick|light|standard] — 선언/계산/수용 예외/R0, Plan 깊이 P·PLAN_MAX, 금지 조건 [해당 없음|{항목}]
+- 선언 quick의 E2E 전용 누락: [없음 | 승격 시 E2E SKIPPED:{사유}]
 - 브랜치: [생성할 이름 / --hard로 현재 브랜치 유지]
 - 로컬 변경: 코드·테스트·문서 편집, 논리 단위 커밋
 - 외부 변경: [일반 모드] push + draft PR / [--hard] 현재 브랜치 push, PR 없음
@@ -159,9 +155,9 @@ Plan 모드 전환 명령에 의존하지 않는다. Plan의 파일 목록으로
 하나도 수행하지 않는다.** 승인 후 `Plan Verification Summary`(iterations, convergence, 잔존 이슈)를
 확정한다. 기존 승인을 재사용한 경우 Run의 `approved_at`·`approved_effects`에는 그 승인 시점·효과를 기록하고 작업 계약에 사용자 근거를 남긴다. 새 승인으로 꾸미거나 권한을 확대하지 않는다.
 
-Phase 4.4 직전에 최종 Plan·사용자 정정·승인 범위를 포함한 A/B·UNKNOWN·max 신호를 항상 재평가한다. 최소 요구 effort가
+P light/standard에서는 Phase 4.4 직전에 최종 Plan·사용자 정정·승인 범위를 포함한 A/B·UNKNOWN·max 신호를 항상 재평가한다. P quick은 advisor 실행·가용성 검사 없이 생략한다. 최소 요구 effort가
 skip→xhigh/max 또는 xhigh→max로 상승할 때만 남은 기존 iteration 하나를 소비해 해당 effort의 fresh advisor를 실행한 뒤 freeze한다.
-남은 slot 또는 `BLOCKED:MAX_ITERATIONS`를 결정하기 전에는 Phase 4.3과 같은 light→standard 승격 순서를 적용해 그 결과의 유효 `{PLAN_MAX}`를 조회한다. counter는 보존한다. 이미 더 높은 effort로 검토했거나 fixed advisor면 rerun·downshift하지 않는다.
+남은 slot 또는 `BLOCKED:MAX_ITERATIONS`를 결정하기 전에는 Phase 4.3과 같은 P light→standard 승격 순서를 적용해 그 결과의 유효 `{PLAN_MAX}`를 조회한다. counter는 보존한다. 이미 더 높은 effort로 검토했거나 fixed advisor면 rerun·downshift하지 않는다.
 
 ## Phase 5: 브랜치, 상태, baseline
 
@@ -171,13 +167,13 @@ skip→xhigh/max 또는 xhigh→max로 상승할 때만 남은 기존 iteration 
   보호 브랜치에 직접 커밋하지 않는다.
 - `--hard`: 브랜치를 만들지 않고 현재 브랜치를 사용한다.
 - `RUN_ID`는 검증된 create 출력 그대로 쓰고 `START_SHA`만 구현 직전 1회 계산한다. RUN_DIR/run.json을 다시 생성하지 않는다.
-- 초기 생성 Write는 [templates.md](templates.md) 앵커 안 템플릿 전체 — `## Flags`(`SCHEMA: 4`, MODE·HARD_MODE·TDD·REFLECT·TIER·TOPOLOGY_MODELS·RUN_ID·START_SHA·PUBLISH_POLICY·ROUTE_TARGET), `## Profile Snapshot`(Pre-flight 확정값 23키 + `profile_path`·`profile_sha256`·`resolved_report_dir`·`resolved_e2e_lock_dir`), `## Verification Tier`(Phase 2 판정·승격 이력)를 반드시 함께 포함한다. `## Test Baseline`은 초기 템플릿에 없다. 이어서 같은 문서의 Implementation Notes 템플릿을 `{IMPL_NOTES}`에 생성한다. Spec에 `[Assumption]`이 있으면 각 항목을 `{IMPL_NOTES}` `## 편차`에 태그 그대로 이월한다(없으면 섹션은 비워 둔다).
-- Build `TOPOLOGY_MODELS`에는 final `advisor=N/A|{concrete effort}`를 기록하고 Phase 4.3 Assignment Status는 `DONE|SKIPPED:ADVISOR_NOT_REQUIRED|SKIPPED:CODEX_UNAVAILABLE|SKIPPED:USER_INTERRUPTED`만 쓴다.
+- 초기 생성 Write는 [templates.md](templates.md) 앵커 안 템플릿 전체 — `## Flags`(`SCHEMA: 4`, MODE·HARD_MODE·TDD·REFLECT·TIER·TOPOLOGY_MODELS·RUN_ID·START_SHA·PUBLISH_POLICY·ROUTE_TARGET), `## Profile Snapshot`(Pre-flight 확정값 23키 + `profile_path`·`profile_sha256`·`resolved_report_dir`·`resolved_e2e_lock_dir`), `## Verification Tier`(선언·C0·R0·T·P·수용 예외·승격 의무/이력)를 반드시 함께 포함한다. `## Test Baseline`은 초기 템플릿에 없다. 이어서 같은 문서의 Implementation Notes 템플릿을 `{IMPL_NOTES}`에 생성한다. Spec에 `[Assumption]`이 있으면 각 항목을 `{IMPL_NOTES}` `## 편차`에 태그 그대로 이월한다(없으면 섹션은 비워 둔다).
+- Build `TOPOLOGY_MODELS`에는 final `advisor=N/A|{concrete effort}`를 기록하고 Phase 4.3 Assignment Status는 `DONE|SKIPPED:PLAN_QUICK|SKIPPED:ADVISOR_NOT_REQUIRED|SKIPPED:CODEX_UNAVAILABLE|SKIPPED:USER_INTERRUPTED`만 쓴다.
 - [tdd.md](tdd.md)의 적용 판정과 baseline 수집을 수행한다.
 - 수집(또는 SKIP 판정) 직후 `## Test Baseline` 블록을 `## TDD Test Map` 앞에 정확히 1회 삽입한다(완전성 canonical: [tdd.md](tdd.md) Phase 5).
 
 baseline 수집 실패는 자율 구간 전 마지막 결정 지점이다. 회귀 판정 저하를 감수하고 진행, 중단,
-`--no-tdd` 전환 중 결정받는다. 진행을 택하면 `수집 실패 — regression 판정 불가`를 기록하고, light면 승격 ④로 standard 전환을 `## Verification Tier`와 진단 `tier_escalated(④)`에 기록한다.
+`--no-tdd` 전환 중 결정받는다. 진행을 택하면 `수집 실패 — regression 판정 불가`를 기록하고, T < standard면 승격 ④로 standard 전환을 `## Verification Tier`와 진단 `tier_escalated(④)`에 기록한다.
 
 순서는 상태 파일 생성 → `{IMPL_NOTES}` → TDD 판정·baseline 수집 → `## Test Baseline` 삽입이며, 이 절이 끝나기 전 중단은 Phase 5 미완 재개([tdd.md](tdd.md))다.
 
@@ -186,6 +182,8 @@ baseline 수집 실패는 자율 구간 전 마지막 결정 지점이다. 회�
 [tdd.md](tdd.md)와 [agent-prompts.md](agent-prompts.md)를 읽는다.
 
 ### Phase 6.1: Red
+
+T quick은 6.1을 SKIPPED:TIER_QUICK으로 기록하고 6.2로 간다. baseline은 활성 TDD이면 그대로 수집한다.
 
 TDD가 활성일 때만 `AC-nn`/`EC-nn`/`RC-nn` 근거의 실패 테스트와 최소 스텁을 작성한다. 형제
 `../../unit-test/SKILL.md`의 Red 절차를 읽어 적용한다(profile 값은 envelope의 `## Profile Snapshot`, 재독 없음).
@@ -210,10 +208,10 @@ Red 커밋은 `Test: {요약} — 실패 테스트 선작성 (Red)`다. pre-comm
 - parallel-slices: 파일 범위를 겹치지 않게 Worker에 배정하고 각 작성자는 커밋·빌드를 하지 않는다.
   오케스트레이터가 결과를 대조한 뒤 한 번 커밋한다.
 
-TDD 활성 시 테스트 파일 수정은 금지한다. 테스트가 잘못됐다고 판단하면 `[TestConflict]`만 보고하고
+quick + TDD 활성은 같은 Worker dispatch에 [tdd.md](tdd.md)의 quick 동반 블록을 넣어 신규 테스트 작성·실행을 허용한다. Orchestrator는 반환 표를 별도 Quick Test Evidence에 기록한다. 그 밖의 TDD 활성 시 테스트 파일 수정은 금지한다. 테스트가 잘못됐다고 판단하면 `[TestConflict]`만 보고하고
 [tdd.md](tdd.md)의 오케스트레이터 판정을 따른다.
 
-완료 직후 **승격 ② 평가**(`START_SHA` 기준 변경 소스 파일 > 3 또는 금지 조건 발견 — [verification-tier.md](verification-tier.md) §4 집계 규칙) → light면 standard 전환을 `## Verification Tier` 승격 이력과 `Phase Results` 진단 `tier_escalated(②)`로 기록하고 Phase 7로.
+완료 직후 **승격 ② 재판정**([verification-tier.md](verification-tier.md) §5: 실제 변경 사실·START_SHA 집계·R0 수용 원인 제외)을 기록하고 Phase 7로 간다. 6.2의 신규 테스트·변경 패키지 검증 뒤 저장소 전체 대조는 8.1·8.7, Spec 단언 대응 독립 확인은 8.4가 맡는다. 새 결함 근거 없는 diff 재리뷰·변이 재검증은 추가하지 않는다.
 
 ## Phase 7: 빌드 강제 검증
 
@@ -223,16 +221,16 @@ Worker build-fix가 원인 범위만 수정하고 결과를 반환한 후 Orches
 
 ## Phase 8: 품질 루프
 
-[quality-loop.md](quality-loop.md)가 canonical이다. 최대 `{QL_MAX}`회(standard 3 / light 2) 동안 읽기 전용 병렬 스캔 → 단일 작성자
+[quality-loop.md](quality-loop.md)가 canonical이다. 최대 `{QL_MAX}`회(standard 3 / light 2 / quick 2) 동안 읽기 전용 병렬 스캔 → 단일 작성자
 통합 수정 → E2E/통합 테스트 순으로 수행한다. 종료 조건은 `modified == false`와 테스트 `PASS` 및 scope 마감 통과다.
 TDD 생략 시에도 수정 0건이며 unit/integration 합산 결과가 PASS 또는 정당한 SKIPPED이고 scope 마감도 통과했을 때만 종료한다. `{QL_MAX}`회 뒤에도 green이 아니면
 `BLOCKED:TEST_NOT_GREEN`을 기록하되 Phase 8.8 이후를 계속한다. scope만 미완료면 BLOCKED:REVIEW_SCOPE로 구분하고 원격 반영을 보류한다.
 
 **light**: 8.2 = `SKIPPED:TIER_LIGHT`(Readonly 통합 스캔을 convention만으로 실행), 8.6 = `e2e-test-loop --smoke`,
-8.8 = `SKIPPED:TIER_LIGHT`. 승격 ③(8.1 회귀·판정 불가)·⑥(8.6 BLOCKED 또는 `full(smoke 미적용)`)·⑦(iteration 종료 시 재집계)은
-[verification-tier.md](verification-tier.md) §4 — 티어 전환은 종료 조건·상한 평가보다 **먼저** 적용하고, ⑥·⑦은 standard iteration을 최소 1회 추가한다. 상세는 [quality-loop.md](quality-loop.md).
+8.8 = `SKIPPED:TIER_LIGHT`. **quick**은 8.2·8.3·8.6·8.8 = `SKIPPED:TIER_QUICK`이며 Quick Evidence 의무는 승격 뒤에도 유지한다. 승격 ③(8.1 회귀·판정 불가)·⑥(8.6 BLOCKED 또는 `full(smoke 미적용)`)·⑦(iteration 종료 시 재집계)은
+[verification-tier.md](verification-tier.md) §5 — 티어 전환은 종료 조건·상한 평가보다 **먼저** 적용하고, ⑥은 standard, ⑦은 새 티어 iteration을 최소 1회 추가한다. 상세는 [quality-loop.md](quality-loop.md).
 
-루프 밖에서 격리된 Phase 8.8 Read-back을 정확히 한 번 실행한다(light: `SKIPPED:TIER_LIGHT` — 승격됐다면 실행). `FAIL`이어도 수정하지 않고 Phase
+루프 밖에서 격리된 Phase 8.8 Read-back을 정확히 한 번 실행한다(light: `SKIPPED:TIER_LIGHT`, quick: `SKIPPED:TIER_QUICK` — standard로 승격됐다면 실행). `FAIL`이어도 수정하지 않고 Phase
 12 결정으로 이연한다.
 
 ## Phase 9: API 문서
@@ -244,11 +242,13 @@ TDD 생략 시에도 수정 0건이며 unit/integration 합산 결과가 PASS �
 
 [review-evidence.md](review-evidence.md)의 현재 scope 수집 → check-scope → check-current --require scope를 통과한다. scope 미수집·미보완·부모 대체 검토는 push 근거가 아니며 기존 필수 kind도 유지한다.
 
+필수 kind는 실행 이력 대신 유효 T와 Profile Snapshot의 명령 설정으로 정한다. quick은 scope·unit 및 makeTestCommand가 설정된 integration이다. light/standard는 기존 활성 검증 집합을 따른다. Quick Evidence가 있으면 정확 ID PASS 증거·필수 ID 전체 대응·scope 단언 대응 마감도 통과해야 한다. check-current의 exit 0만으로 이 게이트를 대체하지 않는다.
+
 [finalization.md](finalization.md)와 [result-contract.md](result-contract.md)를 적용한다. `workflow_results.py check-current "{RESULTS_FILE}" --run-id "{RUN_ID}" --cwd "{CWD}"`에 해당 실행의 필수 kind를 `--require`로 전달한다. 설정된 makeTestCommand가 있으면 integration도 필수로 요구한다. 내용 동일 commit의 v2 재사용은 result-contract의 same_tree 판정을 따르며 HEAD 의존 검증은 재실행한다. stale/실패/필수 검증 차단이 남으면 push/PR을 보류하고 Phase 11~12에서 해결한다.
 `PUBLISH_POLICY:local`이면 동봉 commit으로 소유 변경을 로컬 커밋한 뒤 원격 절차를 생략한다. push는 commit-hard-push, pr은 commit-pr을 사용한다. none은 Build 반영을 실행하지 않는다.
 
 
-진입 직전 light면 승격 ⑦ 재평가([verification-tier.md](verification-tier.md) §4) — 발화 시 Phase 8을 standard 루프로 1회 재진입(카운터 0부터, `{QL_MAX}` = 3, 이력 `⑦: Phase 8 재진입`)한 뒤 돌아온다.
+진입 직전 T < standard면 승격 ⑦ 재판정([verification-tier.md](verification-tier.md) §5) — 상향 시 Phase 8을 새 티어 루프로 재진입(새 QL 카운터, 결과 event는 kind별 최대 iteration + 1)한 뒤 돌아온다. 이력에 미완료 의무를 기록하며 standard가 된 뒤에는 재판정하지 않는다.
 
 base diff의 추가 라인, 미push 커밋 본문, `{IMPL_NOTES}`의 `## 편차`에서 `[Assumption]`을 검색한다. 하나라도 있으면 push/PR을
 금지하고 `BLOCKED:ASSUMPTION_UNRESOLVED`와 위치 목록을 기록한 뒤 Phase 11~12로 간다. 사용자가

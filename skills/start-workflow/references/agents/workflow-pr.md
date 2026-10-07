@@ -40,3 +40,5 @@ already-pushed state explicit; do not silently retry with a different remote or 
 
 workflow 호출은 START_SHA와 OWNED_FILES로 workflow_scope.py가 수집한 명시 경로 목록을 사용한다. main/base를 재추론하거나 dirty 상태에 따라 기준 SHA를 바꾸지 않는다. standalone은 기존 PR base·명시 base·profile mainBranch·origin/HEAD에서 확정한 base-ref를 사용한다. HEAD로 폴백하지 않는다. 삭제는 diff, symlink는 링크 자체만 검토한다. Git/helper 실패는 빈 범위 PASS가 아니라 BLOCKED:REVIEW_SCOPE다.
 writer는 writer-safety.md의 실제 종료 확인 후에만 재시도한다. 공유 상태·결과 JSON은 오케스트레이터가 기록하고 역할은 구조화 결과만 반환한다.
+
+Workflow 필수 kind는 승인된 유효 티어 T와 Profile Snapshot 명령으로 정한다. quick은 scope·unit 및 설정된 integration이며 light/standard는 기존 활성 검증이다. Quick Evidence가 있으면 정확 ID PASS·필수 Spec 대응·scope 대응 마감까지 Orchestrator가 확인한 HEAD만 원격 반영한다. 기록 성공(record exit 0)과 freshness(check-current)는 검증 성공을 대신하지 않는다.
